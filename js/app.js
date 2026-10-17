@@ -11,6 +11,11 @@ let currentUser = null;
 let userProfile = null;
 const $ = (id) => document.getElementById(id);
 
+// Action pour le bouton Paramètres
+$('btn-settings').addEventListener('click', () => {
+  alert("⚙️ Les paramètres de BlueNexus arrivent très bientôt !");
+});
+
 $('btn-signup').addEventListener('click', async () => {
   const email = $('auth-email').value.trim();
   const pass = $('auth-pass').value.trim();
@@ -34,14 +39,23 @@ $('btn-login').addEventListener('click', async () => {
   catch (e) { $('auth-error').textContent = e.message; }
 });
 
+// GESTION ROBUSTE DE LA CONNEXION
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    userProfile = snap.exists() ? snap.data() : null;
+    try {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      userProfile = snap.exists() ? snap.data() : { username: "Utilisateur", bio: "Nouveau membre" };
+    } catch (error) {
+      console.error("Erreur de lecture du profil :", error);
+      userProfile = { username: "Utilisateur", bio: "Nouveau membre", decorations: [], badges: [] };
+    }
+    
+    // On change d'écran QUOI QU'IL ARRIVE si l'utilisateur est connecté
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
-    renderHome(); renderProfile();
+    renderHome(); 
+    renderProfile();
   } else {
     currentUser = null; userProfile = null;
     $('app-screen').classList.remove('active');
@@ -64,13 +78,17 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
 async function renderHome() {
   const list = $('communities-list');
-  const snap = await getDocs(query(collection(db, 'communities'), orderBy('createdAt', 'desc'), limit(30)));
-  if (snap.empty) { list.innerHTML = '<p class="muted">Aucune communauté. Créez la première !</p>'; return; }
-  list.innerHTML = '';
-  snap.forEach(d => {
-    const c = d.data();
-    list.innerHTML += `<div class="card"><h4>${c.name}</h4><p class="muted">${c.description || ''}</p><span class="chip">${c.members?.length || 1} membres</span></div>`;
-  });
+  try {
+    const snap = await getDocs(query(collection(db, 'communities'), orderBy('createdAt', 'desc'), limit(30)));
+    if (snap.empty) { list.innerHTML = '<p class="muted">Aucune communauté. Créez la première !</p>'; return; }
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const c = d.data();
+      list.innerHTML += `<div class="card"><h4>${c.name}</h4><p class="muted">${c.description || ''}</p><span class="chip">${c.members?.length || 1} membres</span></div>`;
+    });
+  } catch(e) {
+    list.innerHTML = '<p class="muted">Prêt à créer votre première communauté !</p>';
+  }
 }
 
 $('btn-new-community').addEventListener('click', () => $('modal').classList.remove('hidden'));
@@ -128,9 +146,9 @@ async function doSearch() {
 
 function renderProfile() {
   if (!userProfile) return;
-  $('profile-name').textContent = userProfile.username;
+  $('profile-name').textContent = userProfile.username || "Utilisateur";
   $('profile-bio').textContent = userProfile.bio || '';
-  $('profile-avatar').textContent = userProfile.username?.[0]?.toUpperCase() || '?';
+  $('profile-avatar').textContent = userProfile.username ? userProfile.username[0].toUpperCase() : '?';
   $('profile-decorations').innerHTML = (userProfile.decorations || []).map(d => `<span class="deco-item">${d}</span>`).join('');
   $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">🏅 ${b}</span>`).join('');
 }
