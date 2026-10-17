@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BlueNexus</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<div id="auth-screen" class="screen active">
+  <div class="auth-box">
+    <h1 class="logo">Blue<span>Nexus</span></h1>
+    <p class="tagline">Communautés · Musique · Découverte</p>
+    <input id="auth-email" type="email" placeholder="Email" />
+    <input id="auth-pass" type="password" placeholder="Mot de passe" />
+    <input id="auth-name" type="text" placeholder="Nom d'utilisateur (inscription)" />
+    <button id="btn-login" class="btn-primary">Se connecter</button>
+    <button id="btn-signup" class="btn-secondary">Créer un compte</button>
+    <p id="auth-error" class="error"></p>
+  </div>
+</div>
+
+<div id="app-screen" class="screen">
+  <header class="top-bar">
+    <h2 id="page-title">Accueil</h2>
+    <button id="btn-settings" class="icon-btn">⚙️</button>
+  </header>
+
+  <main id="main-content">
+    <section id="view-home" class="view active">
+      <div class="action-row">
+        <button id="btn-new-community" class="btn-primary small">+ Nouvelle communauté</button>
+      </div>
+      <div id="communities-list" class="card-grid"></div>
+    </section>
+
+    <section id="view-music" class="view">
+      <h3>Bibliothèque personnelle</h3>
+      <div id="music-list" class="media-list"></div>
+    </section>
+
+    <section id="view-video" class="view">
+      <h3>Découvertes populaires</h3>
+      <div id="video-list" class="media-list"></div>
+    </section>
+
+    <section id="view-search" class="view">
+      <div class="search-filters">
+        <input id="search-input" type="text" placeholder="Rechercher..." />
+        <select id="search-type">
+          <option value="all">Tout</option>
+          <option value="user">Utilisateurs</option>
+          <option value="community">Communautés</option>
+          <option value="audio">Audio</option>
+          <option value="video">Vidéo</option>
+        </select>
+      </div>
+      <div id="search-results" class="card-grid"></div>
+    </section>
+
+    <section id="view-profile" class="view">
+      <div class="profile-banner" id="profile-banner"></div>
+      <div class="profile-body">
+        <div class="profile-avatar" id="profile-avatar"></div>
+        <h2 id="profile-name">—</h2>
+        <p id="profile-bio" class="muted"></p>
+        <div id="profile-decorations" class="deco-row"></div>
+        <div id="profile-badges" class="badge-row"></div>
+        <h3>Contributions épinglées</h3>
+        <div id="profile-pinned" class="card-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
+    <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
+    <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
+    <button data-view="search" class="nav-btn">🔍<span>Recherche</span></button>
+    <button data-view="profile" class="nav-btn">👤<span>Profil</span></button>
+  </nav>
+</div>
+
+<div id="modal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Créer une communauté</h3>
+    <input id="comm-name" placeholder="Nom" />
+    <textarea id="comm-desc" placeholder="Description"></textarea>
+    <button id="comm-save" class="btn-primary">Créer</button>
+    <button id="comm-cancel" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
