@@ -9,6 +9,7 @@
 </head>
 <body>
 
+<!-- ================= AUTH SCREEN ================= -->
 <div id="auth-screen" class="screen active">
   <div class="auth-box">
     <h1 class="logo">Blue<span>Nexus</span></h1>
@@ -22,13 +23,18 @@
   </div>
 </div>
 
+<!-- ================= APP SHELL ================= -->
 <div id="app-screen" class="screen">
+  <!-- Header -->
   <header class="top-bar">
     <h2 id="page-title">Accueil</h2>
     <button id="btn-settings" class="icon-btn">⚙️</button>
   </header>
 
+  <!-- Views -->
   <main id="main-content">
+
+    <!-- ACCUEIL -->
     <section id="view-home" class="view active">
       <div class="action-row">
         <button id="btn-new-community" class="btn-primary small">+ Nouvelle communauté</button>
@@ -36,16 +42,35 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
+    <!-- VUE COMMUNAUTÉ (Fil d'actualité) -->
+    <section id="view-community" class="view">
+      <button id="btn-back-home" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
+      <h2 id="comm-title-display" style="color: var(--blue-light);">Nom du groupe</h2>
+      <p id="comm-desc-display" class="muted" style="margin-bottom: 1.5rem;"></p>
+      
+      <!-- Formulaire de publication (C'est ici !) -->
+      <div id="post-form-container" style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.5rem;">
+        <textarea id="post-content" placeholder="Écrivez quelque chose..." style="margin-bottom: 0.5rem;"></textarea>
+        <button id="btn-publish-post" class="btn-primary small">Publier</button>
+      </div>
+
+      <!-- Liste des publications -->
+      <div id="posts-list" class="media-list"></div>
+    </section>
+
+    <!-- MUSIQUE -->
     <section id="view-music" class="view">
       <h3>Bibliothèque personnelle</h3>
       <div id="music-list" class="media-list"></div>
     </section>
 
+    <!-- VIDÉO -->
     <section id="view-video" class="view">
       <h3>Découvertes populaires</h3>
       <div id="video-list" class="media-list"></div>
     </section>
 
+    <!-- RECHERCHE -->
     <section id="view-search" class="view">
       <div class="search-filters">
         <input id="search-input" type="text" placeholder="Rechercher..." />
@@ -60,6 +85,7 @@
       <div id="search-results" class="card-grid"></div>
     </section>
 
+    <!-- PROFIL (vitrine) -->
     <section id="view-profile" class="view">
       <div class="profile-banner" id="profile-banner"></div>
       <div class="profile-body">
@@ -72,8 +98,19 @@
         <div id="profile-pinned" class="card-grid"></div>
       </div>
     </section>
+
+    <!-- VUE PARAMÈTRES -->
+    <section id="view-settings" class="view">
+      <h3>Paramètres de l'application</h3>
+      <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+        <button id="btn-edit-profile-view" class="btn-primary">Modifier mon profil</button>
+        <button id="btn-logout" class="btn-secondary" style="color: #ff6b6b; border-color: #ff6b6b;">Se déconnecter</button>
+      </div>
+    </section>
+
   </main>
 
+  <!-- Bottom Navigation -->
   <nav class="bottom-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
@@ -83,13 +120,39 @@
   </nav>
 </div>
 
+<!-- Modale création communauté -->
 <div id="modal" class="modal hidden">
   <div class="modal-content">
     <h3>Créer une communauté</h3>
     <input id="comm-name" placeholder="Nom" />
     <textarea id="comm-desc" placeholder="Description"></textarea>
+    <select id="comm-type" style="margin-bottom: 0.5rem;">
+      <option value="chat">💬 Groupe de discussion (Tout le monde écrit)</option>
+      <option value="announcement">📢 Chaîne de publication (Seul l'admin écrit)</option>
+    </select>
     <button id="comm-save" class="btn-primary">Créer</button>
     <button id="comm-cancel" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
+<!-- Modale de modification de profil -->
+<div id="modal-profile" class="modal hidden">
+  <div class="modal-content">
+    <h3>Modifier mon profil</h3>
+    <label style="font-size: 0.8rem; color: var(--muted);">Ma Bio</label>
+    <textarea id="edit-bio" placeholder="Parlez de vous..."></textarea>
+    
+    <label style="font-size: 0.8rem; color: var(--muted);">Choisir une décoration</label>
+    <select id="edit-deco">
+      <option value="">Aucune</option>
+      <option value="💙 Membre Bleu">💙 Membre Bleu</option>
+      <option value="🔥 Créateur Actif">🔥 Créateur Actif</option>
+      <option value="👑 Fondateur">👑 Fondateur</option>
+      <option value="🎵 Mélomane">🎵 Mélomane</option>
+    </select>
+
+    <button id="btn-save-profile" class="btn-primary">Enregistrer</button>
+    <button id="btn-cancel-profile" class="btn-secondary">Annuler</button>
   </div>
 </div>
 
