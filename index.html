@@ -27,51 +27,68 @@
 <!-- ================= APPLICATION ================= -->
 <div id="app-screen" class="screen">
   
-  <header class="top-bar">
+  <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <button id="btn-settings-top" class="icon-btn">⚙️</button>
   </header>
 
   <main id="main-content">
 
-    <!-- ACCUEIL -->
+    <!-- 1. ACCUEIL PRINCIPAL (FLUX GLOBAL) -->
     <section id="view-home" class="view active">
+      <!-- Bouton vers la liste des communautés -->
+      <div class="action-row" style="justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.1rem;">Fil d'actualité</h3>
+        <button id="btn-go-communities" class="btn-primary small">🌐 Communautés</button>
+      </div>
+      
+      <div id="global-feed-list" class="media-list"></div>
+    </section>
+
+    <!-- 2. LISTE DES COMMUNAUTÉS (TRIÉES PAR POPULARITÉ) -->
+    <section id="view-communities" class="view">
+      <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour à l'accueil</button>
+      
       <div class="action-row">
         <button id="btn-new-community" class="btn-primary small">+ Nouvelle communauté</button>
       </div>
+      
+      <h3 style="margin-bottom: 1rem;">Découvrir les communautés</h3>
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- COMMUNAUTÉ -->
+    <!-- 3. VUE COMMUNAUTÉ (CHAT EN BAS) -->
     <section id="view-community" class="view">
-      <button id="btn-back-home" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
-      
-      <div class="comm-header">
-        <!-- Nouvelle image de couverture de la communauté -->
-        <img id="comm-image-display" style="width: 100%; height: 120px; object-fit: cover; border-radius: var(--radius); display: none; margin-bottom: 1rem;" />
-        <h2 id="comm-title-display" style="color: var(--blue-light);">Nom du groupe</h2>
-        <p id="comm-desc-display" class="muted"></p>
-        <p id="members-count" class="muted" style="font-size: 0.75rem;"></p>
-      </div>
-
-      <div id="post-form-container" style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); margin: 1rem 0;">
-        <textarea id="post-content" placeholder="Écrivez quelque chose..." style="margin-bottom: 0.5rem;"></textarea>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;">
-          <button id="btn-attach-file" class="btn-secondary small" style="padding: 8px 12px;">📎 Fichier</button>
-          <span id="file-name" class="muted" style="font-size: 0.8rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
-          <button id="btn-publish-post" class="btn-primary small">Publier</button>
+      <!-- En-tête de la communauté -->
+      <div class="comm-header-fixed">
+        <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">← Retour</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div id="comm-avatar-header" style="width: 35px; height: 35px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold;">C</div>
+          <div>
+            <h2 id="comm-title-display" style="font-size: 1rem; margin: 0;">Nom du groupe</h2>
+            <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p>
+          </div>
         </div>
       </div>
 
-      <div id="posts-list" class="media-list"></div>
+      <!-- Fil de discussion -->
+      <div id="posts-list" class="media-list" style="padding-bottom: 80px;"></div>
+
+      <!-- BARRE DE CHAT FIXÉE EN BAS -->
+      <div id="post-form-container" class="chat-input-bar hidden">
+        <div style="flex: 1; position: relative;">
+          <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 40px;"></textarea>
+          <input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;">
+          <button id="btn-attach-file" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button>
+        </div>
+        <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
+      </div>
     </section>
 
     <!-- MESSAGES -->
     <section id="view-messages" class="view">
       <h3>Messages privés</h3>
-      <p class="muted" style="margin-bottom: 1rem;">Sélectionnez un membre pour discuter.</p>
-      <div id="users-list" class="card-grid"></div>
+      <div id="users-list" class="card-grid" style="margin-top: 1rem;"></div>
     </section>
 
     <!-- MUSIQUE -->
@@ -88,13 +105,11 @@
 
     <!-- RECHERCHE -->
     <section id="view-search" class="view">
-      <div class="search-filters">
-        <input id="search-input" type="text" placeholder="Rechercher un utilisateur..." />
-      </div>
+      <input id="search-input" type="text" placeholder="Rechercher..." style="margin-bottom: 1rem;" />
       <div id="search-results" class="card-grid"></div>
     </section>
 
-    <!-- PROFIL STYLE FACEBOOK -->
+    <!-- PROFIL -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner"></div>
@@ -125,7 +140,8 @@
 
   </main>
 
-  <nav class="bottom-nav">
+  <!-- NAVIGATION BAS (Cachée dans les communautés) -->
+  <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="messages" class="nav-btn">✉️<span>Messages</span></button>
     <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
@@ -143,10 +159,9 @@
     <textarea id="comm-desc" placeholder="Description"></textarea>
     <label class="muted" style="font-size: 0.8rem;">Photo de couverture</label>
     <input type="file" id="comm-image" accept="image/*" style="background: none; border: none; padding: 0; margin-bottom: 10px;">
-    
     <select id="comm-type" style="margin-bottom: 0.5rem;">
       <option value="chat">💬 Groupe de discussion</option>
-      <option value="announcement">📢 Chaîne de publication (Admin seul)</option>
+      <option value="announcement">📢 Chaîne (Admin seul)</option>
     </select>
     <button id="comm-save" class="btn-primary">Créer</button>
     <button id="comm-cancel" class="btn-secondary">Annuler</button>
@@ -160,13 +175,6 @@
     <input type="file" id="edit-avatar" accept="image/*" style="background: none; border: none; padding: 0;">
     <label class="muted">Ma Bio</label>
     <textarea id="edit-bio" placeholder="Parlez de vous..."></textarea>
-    <label class="muted">Décoration</label>
-    <select id="edit-deco">
-      <option value="">Aucune</option>
-      <option value="💙 Membre Bleu">💙 Membre Bleu</option>
-      <option value="🔥 Actif">🔥 Actif</option>
-      <option value="👑 Fondateur">👑 Fondateur</option>
-    </select>
     <button id="btn-save-profile" class="btn-primary">Enregistrer</button>
     <button id="btn-cancel-profile" class="btn-secondary">Annuler</button>
   </div>
