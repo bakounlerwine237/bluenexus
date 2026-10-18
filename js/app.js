@@ -73,7 +73,7 @@ $('btn-signup').addEventListener('click', async () => {
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await setDoc(doc(db, 'users', cred.user.uid), {
-      username: name, email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", decorations: [], badges: [], pinned: []
+      username: name, email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", decorations: [], badges: [], pinned: [], communities: []
     });
   } catch (e) { $('auth-error').textContent = e.message; }
 });
@@ -96,7 +96,7 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     const snap = await getDoc(doc(db, 'users', user.uid));
-    userProfile = snap.exists() ? snap.data() : { username: "Utilisateur", decorations: [], badges: [], pinned: [], photoURL: "" };
+    userProfile = snap.exists() ? snap.data() : { username: "Utilisateur", decorations: [], badges: [], pinned: [], photoURL: "", communities: [] };
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
     switchView('home');
@@ -109,19 +109,52 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ================= FLUX D'ACTUALITÉ GLOBAL (ISOLÉ) =================
-function renderGlobalFeed() {
+// ================= FLUX D'ACTUALITÉ UNIFIÉ =================
+async function renderGlobalFeed() {
   const list = $('global-feed-list');
-  list.innerHTML = '<p class="muted">Chargement du fil d\'actualité...</p>';
+  list.innerHTML = '<p class="muted">Chargement...</p>';
   
-  // On ne récupère QUE les posts qui n'ont pas de communauté (communityId == 'global')
-  const q = query(collection(db, 'posts'), where('communityId', '==', 'global'), orderBy('createdAt', 'desc'), limit(50));
-  
-  unsubscribeGlobalFeed = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message public.</p>';
-    list.innerHTML = snap.docs.map(d => generatePostHTML(d, false)).join('');
-  });
+  try {
+    // 1. Trouver les communautés de l'utilisateur
+    const commQ = query(collection(db, 'communities'), where('members', 'array-contains', currentUser.uid));
+    const commSnap = await getDocs(commQ);
+    let commIds = commSnap.docs.map(d => d.id);
+    
+    // 2. Ajouter le flux global
+    commIds.push('global');
+    
+    // Limite de 10 pour la requête Firebase
+    if (commIds.length > 10) commIds = commIds.slice(0, 10);
+
+    // 3. Récupérer les posts
+    const q = query(collection(db, 'posts'), where('communityId', 'in', commIds), orderBy('createdAt', 'desc'), limit(50));
+    
+    unsubscribeGlobalFeed = onSnapshot(q, snap => {
+      if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message. Publiez quelque chose ou rejoignez une communauté !</p>';
+      list.innerHTML = snap.docs.map(d => generatePostHTML(d, false)).join('');
+    });
+  } catch (error) {
+    console.error(error);
+    list.innerHTML = '<p class="muted">Erreur de chargement. Vérifiez l\'index Firebase.</p>';
+  }
 }
+
+// Publication sur le fil global (Accueil)
+$('btn-global-publish').addEventListener('click', async () => {
+  const content = $('global-post-content').value.trim();
+  if (!content) return;
+  
+  $('btn-global-publish').textContent = "...";
+  try {
+    await addDoc(collection(db, 'posts'), {
+      communityId: 'global', // ID spécial pour le flux public
+      content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
+      mediaUrl: null, mediaType: null, likes: [], createdAt: serverTimestamp()
+    });
+    $('global-post-content').value = '';
+  } catch(e) { alert("Erreur : " + e.message); }
+  $('btn-global-publish').textContent = "Publier";
+});
 
 // ================= COMMUNAUTÉS =================
 $('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
@@ -132,13 +165,16 @@ $('comm-save').addEventListener('click', async () => {
   if (!name) return;
   $('comm-save').textContent = "Création...";
   try {
-    await addDoc(collection(db, 'communities'), {
+    const newCommRef = await addDoc(collection(db, 'communities'), {
       name, description: $('comm-desc').value.trim(), type, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
     });
-    if (!userProfile.badges.includes("Fondateur")) {
-      await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("Fondateur") });
-      userProfile.badges.push("Fondateur");
-    }
+    
+    // Ajouter la communauté à l'utilisateur
+    await updateDoc(doc(db, 'users', currentUser.uid), { 
+      communities: arrayUnion(newCommRef.id),
+      badges: arrayUnion("Fondateur")
+    });
+    
     $('modal-community').classList.add('hidden');
     renderCommunitiesList();
   } catch(e) { alert(e.message); }
@@ -149,7 +185,7 @@ async function renderCommunitiesList() {
   const list = $('communities-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const snap = await getDocs(collection(db, 'communities'));
-  if (snap.empty) return list.innerHTML = '<p class="muted">Aucune communauté trouvée.</p>';
+  if (snap.empty) return list.innerHTML = '<p class="muted">Aucune communauté.</p>';
   
   const comms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   comms.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
@@ -163,7 +199,7 @@ async function renderCommunitiesList() {
   }).join('');
 }
 
-// ================= OUVRIR UNE COMMUNAUTÉ =================
+// ================= OUVRIR ET REJOINDRE =================
 window.openCommunity = async (id) => {
   currentCommunityId = id;
   $('posts-list').innerHTML = '<p class="muted">Chargement...</p>';
@@ -189,32 +225,50 @@ window.openCommunity = async (id) => {
 function updateJoinUI() {
   const isMember = currentCommunityMembers.includes(currentUser.uid);
   const chatBar = $('post-form-container');
-  const joinContainer = $('join-container');
+  const joinBtn = $('btn-join-community');
 
   if (isMember) {
-    // Membre : On cache le gros bouton et on affiche le chat
-    joinContainer.style.display = 'none';
+    joinBtn.textContent = "Quitter";
+    joinBtn.className = "btn-secondary small";
+    joinBtn.style.color = "#ff6b6b";
+    joinBtn.style.borderColor = "#ff6b6b";
+    
     if (currentCommunityType === 'announcement' && currentUser.uid !== currentCommunityOwner) {
-      chatBar.style.display = 'none'; // Les non-admins ne peuvent pas écrire dans les annonces
+      chatBar.style.display = 'none'; 
     } else {
       chatBar.style.display = 'flex';
     }
   } else {
-    // Pas membre : On affiche le gros bouton et on cache le chat
-    joinContainer.style.display = 'block';
+    joinBtn.textContent = "Rejoindre";
+    joinBtn.className = "btn-primary small";
+    joinBtn.style.color = "white";
+    joinBtn.style.borderColor = "transparent";
     chatBar.style.display = 'none';
   }
 }
 
 $('btn-join-community').addEventListener('click', async () => {
+  const isMember = currentCommunityMembers.includes(currentUser.uid);
   const ref = doc(db, 'communities', currentCommunityId);
-  await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
-  currentCommunityMembers.push(currentUser.uid);
+  const userRef = doc(db, 'users', currentUser.uid);
+  
+  if (isMember) {
+    // Quitter
+    await updateDoc(ref, { members: arrayRemove(currentUser.uid) });
+    await updateDoc(userRef, { communities: arrayRemove(currentCommunityId) });
+    currentCommunityMembers = currentCommunityMembers.filter(uid => uid !== currentUser.uid);
+  } else {
+    // Rejoindre
+    await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
+    await updateDoc(userRef, { communities: arrayUnion(currentCommunityId) });
+    currentCommunityMembers.push(currentUser.uid);
+  }
+  
   $('members-count').textContent = `${currentCommunityMembers.length} membres`;
   updateJoinUI();
 });
 
-// ================= CHAT DANS LA COMMUNAUTÉ =================
+// ================= CHAT COMMUNAUTÉ =================
 function loadCommunityFeed() {
   const list = $('posts-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
@@ -285,7 +339,7 @@ window.toggleLike = async (postId, isLiked) => {
   else await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
 };
 
-// ================= PROFIL & RESTE =================
+// ================= PROFIL =================
 $('btn-logout').addEventListener('click', () => signOut(auth));
 $('btn-edit-profile-view').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
 $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));

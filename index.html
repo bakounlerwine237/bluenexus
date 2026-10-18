@@ -32,16 +32,23 @@
 
   <main id="main-content">
 
-    <!-- ACCUEIL PRINCIPAL (FLUX GLOBAL STRICT) -->
+    <!-- 1. ACCUEIL PRINCIPAL (FLUX UNIFIÉ) -->
     <section id="view-home" class="view active">
       <div class="action-row" style="justify-content: space-between; align-items: center;">
-        <h3 style="font-size: 1.1rem;">Fil d'actualité Public</h3>
+        <h3 style="font-size: 1.1rem;">Fil d'actualité</h3>
         <button id="btn-go-communities" class="btn-primary small">🌐 Communautés</button>
       </div>
+      
+      <!-- Zone de publication rapide (Public) -->
+      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem;">
+        <textarea id="global-post-content" placeholder="Quoi de neuf ?" style="margin-bottom: 0.5rem;"></textarea>
+        <button id="btn-global-publish" class="btn-primary small">Publier</button>
+      </div>
+
       <div id="global-feed-list" class="media-list"></div>
     </section>
 
-    <!-- LISTE DES COMMUNAUTÉS -->
+    <!-- 2. LISTE DES COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour à l'accueil</button>
       <div class="action-row">
@@ -51,9 +58,8 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ -->
+    <!-- 3. VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
-      <!-- En-tête de la communauté -->
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
         <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
@@ -63,18 +69,13 @@
             <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p>
           </div>
         </div>
+        <!-- Bouton Rejoindre/Quitter -->
+        <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0;">Rejoindre</button>
       </div>
 
-      <!-- BOUTON REJOINDRE (Affiché uniquement si pas membre) -->
-      <div id="join-container" style="padding: 2rem 1rem; text-align: center;">
-        <h3 style="margin-bottom: 1rem;">Rejoignez cette communauté pour discuter !</h3>
-        <button id="btn-join-community" class="btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">Rejoindre</button>
-      </div>
-
-      <!-- Fil de discussion -->
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
 
-      <!-- BARRE DE CHAT (Cachée par défaut) -->
+      <!-- BARRE DE CHAT -->
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;">
           <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 40px; border-radius: 20px;"></textarea>
@@ -85,7 +86,7 @@
       </div>
     </section>
 
-    <!-- AUTRES VUES INCHANGÉES -->
+    <!-- AUTRES VUES -->
     <section id="view-messages" class="view"><h3>Messages privés</h3><div id="users-list" class="card-grid" style="margin-top: 1rem;"></div></section>
     <section id="view-music" class="view"><h3>Bibliothèque Musicale</h3><div id="music-list" class="media-list" style="margin-top: 1rem;"></div></section>
     <section id="view-video" class="view"><h3>Découvertes Vidéo</h3><div id="video-list" class="media-list" style="margin-top: 1rem;"></div></section>
