@@ -15,7 +15,7 @@ let userProfile = null;
 let currentCommunityId = null; 
 let currentCommunityType = 'chat'; 
 let currentCommunityOwner = null; 
-let currentCommunityMembers = []; // NOUVEAU : Stocke les membres du groupe ouvert
+let currentCommunityMembers = []; 
 let unsubscribeGlobalFeed = null;
 let unsubscribeCommunityFeed = null; 
 const $ = (id) => document.getElementById(id);
@@ -109,13 +109,16 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ================= FLUX D'ACTUALITÉ GLOBAL =================
+// ================= FLUX D'ACTUALITÉ GLOBAL (ISOLÉ) =================
 function renderGlobalFeed() {
   const list = $('global-feed-list');
   list.innerHTML = '<p class="muted">Chargement du fil d\'actualité...</p>';
-  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
+  
+  // On ne récupère QUE les posts qui n'ont pas de communauté (communityId == 'global')
+  const q = query(collection(db, 'posts'), where('communityId', '==', 'global'), orderBy('createdAt', 'desc'), limit(50));
+  
   unsubscribeGlobalFeed = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message.</p>';
+    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message public.</p>';
     list.innerHTML = snap.docs.map(d => generatePostHTML(d, false)).join('');
   });
 }
@@ -126,14 +129,11 @@ $('comm-cancel').addEventListener('click', () => $('modal-community').classList.
 
 $('comm-save').addEventListener('click', async () => {
   const name = $('comm-name').value.trim(), type = $('comm-type').value;
-  const imgFile = $('comm-image').files[0];
   if (!name) return;
   $('comm-save').textContent = "Création...";
   try {
-    let imageURL = "";
-    if(imgFile) imageURL = await uploadToCloudinary(imgFile);
     await addDoc(collection(db, 'communities'), {
-      name, description: $('comm-desc').value.trim(), type, imageURL, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
+      name, description: $('comm-desc').value.trim(), type, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
     });
     if (!userProfile.badges.includes("Fondateur")) {
       await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("Fondateur") });
@@ -155,9 +155,7 @@ async function renderCommunitiesList() {
   comms.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
 
   list.innerHTML = comms.map(c => {
-    const imgHtml = c.imageURL ? `<img src="${c.imageURL}" style="width:100%; height:80px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : '';
     return `<div class="card" onclick="window.openCommunity('${c.id}')">
-      ${imgHtml}
       <h4>${c.type === 'announcement' ? '📢' : '💬'} ${c.name}</h4>
       <p class="muted">${c.description || ''}</p>
       <span class="chip">${c.members?.length || 1} membres</span>
@@ -165,12 +163,11 @@ async function renderCommunitiesList() {
   }).join('');
 }
 
-// ================= OUVRIR UNE COMMUNAUTÉ (LOGIQUE DE MEMBRE) =================
+// ================= OUVRIR UNE COMMUNAUTÉ =================
 window.openCommunity = async (id) => {
   currentCommunityId = id;
   $('posts-list').innerHTML = '<p class="muted">Chargement...</p>';
   
-  // Récupérer les infos de la communauté
   const docRef = doc(db, 'communities', id);
   const docSnap = await getDoc(docRef);
   
@@ -183,9 +180,7 @@ window.openCommunity = async (id) => {
     $('comm-title-display').textContent = data.name;
     $('members-count').textContent = `${currentCommunityMembers.length} membres`;
     
-    // Mettre à jour l'interface en fonction du statut de membre
     updateJoinUI();
-    
     switchView('community');
     loadCommunityFeed();
   }
@@ -194,48 +189,27 @@ window.openCommunity = async (id) => {
 function updateJoinUI() {
   const isMember = currentCommunityMembers.includes(currentUser.uid);
   const chatBar = $('post-form-container');
-  const joinBtn = $('btn-join-community');
+  const joinContainer = $('join-container');
 
   if (isMember) {
-    // Déjà membre
-    joinBtn.textContent = "Quitter";
-    joinBtn.className = "btn-secondary small";
-    joinBtn.style.color = "#ff6b6b";
-    joinBtn.style.borderColor = "#ff6b6b";
-    
-    // Affichage de la barre de chat (sauf si annonce et pas admin)
+    // Membre : On cache le gros bouton et on affiche le chat
+    joinContainer.style.display = 'none';
     if (currentCommunityType === 'announcement' && currentUser.uid !== currentCommunityOwner) {
-      chatBar.classList.add('hidden');
+      chatBar.style.display = 'none'; // Les non-admins ne peuvent pas écrire dans les annonces
     } else {
-      chatBar.classList.remove('hidden');
+      chatBar.style.display = 'flex';
     }
   } else {
-    // Pas membre
-    joinBtn.textContent = "Rejoindre";
-    joinBtn.className = "btn-primary small";
-    joinBtn.style.color = "white";
-    joinBtn.style.borderColor = "transparent";
-    
-    // Cacher la barre de chat
-    chatBar.classList.add('hidden');
+    // Pas membre : On affiche le gros bouton et on cache le chat
+    joinContainer.style.display = 'block';
+    chatBar.style.display = 'none';
   }
 }
 
-// Bouton Rejoindre / Quitter
 $('btn-join-community').addEventListener('click', async () => {
-  const isMember = currentCommunityMembers.includes(currentUser.uid);
   const ref = doc(db, 'communities', currentCommunityId);
-  
-  if (isMember) {
-    // Quitter
-    await updateDoc(ref, { members: arrayRemove(currentUser.uid) });
-    currentCommunityMembers = currentCommunityMembers.filter(uid => uid !== currentUser.uid);
-  } else {
-    // Rejoindre
-    await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
-    currentCommunityMembers.push(currentUser.uid);
-  }
-  
+  await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
+  currentCommunityMembers.push(currentUser.uid);
   $('members-count').textContent = `${currentCommunityMembers.length} membres`;
   updateJoinUI();
 });
@@ -245,7 +219,6 @@ function loadCommunityFeed() {
   const list = $('posts-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
   
-  // Isolation : on ne charge QUE les posts de cette communauté
   const q = query(collection(db, 'posts'), where('communityId', '==', currentCommunityId), orderBy('createdAt', 'desc'));
   
   unsubscribeCommunityFeed = onSnapshot(q, snap => {
@@ -282,11 +255,6 @@ function generatePostHTML(docSnap, showPinBtn) {
 $('btn-attach-file').addEventListener('click', () => $('post-file').click());
 
 $('btn-publish-post').addEventListener('click', async () => {
-  // Vérification de sécurité
-  if (!currentCommunityMembers.includes(currentUser.uid)) {
-    return alert("Vous devez rejoindre la communauté pour écrire.");
-  }
-
   const content = $('post-content').value.trim();
   const file = $('post-file').files[0];
   if (!content && !file) return;
@@ -301,7 +269,6 @@ $('btn-publish-post').addEventListener('click', async () => {
       else mediaType = 'audio';
     }
     
-    // Isolation : on sauvegarde le communityId
     await addDoc(collection(db, 'posts'), {
       communityId: currentCommunityId, content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
       mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
@@ -348,6 +315,5 @@ async function renderProfile() {
   } else {
     av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
   }
-  const pinned = $('profile-pinned');
-  pinned.innerHTML = userProfile.pinned?.length > 0 ? '<p class="muted">Fonctionnalité bientôt disponible.</p>' : '<p class="muted">Aucun post épinglé.</p>';
+  $('profile-pinned').innerHTML = '<p class="muted">Aucun post épinglé.</p>';
 }

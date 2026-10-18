@@ -9,7 +9,6 @@
 </head>
 <body>
 
-<!-- ================= AUTHENTIFICATION ================= -->
 <div id="auth-screen" class="screen active">
   <div class="auth-box">
     <h1 class="logo">Blue<span>Nexus</span></h1>
@@ -24,7 +23,6 @@
   </div>
 </div>
 
-<!-- ================= APPLICATION ================= -->
 <div id="app-screen" class="screen">
   
   <header class="top-bar" id="main-header">
@@ -34,16 +32,16 @@
 
   <main id="main-content">
 
-    <!-- 1. ACCUEIL PRINCIPAL (FLUX GLOBAL) -->
+    <!-- ACCUEIL PRINCIPAL (FLUX GLOBAL STRICT) -->
     <section id="view-home" class="view active">
       <div class="action-row" style="justify-content: space-between; align-items: center;">
-        <h3 style="font-size: 1.1rem;">Fil d'actualité</h3>
+        <h3 style="font-size: 1.1rem;">Fil d'actualité Public</h3>
         <button id="btn-go-communities" class="btn-primary small">🌐 Communautés</button>
       </div>
       <div id="global-feed-list" class="media-list"></div>
     </section>
 
-    <!-- 2. LISTE DES COMMUNAUTÉS -->
+    <!-- LISTE DES COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour à l'accueil</button>
       <div class="action-row">
@@ -53,9 +51,9 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- 3. VUE COMMUNAUTÉ (CHAT) -->
+    <!-- VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
-      <!-- En-tête avec Bouton Rejoindre -->
+      <!-- En-tête de la communauté -->
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
         <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
@@ -65,31 +63,30 @@
             <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p>
           </div>
         </div>
-        <!-- Bouton Rejoindre / Quitter -->
-        <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0;">Rejoindre</button>
+      </div>
+
+      <!-- BOUTON REJOINDRE (Affiché uniquement si pas membre) -->
+      <div id="join-container" style="padding: 2rem 1rem; text-align: center;">
+        <h3 style="margin-bottom: 1rem;">Rejoignez cette communauté pour discuter !</h3>
+        <button id="btn-join-community" class="btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">Rejoindre</button>
       </div>
 
       <!-- Fil de discussion -->
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
 
-      <!-- BARRE DE CHAT (Cachée si on n'est pas membre) -->
+      <!-- BARRE DE CHAT (Cachée par défaut) -->
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;">
           <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 40px; border-radius: 20px;"></textarea>
           <input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;">
-          <!-- Bouton joindre un fichier -->
           <button id="btn-attach-file" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button>
         </div>
-        <!-- Bouton envoyer -->
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
     </section>
 
-    <!-- AUTRES VUES (Messages, Musique, etc. inchangées) -->
-    <section id="view-messages" class="view">
-      <h3>Messages privés</h3>
-      <div id="users-list" class="card-grid" style="margin-top: 1rem;"></div>
-    </section>
+    <!-- AUTRES VUES INCHANGÉES -->
+    <section id="view-messages" class="view"><h3>Messages privés</h3><div id="users-list" class="card-grid" style="margin-top: 1rem;"></div></section>
     <section id="view-music" class="view"><h3>Bibliothèque Musicale</h3><div id="music-list" class="media-list" style="margin-top: 1rem;"></div></section>
     <section id="view-video" class="view"><h3>Découvertes Vidéo</h3><div id="video-list" class="media-list" style="margin-top: 1rem;"></div></section>
     <section id="view-search" class="view"><input id="search-input" type="text" placeholder="Rechercher..." style="margin-bottom: 1rem;" /><div id="search-results" class="card-grid"></div></section>
@@ -129,8 +126,6 @@
     <h3>Créer une communauté</h3>
     <input id="comm-name" placeholder="Nom de la communauté" />
     <textarea id="comm-desc" placeholder="Description"></textarea>
-    <label class="muted" style="font-size: 0.8rem;">Photo de couverture</label>
-    <input type="file" id="comm-image" accept="image/*" style="background: none; border: none; padding: 0; margin-bottom: 10px;">
     <select id="comm-type" style="margin-bottom: 0.5rem;">
       <option value="chat">💬 Groupe de discussion</option>
       <option value="announcement">📢 Chaîne (Admin seul)</option>
