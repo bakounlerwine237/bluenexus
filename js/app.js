@@ -15,6 +15,7 @@ let userProfile = null;
 let currentCommunityId = null; 
 let currentCommunityType = 'chat'; 
 let currentCommunityOwner = null; 
+let currentCommunityMembers = []; // NOUVEAU : Stocke les membres du groupe ouvert
 let unsubscribeGlobalFeed = null;
 let unsubscribeCommunityFeed = null; 
 const $ = (id) => document.getElementById(id);
@@ -32,10 +33,9 @@ function switchView(viewId) {
   const titles = { home: "Accueil", communities: "Communautés", messages: "Messages", music: "Musique", video: "Vidéo", search: "Recherche", profile: "Mon Profil", settings: "Paramètres" };
   $('page-title').textContent = titles[viewId] || "BlueNexus";
 
-  // Gestion de l'affichage de la barre de navigation principale
   if (viewId === 'community') {
-    $('main-nav').style.display = 'none'; // Cache le menu du bas dans le chat
-    $('main-header').style.display = 'none'; // Cache le header principal
+    $('main-nav').style.display = 'none';
+    $('main-header').style.display = 'none';
   } else {
     $('main-nav').style.display = 'flex';
     $('main-header').style.display = 'flex';
@@ -43,20 +43,14 @@ function switchView(viewId) {
 
   if (viewId === 'home') renderGlobalFeed();
   if (viewId === 'communities') renderCommunitiesList();
-  if (viewId === 'messages') renderUsersForMessages();
   if (viewId === 'profile') renderProfile();
   
-  // Nettoyage des flux temps réel si on quitte
   if (viewId !== 'home' && unsubscribeGlobalFeed) { unsubscribeGlobalFeed(); unsubscribeGlobalFeed = null; }
   if (viewId !== 'community' && unsubscribeCommunityFeed) { unsubscribeCommunityFeed(); unsubscribeCommunityFeed = null; }
 }
 
-document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchView(btn.dataset.view));
-});
+document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
 $('btn-settings-top').addEventListener('click', () => switchView('settings'));
-
-// Bouton pour aller aux communautés depuis l'accueil
 $('btn-go-communities').addEventListener('click', () => switchView('communities'));
 $('btn-back-home-comm').addEventListener('click', () => switchView('home'));
 $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
@@ -66,9 +60,7 @@ async function uploadToCloudinary(file) {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
-    method: 'POST', body: formData
-  });
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
   const data = await res.json();
   if(data.secure_url) return data.secure_url;
   throw new Error("Upload échoué");
@@ -117,20 +109,18 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ================= FLUX D'ACTUALITÉ GLOBAL (ACCUEIL) =================
+// ================= FLUX D'ACTUALITÉ GLOBAL =================
 function renderGlobalFeed() {
   const list = $('global-feed-list');
   list.innerHTML = '<p class="muted">Chargement du fil d\'actualité...</p>';
-  
   const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
-  
   unsubscribeGlobalFeed = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message sur le réseau pour l\'instant.</p>';
+    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message.</p>';
     list.innerHTML = snap.docs.map(d => generatePostHTML(d, false)).join('');
   });
 }
 
-// ================= COMMUNAUTÉS (TRIÉES PAR POPULARITÉ) =================
+// ================= COMMUNAUTÉS =================
 $('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
 $('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
 
@@ -138,12 +128,10 @@ $('comm-save').addEventListener('click', async () => {
   const name = $('comm-name').value.trim(), type = $('comm-type').value;
   const imgFile = $('comm-image').files[0];
   if (!name) return;
-  
   $('comm-save').textContent = "Création...";
   try {
     let imageURL = "";
     if(imgFile) imageURL = await uploadToCloudinary(imgFile);
-
     await addDoc(collection(db, 'communities'), {
       name, description: $('comm-desc').value.trim(), type, imageURL, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
     });
@@ -160,17 +148,15 @@ $('comm-save').addEventListener('click', async () => {
 async function renderCommunitiesList() {
   const list = $('communities-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
-  
   const snap = await getDocs(collection(db, 'communities'));
   if (snap.empty) return list.innerHTML = '<p class="muted">Aucune communauté trouvée.</p>';
   
-  // Tri côté client : du plus populaire (membres) au moins populaire
   const comms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   comms.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
 
   list.innerHTML = comms.map(c => {
     const imgHtml = c.imageURL ? `<img src="${c.imageURL}" style="width:100%; height:80px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : '';
-    return `<div class="card" onclick="window.openCommunity('${c.id}', '${c.name}', '${c.description || ''}', '${c.type}', '${c.ownerId}', '${c.imageURL || ''}', ${c.members?.length || 1})">
+    return `<div class="card" onclick="window.openCommunity('${c.id}')">
       ${imgHtml}
       <h4>${c.type === 'announcement' ? '📢' : '💬'} ${c.name}</h4>
       <p class="muted">${c.description || ''}</p>
@@ -179,43 +165,96 @@ async function renderCommunitiesList() {
   }).join('');
 }
 
-// ================= OUVERTURE D'UNE COMMUNAUTÉ (CHAT) =================
-window.openCommunity = (id, name, desc, type, ownerId, imageURL, membersCount) => {
-  currentCommunityId = id; 
-  currentCommunityType = type; 
-  currentCommunityOwner = ownerId;
+// ================= OUVRIR UNE COMMUNAUTÉ (LOGIQUE DE MEMBRE) =================
+window.openCommunity = async (id) => {
+  currentCommunityId = id;
+  $('posts-list').innerHTML = '<p class="muted">Chargement...</p>';
   
-  $('comm-title-display').textContent = name;
-  $('members-count').textContent = `${membersCount} membres`;
+  // Récupérer les infos de la communauté
+  const docRef = doc(db, 'communities', id);
+  const docSnap = await getDoc(docRef);
   
-  // Gestion de l'affichage du formulaire en bas
-  const chatBar = $('post-form-container');
-  if (type === 'announcement' && currentUser.uid !== ownerId) {
-    chatBar.classList.add('hidden'); // Les lecteurs ne voient pas la barre
-  } else {
-    chatBar.classList.remove('hidden'); // Admin ou groupe de chat
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    currentCommunityType = data.type;
+    currentCommunityOwner = data.ownerId;
+    currentCommunityMembers = data.members || [];
+    
+    $('comm-title-display').textContent = data.name;
+    $('members-count').textContent = `${currentCommunityMembers.length} membres`;
+    
+    // Mettre à jour l'interface en fonction du statut de membre
+    updateJoinUI();
+    
+    switchView('community');
+    loadCommunityFeed();
   }
-
-  switchView('community');
-  loadCommunityFeed();
 };
 
+function updateJoinUI() {
+  const isMember = currentCommunityMembers.includes(currentUser.uid);
+  const chatBar = $('post-form-container');
+  const joinBtn = $('btn-join-community');
+
+  if (isMember) {
+    // Déjà membre
+    joinBtn.textContent = "Quitter";
+    joinBtn.className = "btn-secondary small";
+    joinBtn.style.color = "#ff6b6b";
+    joinBtn.style.borderColor = "#ff6b6b";
+    
+    // Affichage de la barre de chat (sauf si annonce et pas admin)
+    if (currentCommunityType === 'announcement' && currentUser.uid !== currentCommunityOwner) {
+      chatBar.classList.add('hidden');
+    } else {
+      chatBar.classList.remove('hidden');
+    }
+  } else {
+    // Pas membre
+    joinBtn.textContent = "Rejoindre";
+    joinBtn.className = "btn-primary small";
+    joinBtn.style.color = "white";
+    joinBtn.style.borderColor = "transparent";
+    
+    // Cacher la barre de chat
+    chatBar.classList.add('hidden');
+  }
+}
+
+// Bouton Rejoindre / Quitter
+$('btn-join-community').addEventListener('click', async () => {
+  const isMember = currentCommunityMembers.includes(currentUser.uid);
+  const ref = doc(db, 'communities', currentCommunityId);
+  
+  if (isMember) {
+    // Quitter
+    await updateDoc(ref, { members: arrayRemove(currentUser.uid) });
+    currentCommunityMembers = currentCommunityMembers.filter(uid => uid !== currentUser.uid);
+  } else {
+    // Rejoindre
+    await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
+    currentCommunityMembers.push(currentUser.uid);
+  }
+  
+  $('members-count').textContent = `${currentCommunityMembers.length} membres`;
+  updateJoinUI();
+});
+
+// ================= CHAT DANS LA COMMUNAUTÉ =================
 function loadCommunityFeed() {
   const list = $('posts-list');
-  list.innerHTML = '<p class="muted">Chargement du chat...</p>';
+  list.innerHTML = '<p class="muted">Chargement...</p>';
   
+  // Isolation : on ne charge QUE les posts de cette communauté
   const q = query(collection(db, 'posts'), where('communityId', '==', currentCommunityId), orderBy('createdAt', 'desc'));
   
   unsubscribeCommunityFeed = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Soyez le premier à écrire !</p>';
+    if (snap.empty) return list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Aucun message.</p>';
     list.innerHTML = snap.docs.map(d => generatePostHTML(d, true)).join('');
-    
-    // Auto-scroll vers le bas (nouveaux messages)
     window.scrollTo(0, document.body.scrollHeight);
   });
 }
 
-// Générateur de HTML pour les posts (évite de dupliquer le code)
 function generatePostHTML(docSnap, showPinBtn) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -230,28 +269,24 @@ function generatePostHTML(docSnap, showPinBtn) {
   const isLiked = p.likes?.includes(currentUser.uid);
   const likeIcon = isLiked ? "💙" : "🤍";
   
-  let pinBtn = '';
-  if (showPinBtn && p.authorId === currentUser.uid) {
-    const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
-    const pinIcon = isPinned ? "📌" : "📍";
-    pinBtn = `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${pinIcon}</button>`;
-  }
-
   return `<div class="media-item">
     <div class="post-header">${avatar} <strong>@${p.authorName}</strong></div>
     <p>${p.content}</p>
     ${mediaHtml}
     <div class="post-actions">
       <button onclick="window.toggleLike('${docSnap.id}', ${isLiked})" class="btn-secondary small">${likeIcon} ${p.likes ? p.likes.length : 0}</button>
-      ${pinBtn}
     </div>
   </div>`;
 }
 
-// ================= ENVOI DE MESSAGES (CHAT) =================
 $('btn-attach-file').addEventListener('click', () => $('post-file').click());
 
 $('btn-publish-post').addEventListener('click', async () => {
+  // Vérification de sécurité
+  if (!currentCommunityMembers.includes(currentUser.uid)) {
+    return alert("Vous devez rejoindre la communauté pour écrire.");
+  }
+
   const content = $('post-content').value.trim();
   const file = $('post-file').files[0];
   if (!content && !file) return;
@@ -266,6 +301,7 @@ $('btn-publish-post').addEventListener('click', async () => {
       else mediaType = 'audio';
     }
     
+    // Isolation : on sauvegarde le communityId
     await addDoc(collection(db, 'posts'), {
       communityId: currentCommunityId, content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
       mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
@@ -276,23 +312,10 @@ $('btn-publish-post').addEventListener('click', async () => {
   $('btn-publish-post').textContent = "➤";
 });
 
-// ================= ACTIONS (LIKE & PIN) =================
 window.toggleLike = async (postId, isLiked) => {
   const ref = doc(db, 'posts', postId);
   if (isLiked) await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
   else await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
-};
-
-window.togglePin = async (postId, isPinned) => {
-  const ref = doc(db, 'users', currentUser.uid);
-  if (isPinned) {
-    await updateDoc(ref, { pinned: arrayRemove(postId) });
-    userProfile.pinned = userProfile.pinned.filter(id => id !== postId);
-  } else {
-    await updateDoc(ref, { pinned: arrayUnion(postId) });
-    if(!userProfile.pinned) userProfile.pinned = [];
-    userProfile.pinned.push(postId);
-  }
 };
 
 // ================= PROFIL & RESTE =================
@@ -325,30 +348,6 @@ async function renderProfile() {
   } else {
     av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
   }
-  $('profile-decorations').innerHTML = (userProfile.decorations || []).map(d => `<span class="deco-item">${d}</span>`).join('');
-  $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">🏅 ${b}</span>`).join('');
-  
   const pinned = $('profile-pinned');
-  pinned.innerHTML = '<p class="muted">Chargement...</p>';
-  if (userProfile.pinned && userProfile.pinned.length > 0) {
-    const docs = await Promise.all(userProfile.pinned.map(id => getDoc(doc(db, 'posts', id))));
-    pinned.innerHTML = docs.map(d => d.exists() ? `<div class="media-item"><p style="font-size:0.9rem">${d.data().content}</p></div>` : '').join('');
-  } else pinned.innerHTML = '<p class="muted">Aucun post épinglé.</p>';
+  pinned.innerHTML = userProfile.pinned?.length > 0 ? '<p class="muted">Fonctionnalité bientôt disponible.</p>' : '<p class="muted">Aucun post épinglé.</p>';
 }
-
-async function renderUsersForMessages() {
-  const list = $('users-list');
-  const snap = await getDocs(collection(db, 'users'));
-  list.innerHTML = snap.docs.filter(d => d.id !== currentUser.uid).map(d => {
-    const u = d.data();
-    return `<div class="card"><h4>👤 ${u.username}</h4><button class="btn-secondary small" style="margin-top:10px" onclick="alert('Bientôt disponible !')">Discuter</button></div>`;
-  }).join('');
-}
-
-$('search-input').addEventListener('input', async () => {
-  const term = $('search-input').value.toLowerCase();
-  const res = $('search-results');
-  if(!term) return res.innerHTML = '';
-  const snapU = await getDocs(collection(db, 'users'));
-  res.innerHTML = snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="card"><h4>👤 ${d.data().username}</h4></div>`).join('');
-});

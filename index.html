@@ -36,100 +36,73 @@
 
     <!-- 1. ACCUEIL PRINCIPAL (FLUX GLOBAL) -->
     <section id="view-home" class="view active">
-      <!-- Bouton vers la liste des communautés -->
       <div class="action-row" style="justify-content: space-between; align-items: center;">
         <h3 style="font-size: 1.1rem;">Fil d'actualité</h3>
         <button id="btn-go-communities" class="btn-primary small">🌐 Communautés</button>
       </div>
-      
       <div id="global-feed-list" class="media-list"></div>
     </section>
 
-    <!-- 2. LISTE DES COMMUNAUTÉS (TRIÉES PAR POPULARITÉ) -->
+    <!-- 2. LISTE DES COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour à l'accueil</button>
-      
       <div class="action-row">
         <button id="btn-new-community" class="btn-primary small">+ Nouvelle communauté</button>
       </div>
-      
       <h3 style="margin-bottom: 1rem;">Découvrir les communautés</h3>
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- 3. VUE COMMUNAUTÉ (CHAT EN BAS) -->
+    <!-- 3. VUE COMMUNAUTÉ (CHAT) -->
     <section id="view-community" class="view">
-      <!-- En-tête de la communauté -->
+      <!-- En-tête avec Bouton Rejoindre -->
       <div class="comm-header-fixed">
-        <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">← Retour</button>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <div id="comm-avatar-header" style="width: 35px; height: 35px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold;">C</div>
-          <div>
-            <h2 id="comm-title-display" style="font-size: 1rem; margin: 0;">Nom du groupe</h2>
+        <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+          <div id="comm-avatar-header" style="width: 35px; height: 35px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">C</div>
+          <div style="overflow: hidden;">
+            <h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom du groupe</h2>
             <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p>
           </div>
         </div>
+        <!-- Bouton Rejoindre / Quitter -->
+        <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0;">Rejoindre</button>
       </div>
 
       <!-- Fil de discussion -->
-      <div id="posts-list" class="media-list" style="padding-bottom: 80px;"></div>
+      <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
 
-      <!-- BARRE DE CHAT FIXÉE EN BAS -->
+      <!-- BARRE DE CHAT (Cachée si on n'est pas membre) -->
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;">
-          <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 40px;"></textarea>
+          <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 40px; border-radius: 20px;"></textarea>
           <input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;">
+          <!-- Bouton joindre un fichier -->
           <button id="btn-attach-file" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button>
         </div>
-        <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
+        <!-- Bouton envoyer -->
+        <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
     </section>
 
-    <!-- MESSAGES -->
+    <!-- AUTRES VUES (Messages, Musique, etc. inchangées) -->
     <section id="view-messages" class="view">
       <h3>Messages privés</h3>
       <div id="users-list" class="card-grid" style="margin-top: 1rem;"></div>
     </section>
-
-    <!-- MUSIQUE -->
-    <section id="view-music" class="view">
-      <h3>Bibliothèque Musicale</h3>
-      <div id="music-list" class="media-list" style="margin-top: 1rem;"></div>
-    </section>
-
-    <!-- VIDÉO -->
-    <section id="view-video" class="view">
-      <h3>Découvertes Vidéo</h3>
-      <div id="video-list" class="media-list" style="margin-top: 1rem;"></div>
-    </section>
-
-    <!-- RECHERCHE -->
-    <section id="view-search" class="view">
-      <input id="search-input" type="text" placeholder="Rechercher..." style="margin-bottom: 1rem;" />
-      <div id="search-results" class="card-grid"></div>
-    </section>
-
-    <!-- PROFIL -->
+    <section id="view-music" class="view"><h3>Bibliothèque Musicale</h3><div id="music-list" class="media-list" style="margin-top: 1rem;"></div></section>
+    <section id="view-video" class="view"><h3>Découvertes Vidéo</h3><div id="video-list" class="media-list" style="margin-top: 1rem;"></div></section>
+    <section id="view-search" class="view"><input id="search-input" type="text" placeholder="Rechercher..." style="margin-bottom: 1rem;" /><div id="search-results" class="card-grid"></div></section>
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner"></div>
         <div class="fb-avatar-container">
           <div class="fb-avatar" id="profile-avatar"></div>
-          <div>
-            <h2 id="profile-name">—</h2>
-            <p id="profile-bio" class="muted"></p>
-          </div>
+          <div><h2 id="profile-name">—</h2><p id="profile-bio" class="muted"></p></div>
         </div>
-        <div id="profile-decorations" class="deco-row"></div>
-        <div id="profile-badges" class="badge-row"></div>
-        <div class="fb-pinned">
-          <h3>Publications épinglées</h3>
-          <div id="profile-pinned" class="media-list"></div>
-        </div>
+        <div class="fb-pinned"><h3>Publications épinglées</h3><div id="profile-pinned" class="media-list"></div></div>
       </div>
     </section>
-
-    <!-- PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 1rem;">
@@ -140,7 +113,6 @@
 
   </main>
 
-  <!-- NAVIGATION BAS (Cachée dans les communautés) -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="messages" class="nav-btn">✉️<span>Messages</span></button>
