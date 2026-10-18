@@ -97,6 +97,14 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     const snap = await getDoc(doc(db, 'users', user.uid));
     userProfile = snap.exists() ? snap.data() : { username: "Utilisateur", decorations: [], badges: [], pinned: [], photoURL: "", communities: [] };
+    
+    // Vérification Admin pour le fil global
+    if (userProfile.role === 'admin') {
+      $('global-post-container').style.display = 'block';
+    } else {
+      $('global-post-container').style.display = 'none';
+    }
+
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
     switchView('home');
@@ -109,51 +117,44 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ================= FLUX D'ACTUALITÉ UNIFIÉ =================
+// ================= FLUX D'ACTUALITÉ (GLOBAL + ANNONCES) =================
 async function renderGlobalFeed() {
   const list = $('global-feed-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
   
   try {
-    // 1. Trouver les communautés de l'utilisateur
-    const commQ = query(collection(db, 'communities'), where('members', 'array-contains', currentUser.uid));
-    const commSnap = await getDocs(commQ);
-    let commIds = commSnap.docs.map(d => d.id);
-    
-    // 2. Ajouter le flux global
-    commIds.push('global');
-    
-    // Limite de 10 pour la requête Firebase
-    if (commIds.length > 10) commIds = commIds.slice(0, 10);
-
-    // 3. Récupérer les posts
-    const q = query(collection(db, 'posts'), where('communityId', 'in', commIds), orderBy('createdAt', 'desc'), limit(50));
+    // On ne cherche QUE les posts globaux ou d'annonces
+    const q = query(
+      collection(db, 'posts'), 
+      where('communityType', 'in', ['global', 'announcement']), 
+      orderBy('createdAt', 'desc'), 
+      limit(50)
+    );
     
     unsubscribeGlobalFeed = onSnapshot(q, snap => {
-      if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message. Publiez quelque chose ou rejoignez une communauté !</p>';
+      if (snap.empty) return list.innerHTML = '<p class="muted">Aucune annonce publique pour l\'instant.</p>';
       list.innerHTML = snap.docs.map(d => generatePostHTML(d, false)).join('');
     });
   } catch (error) {
     console.error(error);
-    list.innerHTML = '<p class="muted">Erreur de chargement. Vérifiez l\'index Firebase.</p>';
+    list.innerHTML = '<p class="muted">Erreur : Vérifiez l\'index Firebase (communityType + createdAt).</p>';
   }
 }
 
-// Publication sur le fil global (Accueil)
+// Publication Admin (Global)
 $('btn-global-publish').addEventListener('click', async () => {
   const content = $('global-post-content').value.trim();
   if (!content) return;
-  
   $('btn-global-publish').textContent = "...";
   try {
     await addDoc(collection(db, 'posts'), {
-      communityId: 'global', // ID spécial pour le flux public
+      communityId: 'global', communityType: 'global', // <-- TYPE GLOBAL
       content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
       mediaUrl: null, mediaType: null, likes: [], createdAt: serverTimestamp()
     });
     $('global-post-content').value = '';
   } catch(e) { alert("Erreur : " + e.message); }
-  $('btn-global-publish').textContent = "Publier";
+  $('btn-global-publish').textContent = "Publier l'annonce";
 });
 
 // ================= COMMUNAUTÉS =================
@@ -168,13 +169,9 @@ $('comm-save').addEventListener('click', async () => {
     const newCommRef = await addDoc(collection(db, 'communities'), {
       name, description: $('comm-desc').value.trim(), type, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
     });
-    
-    // Ajouter la communauté à l'utilisateur
     await updateDoc(doc(db, 'users', currentUser.uid), { 
-      communities: arrayUnion(newCommRef.id),
-      badges: arrayUnion("Fondateur")
+      communities: arrayUnion(newCommRef.id), badges: arrayUnion("Fondateur")
     });
-    
     $('modal-community').classList.add('hidden');
     renderCommunitiesList();
   } catch(e) { alert(e.message); }
@@ -186,7 +183,6 @@ async function renderCommunitiesList() {
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const snap = await getDocs(collection(db, 'communities'));
   if (snap.empty) return list.innerHTML = '<p class="muted">Aucune communauté.</p>';
-  
   const comms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   comms.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
 
@@ -199,11 +195,10 @@ async function renderCommunitiesList() {
   }).join('');
 }
 
-// ================= OUVRIR ET REJOINDRE =================
+// ================= CHAT COMMUNAUTÉ =================
 window.openCommunity = async (id) => {
   currentCommunityId = id;
   $('posts-list').innerHTML = '<p class="muted">Chargement...</p>';
-  
   const docRef = doc(db, 'communities', id);
   const docSnap = await getDoc(docRef);
   
@@ -253,12 +248,10 @@ $('btn-join-community').addEventListener('click', async () => {
   const userRef = doc(db, 'users', currentUser.uid);
   
   if (isMember) {
-    // Quitter
     await updateDoc(ref, { members: arrayRemove(currentUser.uid) });
     await updateDoc(userRef, { communities: arrayRemove(currentCommunityId) });
     currentCommunityMembers = currentCommunityMembers.filter(uid => uid !== currentUser.uid);
   } else {
-    // Rejoindre
     await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
     await updateDoc(userRef, { communities: arrayUnion(currentCommunityId) });
     currentCommunityMembers.push(currentUser.uid);
@@ -268,11 +261,9 @@ $('btn-join-community').addEventListener('click', async () => {
   updateJoinUI();
 });
 
-// ================= CHAT COMMUNAUTÉ =================
 function loadCommunityFeed() {
   const list = $('posts-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
-  
   const q = query(collection(db, 'posts'), where('communityId', '==', currentCommunityId), orderBy('createdAt', 'desc'));
   
   unsubscribeCommunityFeed = onSnapshot(q, snap => {
@@ -282,6 +273,36 @@ function loadCommunityFeed() {
   });
 }
 
+// Envoi message communauté
+$('btn-attach-file').addEventListener('click', () => $('post-file').click());
+$('btn-publish-post').addEventListener('click', async () => {
+  const content = $('post-content').value.trim();
+  const file = $('post-file').files[0];
+  if (!content && !file) return;
+  
+  $('btn-publish-post').textContent = "...";
+  try {
+    let mediaUrl = null, mediaType = null;
+    if (file) {
+      mediaUrl = await uploadToCloudinary(file);
+      if (file.type.startsWith('image')) mediaType = 'image';
+      else if (file.type.startsWith('video')) mediaType = 'video';
+      else mediaType = 'audio';
+    }
+    
+    await addDoc(collection(db, 'posts'), {
+      communityId: currentCommunityId, 
+      communityType: currentCommunityType, // <-- TYPE DE LA COMMUNAUTÉ (chat ou announcement)
+      content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
+      mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
+    });
+    
+    $('post-content').value = ''; $('post-file').value = '';
+  } catch(e) { alert("Erreur : " + e.message); }
+  $('btn-publish-post').textContent = "➤";
+});
+
+// ================= GÉNÉRATION HTML (POSTS + COMMENTAIRES) =================
 function generatePostHTML(docSnap, showPinBtn) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -300,38 +321,77 @@ function generatePostHTML(docSnap, showPinBtn) {
     <div class="post-header">${avatar} <strong>@${p.authorName}</strong></div>
     <p>${p.content}</p>
     ${mediaHtml}
+    
     <div class="post-actions">
       <button onclick="window.toggleLike('${docSnap.id}', ${isLiked})" class="btn-secondary small">${likeIcon} ${p.likes ? p.likes.length : 0}</button>
+      <button onclick="window.toggleComments('${docSnap.id}')" class="btn-secondary small">💬 Commenter</button>
+    </div>
+
+    <!-- ZONE DES COMMENTAIRES (Cachée par défaut) -->
+    <div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;">
+      <div id="comments-list-${docSnap.id}">
+        <p class="muted" style="font-size: 0.8rem;">Chargement des commentaires...</p>
+      </div>
+      <div class="comment-input-row">
+        <input type="text" id="comment-input-${docSnap.id}" placeholder="Votre commentaire...">
+        <button onclick="window.addComment('${docSnap.id}')" class="btn-primary small">Envoyer</button>
+      </div>
     </div>
   </div>`;
 }
 
-$('btn-attach-file').addEventListener('click', () => $('post-file').click());
+// ================= SYSTÈME DE COMMENTAIRES =================
+window.toggleComments = (postId) => {
+  const section = $(`comments-section-${postId}`);
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    loadComments(postId);
+  } else {
+    section.style.display = 'none';
+  }
+};
 
-$('btn-publish-post').addEventListener('click', async () => {
-  const content = $('post-content').value.trim();
-  const file = $('post-file').files[0];
-  if (!content && !file) return;
+async function loadComments(postId) {
+  const list = $(`comments-list-${postId}`);
+  list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Chargement...</p>';
   
-  $('btn-publish-post').textContent = "...";
+  const q = query(collection(db, 'comments'), where('postId', '==', postId));
+  const snap = await getDocs(q);
+  
+  if (snap.empty) {
+    list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Soyez le premier à commenter !</p>';
+    return;
+  }
+  
+  const comments = snap.docs.map(d => d.data());
+  comments.sort((a, b) => a.createdAt - b.createdAt);
+
+  list.innerHTML = comments.map(c => `
+    <div class="comment-item">
+      <strong>@${c.authorName}</strong> : ${c.content}
+    </div>
+  `).join('');
+}
+
+window.addComment = async (postId) => {
+  const input = $(`comment-input-${postId}`);
+  const content = input.value.trim();
+  if (!content) return;
+
+  input.value = ''; // Vider le champ
   try {
-    let mediaUrl = null, mediaType = null;
-    if (file) {
-      mediaUrl = await uploadToCloudinary(file);
-      if (file.type.startsWith('image')) mediaType = 'image';
-      else if (file.type.startsWith('video')) mediaType = 'video';
-      else mediaType = 'audio';
-    }
-    
-    await addDoc(collection(db, 'posts'), {
-      communityId: currentCommunityId, content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
-      mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
+    await addDoc(collection(db, 'comments'), {
+      postId: postId,
+      content: content,
+      authorId: currentUser.uid,
+      authorName: userProfile.username,
+      createdAt: Date.now() 
     });
-    
-    $('post-content').value = ''; $('post-file').value = '';
-  } catch(e) { alert("Erreur : " + e.message); }
-  $('btn-publish-post').textContent = "➤";
-});
+    loadComments(postId); 
+  } catch(e) {
+    alert("Erreur d'envoi du commentaire : " + e.message);
+  }
+};
 
 window.toggleLike = async (postId, isLiked) => {
   const ref = doc(db, 'posts', postId);

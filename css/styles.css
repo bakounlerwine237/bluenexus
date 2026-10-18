@@ -80,3 +80,33 @@ textarea { resize: none; }
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal.hidden { display: none !important; }
 .modal-content { background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 0.8rem; }
+/* SECTION COMMENTAIRES */
+.comments-section {
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.comment-item {
+  background: var(--bg);
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+.comment-item strong {
+  color: var(--blue-light);
+}
+.comment-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.comment-input-row input {
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+.comment-input-row button {
+  padding: 8px 15px;
+  border-radius: 20px;
+}
