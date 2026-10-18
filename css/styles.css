@@ -1,319 +1,82 @@
-import { firebaseConfig } from './firebase-config.js';
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit, serverTimestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const CLOUDINARY_CLOUD_NAME = "uotg2qg2"; 
-const CLOUDINARY_UPLOAD_PRESET = "bluenexus"; 
-
-let currentUser = null;
-let userProfile = null;
-let currentCommunityId = null; 
-let currentCommunityType = 'chat'; 
-let currentCommunityOwner = null; 
-let currentCommunityMembers = []; 
-let unsubscribeGlobalFeed = null;
-let unsubscribeCommunityFeed = null; 
-const $ = (id) => document.getElementById(id);
-
-// ================= NAVIGATION =================
-function switchView(viewId) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const target = $(`view-${viewId}`);
-  if(target) target.classList.add('active');
-  
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
-  if(navBtn) navBtn.classList.add('active');
-
-  const titles = { home: "Accueil", communities: "Communautés", messages: "Messages", music: "Musique", video: "Vidéo", search: "Recherche", profile: "Mon Profil", settings: "Paramètres" };
-  $('page-title').textContent = titles[viewId] || "BlueNexus";
-
-  if (viewId === 'community') {
-    $('main-nav').style.display = 'none';
-    $('main-header').style.display = 'none';
-  } else {
-    $('main-nav').style.display = 'flex';
-    $('main-header').style.display = 'flex';
-  }
-
-  if (viewId === 'home') renderGlobalFeed();
-  if (viewId === 'communities') renderCommunitiesList();
-  if (viewId === 'profile') renderProfile();
-  
-  if (viewId !== 'home' && unsubscribeGlobalFeed) { unsubscribeGlobalFeed(); unsubscribeGlobalFeed = null; }
-  if (viewId !== 'community' && unsubscribeCommunityFeed) { unsubscribeCommunityFeed(); unsubscribeCommunityFeed = null; }
+:root {
+  --bg: #0a0e1a; --bg-2: #121829; --blue: #2563eb; --blue-light: #3b82f6;
+  --blue-glow: rgba(37, 99, 235, 0.4); --text: #e6ecff; --muted: #7a86a8;
+  --border: #1e2a45; --radius: 14px;
 }
 
-document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
-$('btn-settings-top').addEventListener('click', () => switchView('settings'));
-$('btn-go-communities').addEventListener('click', () => switchView('communities'));
-$('btn-back-home-comm').addEventListener('click', () => switchView('home'));
-$('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-// ================= CLOUDINARY =================
-async function uploadToCloudinary(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, { method: 'POST', body: formData });
-  const data = await res.json();
-  if(data.secure_url) return data.secure_url;
-  throw new Error("Upload échoué");
-}
+/* GESTION DES ECRANS (Le secret pour cacher les blocs) */
+.screen { display: none !important; } 
+.screen.active { display: block !important; }
+.view { display: none !important; }
+.view.active { display: block !important; animation: fade 0.2s ease; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 
-// ================= AUTHENTIFICATION =================
-$('btn-signup').addEventListener('click', async () => {
-  const email = $('auth-email').value.trim(), pass = $('auth-pass').value.trim(), name = $('auth-name').value.trim();
-  if (!email || !pass || !name) return $('auth-error').textContent = "Remplissez tous les champs.";
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await setDoc(doc(db, 'users', cred.user.uid), {
-      username: name, email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", decorations: [], badges: [], pinned: []
-    });
-  } catch (e) { $('auth-error').textContent = e.message; }
-});
+/* AUTHENTIFICATION */
+#auth-screen.active { display: flex !important; align-items: center; justify-content: center; min-height: 100vh; background: radial-gradient(circle at 30% 20%, #1a2a55 0%, #0a0e1a 60%); }
+.auth-box { width: 100%; max-width: 360px; padding: 2rem; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 0 40px var(--blue-glow); display: flex; flex-direction: column; gap: 0.8rem; }
+.logo { font-size: 2rem; font-weight: 800; }
+.logo span { color: var(--blue-light); }
+.tagline { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
 
-$('btn-login').addEventListener('click', async () => {
-  const email = $('auth-email').value.trim(), pass = $('auth-pass').value.trim();
-  if (!email || !pass) return $('auth-error').textContent = "Email et mot de passe requis.";
-  try { await signInWithEmailAndPassword(auth, email, pass); } 
-  catch (e) { $('auth-error').textContent = "Identifiants invalides."; }
-});
+/* FORMULAIRES ET BOUTONS */
+input, textarea, select { width: 100%; padding: 0.75rem 1rem; background: #0d1424; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: inherit; font-size: 0.9rem; outline: none; }
+input:focus, textarea:focus { border-color: var(--blue-light); }
+textarea { resize: none; }
+.btn-primary { background: linear-gradient(135deg, var(--blue), var(--blue-light)); color: white; padding: 0.75rem 1rem; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; }
+.btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.75rem 1rem; border-radius: 10px; cursor: pointer; }
+.btn-primary.small, .btn-secondary.small { padding: 0.5rem 0.9rem; font-size: 0.85rem; width: auto; }
+.muted { color: var(--muted); font-size: 0.85rem; }
+.error { color: #ff6b6b; font-size: 0.8rem; }
 
-$('btn-forgot-password').addEventListener('click', async () => {
-  const email = $('auth-email').value.trim();
-  if (!email) return $('auth-error').textContent = "Entrez votre email.";
-  try { await sendPasswordResetEmail(auth, email); alert("Email envoyé ! Vérifiez vos spams."); } 
-  catch (e) { $('auth-error').textContent = e.message; }
-});
+/* APPLICATION */
+#app-screen { min-height: 100vh; padding-bottom: 60px; }
+#main-header { position: sticky; top: 0; z-index: 10; display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: rgba(10, 14, 26, 0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+#main-content { padding: 1rem; }
 
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    currentUser = user;
-    const snap = await getDoc(doc(db, 'users', user.uid));
-    userProfile = snap.exists() ? snap.data() : { username: "Utilisateur", decorations: [], badges: [], pinned: [], photoURL: "" };
-    $('auth-screen').classList.remove('active');
-    $('app-screen').classList.add('active');
-    switchView('home');
-  } else {
-    currentUser = null;
-    if(unsubscribeGlobalFeed) unsubscribeGlobalFeed();
-    if(unsubscribeCommunityFeed) unsubscribeCommunityFeed();
-    $('app-screen').classList.remove('active');
-    $('auth-screen').classList.add('active');
-  }
-});
+/* CARTES ET LISTES */
+.action-row { display: flex; gap: 0.6rem; margin-bottom: 1rem; }
+.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+.card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; cursor: pointer; display: flex; flex-direction: column; }
+.card:hover { border-color: var(--blue-light); }
+.card h4 { font-size: 0.95rem; margin-bottom: 0.4rem; }
+.card .chip { font-size: 0.7rem; background: var(--blue); color: white; padding: 2px 8px; border-radius: 20px; margin-top: auto; align-self: flex-start; }
 
-// ================= FLUX D'ACTUALITÉ GLOBAL (ISOLÉ) =================
-function renderGlobalFeed() {
-  const list = $('global-feed-list');
-  list.innerHTML = '<p class="muted">Chargement du fil d\'actualité...</p>';
-  
-  // On ne récupère QUE les posts qui n'ont pas de communauté (communityId == 'global')
-  const q = query(collection(db, 'posts'), where('communityId', '==', 'global'), orderBy('createdAt', 'desc'), limit(50));
-  
-  unsubscribeGlobalFeed = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message public.</p>';
-    list.innerHTML = snap.docs.map(d => generatePostHTML(d, false)).join('');
-  });
-}
+/* FIL D'ACTUALITÉ (POSTS) */
+.media-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.media-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.post-header { display: flex; align-items: center; gap: 10px; }
+.post-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; background: var(--blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.post-media { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; margin-top: 0.5rem; background: #000; }
+.post-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 
-// ================= COMMUNAUTÉS =================
-$('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
-$('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
+/* VUE COMMUNAUTÉ ET CHAT FIXE */
+.comm-header-fixed { position: sticky; top: 0; background: var(--bg); z-index: 9; display: flex; align-items: center; gap: 10px; padding: 10px 1rem; border-bottom: 1px solid var(--border); }
+#view-community { padding: 0 !important; }
+#posts-list { padding: 1rem; }
+.chat-input-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-2); border-top: 1px solid var(--border); padding: 10px; display: flex; gap: 10px; align-items: flex-end; z-index: 100; }
+.chat-input-bar.hidden { display: none !important; }
+.chat-input-bar textarea { border-radius: 20px; padding: 10px 40px 10px 15px; max-height: 100px; }
 
-$('comm-save').addEventListener('click', async () => {
-  const name = $('comm-name').value.trim(), type = $('comm-type').value;
-  if (!name) return;
-  $('comm-save').textContent = "Création...";
-  try {
-    await addDoc(collection(db, 'communities'), {
-      name, description: $('comm-desc').value.trim(), type, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
-    });
-    if (!userProfile.badges.includes("Fondateur")) {
-      await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("Fondateur") });
-      userProfile.badges.push("Fondateur");
-    }
-    $('modal-community').classList.add('hidden');
-    renderCommunitiesList();
-  } catch(e) { alert(e.message); }
-  $('comm-save').textContent = "Créer";
-});
+/* PROFIL STYLE FACEBOOK */
+.fb-profile { background: var(--bg-2); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.fb-banner { height: 120px; background: linear-gradient(135deg, var(--blue), #0a0e1a); }
+.fb-avatar-container { display: flex; align-items: flex-end; gap: 1rem; padding: 0 1rem; margin-top: -40px; margin-bottom: 1rem; }
+.fb-avatar { width: 90px; height: 90px; border-radius: 50%; border: 4px solid var(--bg-2); background: var(--blue-light); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; }
+.fb-pinned { padding: 1rem; border-top: 1px solid var(--border); margin-top: 1rem; }
+.deco-row, .badge-row { display: flex; gap: 0.4rem; padding: 0 1rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.deco-item, .badge-item { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border); }
+.badge-item { background: #b45309; border: none; color: white; }
 
-async function renderCommunitiesList() {
-  const list = $('communities-list');
-  list.innerHTML = '<p class="muted">Chargement...</p>';
-  const snap = await getDocs(collection(db, 'communities'));
-  if (snap.empty) return list.innerHTML = '<p class="muted">Aucune communauté trouvée.</p>';
-  
-  const comms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  comms.sort((a, b) => (b.members?.length || 0) - (a.members?.length || 0));
+/* NAVIGATION BAS */
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; background: rgba(10, 14, 26, 0.95); border-top: 1px solid var(--border); padding: 0.5rem 0; z-index: 20; }
+.nav-btn { background: none; color: var(--muted); border: none; display: flex; flex-direction: column; align-items: center; font-size: 1.1rem; cursor: pointer; padding: 0.4rem; }
+.nav-btn span { font-size: 0.65rem; margin-top: 2px; }
+.nav-btn.active { color: var(--blue-light); }
 
-  list.innerHTML = comms.map(c => {
-    return `<div class="card" onclick="window.openCommunity('${c.id}')">
-      <h4>${c.type === 'announcement' ? '📢' : '💬'} ${c.name}</h4>
-      <p class="muted">${c.description || ''}</p>
-      <span class="chip">${c.members?.length || 1} membres</span>
-    </div>`;
-  }).join('');
-}
-
-// ================= OUVRIR UNE COMMUNAUTÉ =================
-window.openCommunity = async (id) => {
-  currentCommunityId = id;
-  $('posts-list').innerHTML = '<p class="muted">Chargement...</p>';
-  
-  const docRef = doc(db, 'communities', id);
-  const docSnap = await getDoc(docRef);
-  
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    currentCommunityType = data.type;
-    currentCommunityOwner = data.ownerId;
-    currentCommunityMembers = data.members || [];
-    
-    $('comm-title-display').textContent = data.name;
-    $('members-count').textContent = `${currentCommunityMembers.length} membres`;
-    
-    updateJoinUI();
-    switchView('community');
-    loadCommunityFeed();
-  }
-};
-
-function updateJoinUI() {
-  const isMember = currentCommunityMembers.includes(currentUser.uid);
-  const chatBar = $('post-form-container');
-  const joinContainer = $('join-container');
-
-  if (isMember) {
-    // Membre : On cache le gros bouton et on affiche le chat
-    joinContainer.style.display = 'none';
-    if (currentCommunityType === 'announcement' && currentUser.uid !== currentCommunityOwner) {
-      chatBar.style.display = 'none'; // Les non-admins ne peuvent pas écrire dans les annonces
-    } else {
-      chatBar.style.display = 'flex';
-    }
-  } else {
-    // Pas membre : On affiche le gros bouton et on cache le chat
-    joinContainer.style.display = 'block';
-    chatBar.style.display = 'none';
-  }
-}
-
-$('btn-join-community').addEventListener('click', async () => {
-  const ref = doc(db, 'communities', currentCommunityId);
-  await updateDoc(ref, { members: arrayUnion(currentUser.uid) });
-  currentCommunityMembers.push(currentUser.uid);
-  $('members-count').textContent = `${currentCommunityMembers.length} membres`;
-  updateJoinUI();
-});
-
-// ================= CHAT DANS LA COMMUNAUTÉ =================
-function loadCommunityFeed() {
-  const list = $('posts-list');
-  list.innerHTML = '<p class="muted">Chargement...</p>';
-  
-  const q = query(collection(db, 'posts'), where('communityId', '==', currentCommunityId), orderBy('createdAt', 'desc'));
-  
-  unsubscribeCommunityFeed = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Aucun message.</p>';
-    list.innerHTML = snap.docs.map(d => generatePostHTML(d, true)).join('');
-    window.scrollTo(0, document.body.scrollHeight);
-  });
-}
-
-function generatePostHTML(docSnap, showPinBtn) {
-  const p = docSnap.data();
-  const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
-  
-  let mediaHtml = '';
-  if (p.mediaUrl) {
-    if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media">`;
-    else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media"></video>`;
-    else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
-  }
-  
-  const isLiked = p.likes?.includes(currentUser.uid);
-  const likeIcon = isLiked ? "💙" : "🤍";
-  
-  return `<div class="media-item">
-    <div class="post-header">${avatar} <strong>@${p.authorName}</strong></div>
-    <p>${p.content}</p>
-    ${mediaHtml}
-    <div class="post-actions">
-      <button onclick="window.toggleLike('${docSnap.id}', ${isLiked})" class="btn-secondary small">${likeIcon} ${p.likes ? p.likes.length : 0}</button>
-    </div>
-  </div>`;
-}
-
-$('btn-attach-file').addEventListener('click', () => $('post-file').click());
-
-$('btn-publish-post').addEventListener('click', async () => {
-  const content = $('post-content').value.trim();
-  const file = $('post-file').files[0];
-  if (!content && !file) return;
-  
-  $('btn-publish-post').textContent = "...";
-  try {
-    let mediaUrl = null, mediaType = null;
-    if (file) {
-      mediaUrl = await uploadToCloudinary(file);
-      if (file.type.startsWith('image')) mediaType = 'image';
-      else if (file.type.startsWith('video')) mediaType = 'video';
-      else mediaType = 'audio';
-    }
-    
-    await addDoc(collection(db, 'posts'), {
-      communityId: currentCommunityId, content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
-      mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
-    });
-    
-    $('post-content').value = ''; $('post-file').value = '';
-  } catch(e) { alert("Erreur : " + e.message); }
-  $('btn-publish-post').textContent = "➤";
-});
-
-window.toggleLike = async (postId, isLiked) => {
-  const ref = doc(db, 'posts', postId);
-  if (isLiked) await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
-  else await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
-};
-
-// ================= PROFIL & RESTE =================
-$('btn-logout').addEventListener('click', () => signOut(auth));
-$('btn-edit-profile-view').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
-$('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
-
-$('btn-save-profile').addEventListener('click', async () => {
-  const file = $('edit-avatar').files[0];
-  let photoURL = userProfile.photoURL;
-  $('btn-save-profile').textContent = "Patientez...";
-  try {
-    if (file) photoURL = await uploadToCloudinary(file);
-    const updates = { bio: $('edit-bio').value.trim(), photoURL };
-    await updateDoc(doc(db, 'users', currentUser.uid), updates);
-    userProfile = { ...userProfile, ...updates };
-    $('modal-profile').classList.add('hidden');
-    renderProfile();
-  } catch (e) { alert("Erreur : " + e.message); }
-  $('btn-save-profile').textContent = "Enregistrer";
-});
-
-async function renderProfile() {
-  if (!userProfile) return;
-  $('profile-name').textContent = userProfile.username;
-  $('profile-bio').textContent = userProfile.bio || 'Aucune bio.';
-  const av = $('profile-avatar');
-  if (userProfile.photoURL) {
-    av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = '';
-  } else {
-    av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
-  }
-  $('profile-pinned').innerHTML = '<p class="muted">Aucun post épinglé.</p>';
-}
+/* MODALES */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.modal.hidden { display: none !important; }
+.modal-content { background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border); width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 0.8rem; }
