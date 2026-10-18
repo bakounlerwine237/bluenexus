@@ -1,6 +1,6 @@
 import { firebaseConfig } from './firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit, serverTimestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
 
 const app = initializeApp(firebaseConfig);
@@ -47,7 +47,6 @@ $('btn-save-profile').addEventListener('click', async () => {
   try {
     $('btn-save-profile').textContent = "Enregistrement...";
     
-    // Envoi de la photo vers Cloudinary
     if (file) {
       const formData = new FormData();
       formData.append('file', file);
@@ -110,6 +109,23 @@ $('btn-login').addEventListener('click', async () => {
   } catch (e) { 
     if(e.code === 'auth/invalid-credential') $('auth-error').textContent = "Mot de passe incorrect ou compte inexistant.";
     else $('auth-error').textContent = e.message; 
+  }
+});
+
+// NOUVELLE FONCTIONNALITÉ : MOT DE PASSE OUBLIÉ
+$('btn-forgot-password').addEventListener('click', async () => {
+  const email = $('auth-email').value.trim();
+  if (!email) {
+    $('auth-error').textContent = "Veuillez entrer votre email pour recevoir le lien.";
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert(`Un email de réinitialisation a été envoyé à ${email}. Vérifie ta boîte de réception (et tes spams).`);
+    $('auth-error').textContent = "";
+  } catch (e) {
+    if (e.code === 'auth/user-not-found') $('auth-error').textContent = "Aucun compte n'est associé à cet email.";
+    else $('auth-error').textContent = "Erreur : " + e.message;
   }
 });
 

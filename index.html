@@ -17,8 +17,13 @@
     <input id="auth-email" type="email" placeholder="Email" />
     <input id="auth-pass" type="password" placeholder="Mot de passe" />
     <input id="auth-name" type="text" placeholder="Nom d'utilisateur (inscription)" />
+    
     <button id="btn-login" class="btn-primary">Se connecter</button>
     <button id="btn-signup" class="btn-secondary">Créer un compte</button>
+    
+    <!-- NOUVEAU BOUTON ICI -->
+    <button id="btn-forgot-password" class="btn-secondary" style="margin-top: 5px; font-size: 0.8rem; border: none; color: var(--blue-light);">Mot de passe oublié ?</button>
+    
     <p id="auth-error" class="error"></p>
   </div>
 </div>
@@ -47,8 +52,13 @@
       <button id="btn-back-home" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
       <h2 id="comm-title-display" style="color: var(--blue-light);">Nom du groupe</h2>
       <p id="comm-desc-display" class="muted" style="margin-bottom: 1.5rem;"></p>
+      <p id="members-count" class="muted" style="margin-bottom: 1rem;"></p>
       
-      <!-- Formulaire de publication (C'est ici !) -->
+      <div id="join-container" style="margin-bottom: 1rem;">
+        <button id="btn-join-community" class="btn-primary small">Rejoindre cette communauté</button>
+      </div>
+
+      <!-- Formulaire de publication -->
       <div id="post-form-container" style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1.5rem;">
         <textarea id="post-content" placeholder="Écrivez quelque chose..." style="margin-bottom: 0.5rem;"></textarea>
         <button id="btn-publish-post" class="btn-primary small">Publier</button>
@@ -139,6 +149,10 @@
 <div id="modal-profile" class="modal hidden">
   <div class="modal-content">
     <h3>Modifier mon profil</h3>
+    
+    <label style="font-size: 0.8rem; color: var(--muted);">Photo de profil</label>
+    <input type="file" id="edit-avatar" accept="image/*" style="background: none; border: none; padding: 0;">
+    
     <label style="font-size: 0.8rem; color: var(--muted);">Ma Bio</label>
     <textarea id="edit-bio" placeholder="Parlez de vous..."></textarea>
     
