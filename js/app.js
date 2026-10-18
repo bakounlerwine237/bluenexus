@@ -7,7 +7,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Configuration Cloudinary
 const CLOUDINARY_CLOUD_NAME = "uotg2qg2"; 
 const CLOUDINARY_UPLOAD_PRESET = "bluenexus"; 
 
@@ -19,114 +18,68 @@ let currentCommunityOwner = null;
 let unsubscribePosts = null; 
 const $ = (id) => document.getElementById(id);
 
-// --- PARAMÈTRES ET DÉCONNEXION ---
-$('btn-settings').addEventListener('click', () => {
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+// ================= NAVIGATION =================
+function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $('view-settings').classList.add('active');
-  $('page-title').textContent = "Paramètres";
+  const target = $(`view-${viewId}`);
+  if(target) target.classList.add('active');
+  
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const navBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
+  if(navBtn) navBtn.classList.add('active');
+
+  const titles = { home: "Accueil", messages: "Messages", music: "Musique", video: "Vidéo", search: "Recherche", profile: "Mon Profil", settings: "Paramètres" };
+  $('page-title').textContent = titles[viewId] || "BlueNexus";
+
+  if (viewId === 'home') renderHome();
+  if (viewId === 'messages') renderUsersForMessages();
+  if (viewId === 'music') renderMusic();
+  if (viewId === 'video') renderVideo();
+  if (viewId === 'profile') renderProfile();
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
+$('btn-settings-top').addEventListener('click', () => switchView('settings'));
 
-$('btn-logout').addEventListener('click', () => signOut(auth));
+// ================= CLOUDINARY =================
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+    method: 'POST', body: formData
+  });
+  const data = await res.json();
+  if(data.secure_url) return data.secure_url;
+  throw new Error("Upload échoué");
+}
 
-// --- MODIFIER LE PROFIL (AVEC PHOTO CLOUDINARY) ---
-$('btn-edit-profile-view').addEventListener('click', () => {
-  $('edit-bio').value = userProfile.bio || '';
-  $('edit-deco').value = userProfile.decorations[0] || '';
-  $('modal-profile').classList.remove('hidden');
-});
-
-$('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
-
-$('btn-save-profile').addEventListener('click', async () => {
-  const newBio = $('edit-bio').value.trim();
-  const newDeco = $('edit-deco').value;
-  const file = $('edit-avatar').files[0];
-  let photoURL = userProfile.photoURL || null;
-
-  try {
-    $('btn-save-profile').textContent = "Enregistrement...";
-    
-    if (file) {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-        method: 'POST',
-        body: formData
-      });
-      
-      const data = await response.json();
-      if (data.secure_url) {
-        photoURL = data.secure_url;
-      } else {
-        throw new Error("Erreur lors de l'envoi sur Cloudinary");
-      }
-    }
-
-    const updates = { bio: newBio, decorations: newDeco ? [newDeco] : [], photoURL: photoURL };
-    await updateDoc(doc(db, 'users', currentUser.uid), updates);
-    
-    userProfile.bio = newBio;
-    userProfile.decorations = updates.decorations;
-    userProfile.photoURL = photoURL;
-    
-    $('modal-profile').classList.add('hidden');
-    renderProfile();
-    $('btn-save-profile').textContent = "Enregistrer";
-  } catch (e) {
-    alert("Erreur : " + e.message);
-    $('btn-save-profile').textContent = "Enregistrer";
-  }
-});
-
-// --- AUTHENTIFICATION ---
+// ================= AUTHENTIFICATION =================
 $('btn-signup').addEventListener('click', async () => {
-  const email = $('auth-email').value.trim();
-  const pass = $('auth-pass').value.trim();
-  const name = $('auth-name').value.trim();
-  if (!email || !pass || !name) { $('auth-error').textContent = "Remplissez tous les champs."; return; }
+  const email = $('auth-email').value.trim(), pass = $('auth-pass').value.trim(), name = $('auth-name').value.trim();
+  if (!email || !pass || !name) return $('auth-error').textContent = "Remplissez tous les champs.";
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await setDoc(doc(db, 'users', cred.user.uid), {
-      username: name, email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "",
-      decorations: [], badges: [], pinned: [], communities: [], createdAt: serverTimestamp()
+      username: name, email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", decorations: [], badges: [], pinned: []
     });
-    $('auth-error').textContent = "";
-  } catch (e) { 
-    if(e.code === 'auth/email-already-in-use') $('auth-error').textContent = "Cet email existe déjà. Cliquez sur Se connecter.";
-    else $('auth-error').textContent = e.message; 
-  }
+  } catch (e) { $('auth-error').textContent = e.message; }
 });
 
 $('btn-login').addEventListener('click', async () => {
-  const email = $('auth-email').value.trim();
-  const pass = $('auth-pass').value.trim();
-  if (!email || !pass) { $('auth-error').textContent = "Email et mot de passe requis."; return; }
-  try { 
-    await signInWithEmailAndPassword(auth, email, pass); 
-  } catch (e) { 
-    if(e.code === 'auth/invalid-credential') $('auth-error').textContent = "Mot de passe incorrect ou compte inexistant.";
-    else $('auth-error').textContent = e.message; 
-  }
+  const email = $('auth-email').value.trim(), pass = $('auth-pass').value.trim();
+  if (!email || !pass) return $('auth-error').textContent = "Email et mot de passe requis.";
+  try { await signInWithEmailAndPassword(auth, email, pass); } 
+  catch (e) { $('auth-error').textContent = "Identifiants invalides."; }
 });
 
-// NOUVELLE FONCTIONNALITÉ : MOT DE PASSE OUBLIÉ
 $('btn-forgot-password').addEventListener('click', async () => {
   const email = $('auth-email').value.trim();
-  if (!email) {
-    $('auth-error').textContent = "Veuillez entrer votre email pour recevoir le lien.";
-    return;
-  }
-  try {
-    await sendPasswordResetEmail(auth, email);
-    alert(`Un email de réinitialisation a été envoyé à ${email}. Vérifie ta boîte de réception (et tes spams).`);
-    $('auth-error').textContent = "";
-  } catch (e) {
-    if (e.code === 'auth/user-not-found') $('auth-error').textContent = "Aucun compte n'est associé à cet email.";
-    else $('auth-error').textContent = "Erreur : " + e.message;
-  }
+  if (!email) return $('auth-error').textContent = "Entrez votre email.";
+  try { await sendPasswordResetEmail(auth, email); alert("Email envoyé ! Vérifiez vos spams."); } 
+  catch (e) { $('auth-error').textContent = e.message; }
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -134,271 +87,244 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     const snap = await getDoc(doc(db, 'users', user.uid));
     userProfile = snap.exists() ? snap.data() : { username: "Utilisateur", decorations: [], badges: [], pinned: [], photoURL: "" };
-    
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
-    renderHome(); renderProfile();
+    switchView('home');
   } else {
-    currentUser = null; userProfile = null;
-    if(unsubscribePosts) unsubscribePosts(); 
+    currentUser = null;
+    if(unsubscribePosts) unsubscribePosts();
     $('app-screen').classList.remove('active');
     $('auth-screen').classList.add('active');
   }
 });
 
-// --- NAVIGATION ---
-document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    const view = btn.dataset.view;
-    $(`view-${view}`).classList.add('active');
-    if (view === 'music') renderMusic();
-    if (view === 'video') renderVideo();
-    if (view === 'profile') renderProfile();
-    if (view === 'home') renderHome();
-  });
+// ================= PARAMÈTRES ET PROFIL =================
+$('btn-logout').addEventListener('click', () => signOut(auth));
+$('btn-edit-profile-view').addEventListener('click', () => {
+  $('edit-bio').value = userProfile.bio || '';
+  $('edit-deco').value = userProfile.decorations[0] || '';
+  $('modal-profile').classList.remove('hidden');
+});
+$('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
+
+$('btn-save-profile').addEventListener('click', async () => {
+  const file = $('edit-avatar').files[0];
+  let photoURL = userProfile.photoURL;
+  $('btn-save-profile').textContent = "Enregistrement...";
+  try {
+    if (file) photoURL = await uploadToCloudinary(file);
+    const updates = { bio: $('edit-bio').value.trim(), decorations: $('edit-deco').value ? [$('edit-deco').value] : [], photoURL };
+    await updateDoc(doc(db, 'users', currentUser.uid), updates);
+    userProfile = { ...userProfile, ...updates };
+    $('modal-profile').classList.add('hidden');
+    renderProfile();
+  } catch (e) { alert("Erreur photo: " + e.message); }
+  $('btn-save-profile').textContent = "Enregistrer";
 });
 
-// --- COMMUNAUTÉS ---
-async function renderHome() {
-  const list = $('communities-list');
-  const snap = await getDocs(query(collection(db, 'communities'), orderBy('createdAt', 'desc'), limit(30)));
-  if (snap.empty) { list.innerHTML = '<p class="muted">Aucune communauté. Créez la première !</p>'; return; }
-  list.innerHTML = '';
-  snap.forEach(d => {
-    const c = d.data();
-    const typeIcon = c.type === 'announcement' ? '📢' : '💬';
-    
-    list.innerHTML += `
-      <div class="card" onclick="window.openCommunity('${d.id}', '${c.name}', '${c.description || ''}', '${c.type || 'chat'}', '${c.ownerId}', ${c.members ? c.members.length : 1})">
-        <h4>${typeIcon} ${c.name}</h4>
-        <p class="muted">${c.description || ''}</p>
-        <span class="chip">${c.members ? c.members.length : 1} membres</span>
-      </div>`;
-  });
+async function renderProfile() {
+  if (!userProfile) return;
+  $('profile-name').textContent = userProfile.username;
+  $('profile-bio').textContent = userProfile.bio || 'Aucune bio.';
+  const av = $('profile-avatar');
+  if (userProfile.photoURL) {
+    av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = '';
+  } else {
+    av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
+  }
+  $('profile-decorations').innerHTML = (userProfile.decorations || []).map(d => `<span class="deco-item">${d}</span>`).join('');
+  $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">🏅 ${b}</span>`).join('');
+  
+  const pinned = $('profile-pinned');
+  pinned.innerHTML = '<p class="muted">Chargement...</p>';
+  if (userProfile.pinned && userProfile.pinned.length > 0) {
+    const docs = await Promise.all(userProfile.pinned.map(id => getDoc(doc(db, 'posts', id))));
+    pinned.innerHTML = docs.map(d => d.exists() ? `<div class="media-item"><p style="font-size:0.9rem">${d.data().content}</p></div>` : '').join('');
+  } else pinned.innerHTML = '<p class="muted">Aucun post épinglé.</p>';
 }
 
-$('btn-new-community').addEventListener('click', () => $('modal').classList.remove('hidden'));
-$('comm-cancel').addEventListener('click', () => $('modal').classList.add('hidden'));
+// ================= COMMUNAUTÉS (AVEC PHOTO) =================
+$('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
+$('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
 
 $('comm-save').addEventListener('click', async () => {
-  const name = $('comm-name').value.trim();
-  const type = $('comm-type').value;
+  const name = $('comm-name').value.trim(), type = $('comm-type').value;
+  const imgFile = $('comm-image').files[0];
   if (!name) return;
   
-  await addDoc(collection(db, 'communities'), {
-    name, description: $('comm-desc').value.trim(),
-    type: type, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
-  });
+  $('comm-save').textContent = "Création...";
+  try {
+    let imageURL = "";
+    if(imgFile) imageURL = await uploadToCloudinary(imgFile);
 
-  if (!userProfile.badges.includes("Fondateur")) {
-    await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("Fondateur") });
-    userProfile.badges.push("Fondateur");
-    renderProfile();
-  }
-
-  $('modal').classList.add('hidden');
-  $('comm-name').value = ''; $('comm-desc').value = '';
-  renderHome();
+    await addDoc(collection(db, 'communities'), {
+      name, description: $('comm-desc').value.trim(), type, imageURL, ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
+    });
+    if (!userProfile.badges.includes("Fondateur")) {
+      await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("Fondateur") });
+      userProfile.badges.push("Fondateur");
+    }
+    $('modal-community').classList.add('hidden');
+    renderHome();
+  } catch(e) { alert(e.message); }
+  $('comm-save').textContent = "Créer";
 });
 
-// --- OUVRIR UNE COMMUNAUTÉ ---
-window.openCommunity = (id, name, desc, type, ownerId, membersCount) => {
-  currentCommunityId = id;
-  currentCommunityType = type;
-  currentCommunityOwner = ownerId;
+async function renderHome() {
+  const list = $('communities-list');
+  const snap = await getDocs(query(collection(db, 'communities'), orderBy('createdAt', 'desc')));
+  if (snap.empty) return list.innerHTML = '<p class="muted">Aucune communauté.</p>';
+  list.innerHTML = snap.docs.map(d => {
+    const c = d.data();
+    const imgHtml = c.imageURL ? `<img src="${c.imageURL}" style="width:100%; height:80px; object-fit:cover; border-radius:8px; margin-bottom:8px;">` : '';
+    return `<div class="card" onclick="window.openCommunity('${d.id}', '${c.name}', '${c.description || ''}', '${c.type}', '${c.ownerId}', '${c.imageURL || ''}')">
+      ${imgHtml}
+      <h4>${c.type === 'announcement' ? '📢' : '💬'} ${c.name}</h4>
+      <p class="muted">${c.description || ''}</p>
+    </div>`;
+  }).join('');
+}
 
+window.openCommunity = (id, name, desc, type, ownerId, imageURL) => {
+  currentCommunityId = id; currentCommunityType = type; currentCommunityOwner = ownerId;
   $('comm-title-display').textContent = name;
   $('comm-desc-display').textContent = desc;
-  $('members-count').textContent = `${membersCount} membre(s) actif(s)`;
   
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $('view-community').classList.add('active');
-  $('page-title').textContent = name;
+  const imgDisplay = $('comm-image-display');
+  if(imageURL) { imgDisplay.src = imageURL; imgDisplay.style.display = 'block'; }
+  else { imgDisplay.style.display = 'none'; }
 
-  const formContainer = $('post-form-container');
-  if (currentCommunityType === 'announcement' && currentUser.uid !== currentCommunityOwner) {
-    formContainer.style.display = 'none'; 
-  } else {
-    formContainer.style.display = 'block'; 
-  }
-
+  switchView('community');
+  
+  const form = $('post-form-container');
+  form.style.display = (type === 'announcement' && currentUser.uid !== ownerId) ? 'none' : 'block';
   loadPosts();
 };
 
-$('btn-back-home').addEventListener('click', () => {
-  if(unsubscribePosts) unsubscribePosts();
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  $('view-home').classList.add('active');
-  $('page-title').textContent = "Accueil";
-  renderHome();
+$('btn-back-home').addEventListener('click', () => switchView('home'));
+
+// ================= POSTS, UPLOAD, LIKE ET PIN =================
+$('btn-attach-file').addEventListener('click', () => $('post-file').click());
+$('post-file').addEventListener('change', () => {
+  const f = $('post-file').files[0];
+  if(f) $('file-name').textContent = f.name;
 });
 
-$('btn-join-community').addEventListener('click', async () => {
-  try {
-    await updateDoc(doc(db, 'communities', currentCommunityId), {
-      members: arrayUnion(currentUser.uid)
-    });
-    alert("Vous avez rejoint la communauté !");
-    $('btn-join-community').style.display = 'none';
-  } catch(e) { alert("Erreur : " + e.message); }
-});
-
-// --- POSTS ET LIKES (TEMPS RÉEL) ---
 $('btn-publish-post').addEventListener('click', async () => {
-  if (currentCommunityType === 'announcement' && currentUser.uid !== currentCommunityOwner) {
-    alert("Seul l'administrateur peut publier ici.");
-    return;
-  }
-
   const content = $('post-content').value.trim();
-  if (!content) return;
+  const file = $('post-file').files[0];
+  if (!content && !file) return;
   
-  $('post-content').value = ''; 
-  await addDoc(collection(db, 'posts'), {
-    communityId: currentCommunityId,
-    content: content,
-    authorId: currentUser.uid,
-    authorName: userProfile.username,
-    authorPhoto: userProfile.photoURL || "",
-    likes: [],
-    createdAt: serverTimestamp()
-  });
+  $('btn-publish-post').textContent = "Envoi...";
+  try {
+    let mediaUrl = null, mediaType = null;
+    if (file) {
+      mediaUrl = await uploadToCloudinary(file);
+      if (file.type.startsWith('image')) mediaType = 'image';
+      else if (file.type.startsWith('video')) mediaType = 'video';
+      else mediaType = 'audio';
+    }
+    
+    await addDoc(collection(db, 'posts'), {
+      communityId: currentCommunityId, content, authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
+      mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
+    });
+    
+    $('post-content').value = ''; $('post-file').value = ''; $('file-name').textContent = '';
+  } catch(e) { alert("Erreur d'envoi : " + e.message); }
+  $('btn-publish-post').textContent = "Publier";
 });
 
 function loadPosts() {
   const list = $('posts-list');
-  list.innerHTML = '<p class="muted">Connexion au flux...</p>';
-  
+  list.innerHTML = '<p class="muted">Chargement...</p>';
   const q = query(collection(db, 'posts'), where('communityId', '==', currentCommunityId), orderBy('createdAt', 'desc'));
   
-  unsubscribePosts = onSnapshot(q, (snap) => {
-    if (snap.empty) { list.innerHTML = '<p class="muted">Aucun message pour le moment.</p>'; return; }
-    list.innerHTML = '';
-    
-    snap.forEach(d => {
+  unsubscribePosts = onSnapshot(q, snap => {
+    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message.</p>';
+    list.innerHTML = snap.docs.map(d => {
       const p = d.data();
+      const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
+      
+      let mediaHtml = '';
+      if (p.mediaUrl) {
+        if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media">`;
+        else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media"></video>`;
+        else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
+      }
+      
+      // LOGIQUE DU LIKE
       const isLiked = p.likes.includes(currentUser.uid);
       const likeIcon = isLiked ? "💙" : "🤍";
+      
+      // LOGIQUE DU PIN (Si c'est notre post)
       const isPinned = userProfile.pinned && userProfile.pinned.includes(d.id);
       const pinIcon = isPinned ? "📌 Épinglé" : "📍 Épingler";
-      
       const pinBtn = (p.authorId === currentUser.uid) 
-        ? `<button onclick="window.togglePin('${d.id}', ${isPinned})" class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 20px; margin-left: 5px;">${pinIcon}</button>` 
+        ? `<button onclick="window.togglePin('${d.id}', ${isPinned})" class="btn-secondary small">${pinIcon}</button>` 
         : '';
 
-      const avatarHtml = p.authorPhoto 
-        ? `<img src="${p.authorPhoto}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover; margin-right: 8px; vertical-align: middle;">`
-        : `<span style="display:inline-block; width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: white; text-align: center; line-height: 30px; margin-right: 8px; font-weight: bold;">${p.authorName[0].toUpperCase()}</span>`;
-
-      list.innerHTML += `
-        <div class="media-item" style="flex-direction: column; align-items: flex-start;">
-          <div style="width: 100%; margin-bottom: 0.5rem;">
-            <div style="display: flex; align-items: center;">
-              ${avatarHtml}
-              <strong style="color: var(--blue-light); font-size: 0.9rem;">@${p.authorName}</strong>
-            </div>
-            <p style="margin-top: 0.5rem; font-size: 0.95rem;">${p.content}</p>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button onclick="window.toggleLike('${d.id}', ${isLiked})" class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 20px;">
-              ${likeIcon} ${p.likes.length}
-            </button>
-            ${pinBtn}
-          </div>
-        </div>`;
-    });
+      return `<div class="media-item">
+        <div class="post-header">${avatar} <strong>@${p.authorName}</strong></div>
+        <p>${p.content}</p>
+        ${mediaHtml}
+        <div class="post-actions">
+          <button onclick="window.toggleLike('${d.id}', ${isLiked})" class="btn-secondary small">${likeIcon} ${p.likes.length}</button>
+          ${pinBtn}
+        </div>
+      </div>`;
+    }).join('');
   });
 }
 
+// FONCTIONS GLOBALES POUR LES BOUTONS DANS LE HTML
 window.toggleLike = async (postId, isLiked) => {
-  const postRef = doc(db, 'posts', postId);
-  if (isLiked) { await updateDoc(postRef, { likes: arrayRemove(currentUser.uid) }); }
-  else { await updateDoc(postRef, { likes: arrayUnion(currentUser.uid) }); }
+  const ref = doc(db, 'posts', postId);
+  if (isLiked) await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
+  else await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
 };
 
 window.togglePin = async (postId, isPinned) => {
-  const userRef = doc(db, 'users', currentUser.uid);
+  const ref = doc(db, 'users', currentUser.uid);
   if (isPinned) {
-    await updateDoc(userRef, { pinned: arrayRemove(postId) });
+    await updateDoc(ref, { pinned: arrayRemove(postId) });
     userProfile.pinned = userProfile.pinned.filter(id => id !== postId);
   } else {
-    await updateDoc(userRef, { pinned: arrayUnion(postId) });
+    await updateDoc(ref, { pinned: arrayUnion(postId) });
     if(!userProfile.pinned) userProfile.pinned = [];
     userProfile.pinned.push(postId);
   }
   renderProfile();
 };
 
-// --- MUSIQUE ET VIDÉO ---
-async function renderMusic() { $('music-list').innerHTML = '<p class="muted">La bibliothèque musicale arrive bientôt ! 🎧</p>'; }
-async function renderVideo() { $('video-list').innerHTML = '<p class="muted">Les vidéos arrivent bientôt ! 🎬</p>'; }
-
-// --- RECHERCHE ---
-$('search-input').addEventListener('input', debounce(doSearch, 350));
-$('search-type').addEventListener('change', doSearch);
-async function doSearch() {
-  const term = $('search-input').value.trim().toLowerCase();
-  const type = $('search-type').value;
-  const results = $('search-results');
-  results.innerHTML = '';
-  if (!term) return;
-  if (type === 'all' || type === 'user') {
-    const snap = await getDocs(collection(db, 'users'));
-    snap.forEach(d => { const u = d.data();
-      if (u.username?.toLowerCase().includes(term)) results.innerHTML += `<div class="card"><h4>👤 ${u.username}</h4><p class="muted">${u.bio || ''}</p></div>`; });
-  }
-  if (type === 'all' || type === 'community') {
-    const snap = await getDocs(collection(db, 'communities'));
-    snap.forEach(d => { const c = d.data();
-      if (c.name?.toLowerCase().includes(term)) results.innerHTML += `<div class="card"><h4>🏘️ ${c.name}</h4><p class="muted">${c.description || ''}</p></div>`; });
-  }
-  if (!results.innerHTML) results.innerHTML = '<p class="muted">Aucun résultat.</p>';
+// ================= MESSAGERIE & AUTRES =================
+async function renderUsersForMessages() {
+  const list = $('users-list');
+  const snap = await getDocs(collection(db, 'users'));
+  list.innerHTML = snap.docs.filter(d => d.id !== currentUser.uid).map(d => {
+    const u = d.data();
+    return `<div class="card"><h4>👤 ${u.username}</h4><button class="btn-secondary small" style="margin-top:10px" onclick="alert('La messagerie sera ajoutée à la prochaine mise à jour !')">Discuter</button></div>`;
+  }).join('');
 }
 
-// --- PROFIL VITRINE ---
-async function renderProfile() {
-  if (!userProfile) return;
-  $('profile-name').textContent = userProfile.username || "Utilisateur";
-  $('profile-bio').textContent = userProfile.bio || 'Aucune bio.';
-  
-  const avatarContainer = $('profile-avatar');
-  if (userProfile.photoURL) {
-    avatarContainer.style.backgroundImage = `url(${userProfile.photoURL})`;
-    avatarContainer.style.backgroundSize = 'cover';
-    avatarContainer.style.backgroundPosition = 'center';
-    avatarContainer.textContent = ''; 
-  } else {
-    avatarContainer.style.backgroundImage = 'none';
-    avatarContainer.textContent = userProfile.username ? userProfile.username[0].toUpperCase() : '?';
-  }
-
-  $('profile-decorations').innerHTML = (userProfile.decorations || []).map(d => `<span class="deco-item">${d}</span>`).join('');
-  $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">🏅 ${b}</span>`).join('');
-  
-  const pinnedContainer = $('profile-pinned');
-  pinnedContainer.innerHTML = '';
-  
-  if (userProfile.pinned && userProfile.pinned.length > 0) {
-    pinnedContainer.innerHTML = '<p class="muted">Chargement...</p>';
-    try {
-      const postDocs = await Promise.all(userProfile.pinned.map(id => getDoc(doc(db, 'posts', id))));
-      pinnedContainer.innerHTML = '';
-      postDocs.forEach(d => {
-        if (d.exists()) {
-          const p = d.data();
-          pinnedContainer.innerHTML += `
-            <div class="card" style="border-color: var(--blue-light);">
-              <p style="font-size: 0.85rem;">${p.content}</p>
-            </div>`;
-        }
-      });
-    } catch(e) { pinnedContainer.innerHTML = '<p class="muted">Erreur de chargement.</p>'; }
-  } else {
-    pinnedContainer.innerHTML = '<p class="muted">Aucune contribution épinglée.</p>';
-  }
+async function renderMusic() {
+  const list = $('music-list');
+  const snap = await getDocs(query(collection(db, 'posts'), where('mediaType', '==', 'audio'), limit(20)));
+  if(snap.empty) return list.innerHTML = '<p class="muted">Aucun audio.</p>';
+  list.innerHTML = snap.docs.map(d => `<div class="media-item"><strong>@${d.data().authorName}</strong><p>${d.data().content}</p><audio src="${d.data().mediaUrl}" controls style="width:100%; margin-top:10px;"></audio></div>`).join('');
 }
 
-function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+async function renderVideo() {
+  const list = $('video-list');
+  const snap = await getDocs(query(collection(db, 'posts'), where('mediaType', '==', 'video'), limit(20)));
+  if(snap.empty) return list.innerHTML = '<p class="muted">Aucune vidéo.</p>';
+  list.innerHTML = snap.docs.map(d => `<div class="media-item"><strong>@${d.data().authorName}</strong><p>${d.data().content}</p><video src="${d.data().mediaUrl}" controls class="post-media"></video></div>`).join('');
+}
+
+$('search-input').addEventListener('input', async () => {
+  const term = $('search-input').value.toLowerCase();
+  const res = $('search-results');
+  if(!term) return res.innerHTML = '';
+  const snapU = await getDocs(collection(db, 'users'));
+  res.innerHTML = snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="card"><h4>👤 ${d.data().username}</h4></div>`).join('');
+});
