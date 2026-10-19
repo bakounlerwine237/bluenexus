@@ -26,6 +26,7 @@
 
 <!-- APPLICATION -->
 <div id="app-screen" class="screen">
+  
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <button id="btn-settings-top" class="icon-btn">⚙️</button>
@@ -54,7 +55,7 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ (CHAT) -->
+    <!-- VUE COMMUNAUTÉ (CHAT DE GROUPE) -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -75,16 +76,35 @@
       </div>
     </section>
 
-    <!-- MESSAGERIE (Pour plus tard) -->
-    <section id="view-messages" class="view"><h3>Messages</h3><p class="muted">Bientôt disponible avec Tencent RTC.</p></section>
-    
-    <!-- MUSIQUE & VIDÉO (Pour plus tard) -->
-    <section id="view-music" class="view"><h3>Bibliothèque Musicale</h3></section>
-    <section id="view-video" class="view"><h3>Découvertes Vidéo</h3></section>
+    <!-- MESSAGERIE PRIVÉE (LISTE) -->
+    <section id="view-messages" class="view">
+      <h3>Messages Privés</h3>
+      <p class="muted" style="margin-bottom: 1rem;">Sélectionnez un membre pour discuter.</p>
+      <div id="users-list" class="card-grid"></div>
+    </section>
+
+    <!-- MESSAGERIE PRIVÉE (CHAT ACTIF) -->
+    <section id="view-chat" class="view">
+      <div class="comm-header-fixed" style="background: var(--bg-2);">
+        <button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button>
+        <h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2>
+      </div>
+      <div id="chat-messages" class="media-list" style="padding: 1rem; padding-bottom: 80px; min-height: calc(100vh - 120px);"></div>
+      <div class="chat-input-bar">
+        <div style="flex: 1;">
+          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
+        </div>
+        <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
+      </div>
+    </section>
+
+    <!-- MUSIQUE & VIDÉO -->
+    <section id="view-music" class="view"><h3>Bibliothèque Musicale</h3><div id="music-list" class="media-list" style="margin-top: 1rem;"></div></section>
+    <section id="view-video" class="view"><h3>Découvertes Vidéo</h3><div id="video-list" class="media-list" style="margin-top: 1rem;"></div></section>
     
     <!-- RECHERCHE -->
     <section id="view-search" class="view">
-      <input id="search-input" type="text" placeholder="Rechercher..." style="margin-bottom: 1rem;" />
+      <input id="search-input" type="text" placeholder="Rechercher un utilisateur..." style="margin-bottom: 1rem;" />
       <div id="search-results" class="card-grid"></div>
     </section>
     
@@ -107,6 +127,7 @@
       <button id="btn-edit-profile-view" class="btn-primary" style="margin-top: 1rem;">Modifier mon profil</button>
       <button id="btn-logout" class="btn-secondary" style="margin-top: 1rem; color: #ff6b6b; border-color: #ff6b6b;">Se déconnecter</button>
     </section>
+
   </main>
 
   <!-- BARRE DE NAVIGATION EN BAS -->
