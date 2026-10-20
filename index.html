@@ -39,7 +39,7 @@
   
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
-    <div style="display: flex; gap: 12px; align-items: center;">
+    <div style="display: flex; gap: 15px; align-items: center;">
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;" title="Notifications">
         🔔<span id="notif-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span>
       </button>
@@ -61,13 +61,17 @@
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;" title="Actualiser">🔄</button>
       </div>
 
+      <!-- NOUVEAU : ZONE DE CRÉATION AVEC PHOTO DE PROFIL -->
       <div class="post-creation-box">
-        <textarea id="global-post-content" placeholder="Quoi de neuf ?"></textarea>
-        <div style="display: flex; gap: 10px; align-items: center;">
-          <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
-          <button id="btn-global-attach" class="btn-secondary small">📎</button>
-          <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
-          <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
+        <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0;">?</div>
+        <div style="flex: 1;">
+          <textarea id="global-post-content" placeholder="Quoi de neuf ?"></textarea>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
+            <button id="btn-global-attach" class="btn-secondary small">📎</button>
+            <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
+            <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
+          </div>
         </div>
       </div>
 

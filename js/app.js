@@ -99,7 +99,6 @@ if($('tab-following')) $('tab-following').addEventListener('click', () => {
   loadGlobalFeed(true);
 });
 
-// NOUVEAU : Bouton actualiser
 if($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
   $('btn-refresh-feed').textContent = "⏳";
   loadGlobalFeed(true);
@@ -176,6 +175,14 @@ onAuthStateChanged(auth, async (user) => {
       userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [] };
       await setDoc(doc(db, 'users', user.uid), userProfile);
     }
+    
+    // NOUVEAU : Mettre l'avatar dans la zone de création
+    const createAvatar = $('create-post-avatar');
+    if (createAvatar) {
+      if (userProfile.photoURL) { createAvatar.style.backgroundImage = `url(${userProfile.photoURL})`; createAvatar.textContent = ''; }
+      else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = userProfile.username[0].toUpperCase(); }
+    }
+
     listenToNotifications();
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
@@ -220,7 +227,7 @@ async function loadNotifications() {
   for (const docSnap of snap.docs) { await updateDoc(doc(db, 'notifications', docSnap.id), { read: true }); }
 }
 
-// ================= FEED (Avec Skeleton Loader) =================
+// ================= FEED =================
 if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
 if($('btn-global-publish')) $('btn-global-publish').addEventListener('click', async () => {
   const content = $('global-post-content').value.trim();
@@ -250,7 +257,6 @@ async function loadGlobalFeed(reset = false) {
   if(!list) return;
   
   if (reset) {
-    // NOUVEAU : Animation Skeleton (faux posts qui chargent)
     list.innerHTML = `
       <div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
       <div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
@@ -300,7 +306,7 @@ async function loadMedia(type) {
   }).join('');
 }
 
-// ================= POSTS =================
+// ================= POSTS (AVEC MENU "..." POUR LES OPTIONS CACHÉES) =================
 function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -323,10 +329,11 @@ function generatePostHTML(docSnap) {
     else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
   }
 
+  // Préparation des boutons du menu caché
   const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
-  const pinBtn = (p.authorId === currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="action-btn" title="Épingler">${isPinned ? '📌' : '📍'}</button>` : '';
+  const pinBtn = (p.authorId === currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned}); window.toggleMoreMenu('${docSnap.id}')">${isPinned ? '📌 Désépingler' : '📍 Épingler'}</button>` : '';
   const canDelete = (p.authorId === currentUser.uid) || (currentCommunityId && userProfile.username === currentCommunityOwner);
-  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete" title="Supprimer">🗑️</button>` : '';
+  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer</button>` : '';
 
   return `<div class="media-item" id="post-${docSnap.id}">
     <div class="post-header">
@@ -339,6 +346,7 @@ function generatePostHTML(docSnap) {
     ${mediaHtml}
     
     <div class="post-actions">
+      <!-- BOUTONS PRINCIPAUX VISIBLES -->
       <button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};">
         <span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> 
         <span id="like-count-${docSnap.id}">${likeCount}</span>
@@ -347,10 +355,17 @@ function generatePostHTML(docSnap) {
         💬 ${p.commentsCount || 0}
       </button>
       <button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button>
-      <button onclick="window.speakText('text-${docSnap.id}')" class="action-btn" title="Écouter">🔊</button>
-      <button onclick="window.translateText('text-${docSnap.id}')" class="action-btn" title="Traduire">🌐</button>
-      ${pinBtn}
-      ${deleteBtn}
+
+      <!-- BOUTON MENU "..." POUR LES OPTIONS CACHÉES -->
+      <div class="more-menu-container">
+        <button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button>
+        <div id="more-menu-${docSnap.id}" class="more-menu">
+          <button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button>
+          <button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>
+          ${pinBtn}
+          ${deleteBtn}
+        </div>
+      </div>
     </div>
 
     <div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;">
@@ -363,13 +378,28 @@ function generatePostHTML(docSnap) {
   </div>`;
 }
 
-// NOUVEAU : Fonction Partager
+// Fonction pour ouvrir/fermer le menu "⋮"
+window.toggleMoreMenu = (postId) => {
+  const menu = $(`more-menu-${postId}`);
+  if(!menu) return;
+  // Fermer les autres menus ouverts
+  document.querySelectorAll('.more-menu').forEach(m => { if(m !== menu) m.classList.remove('active'); });
+  menu.classList.toggle('active');
+};
+
+// Fermer le menu si on clique ailleurs
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.more-menu-container')) {
+    document.querySelectorAll('.more-menu').forEach(m => m.classList.remove('active'));
+  }
+});
+
 window.sharePost = (postId) => {
   const url = window.location.origin + window.location.pathname + "?post=" + postId;
   navigator.clipboard.writeText(url).then(() => {
-    alert("Lien du post copié dans le presse-papiers ! Partagez-le partout.");
+    alert("Lien du post copié ! Partagez-le partout.");
   }).catch(() => {
-    alert("Impossible de copier le lien. Voici le lien : " + url);
+    alert("Voici le lien : " + url);
   });
 };
 
@@ -421,14 +451,12 @@ window.addComment = async (postId, authorId) => {
   input.value = ''; 
   try {
     await addDoc(collection(db, 'comments'), { postId, content, authorId: currentUser.uid, authorName: userProfile.username, createdAt: Date.now() });
-    
     const postRef = doc(db, 'posts', postId);
     const postSnap = await getDoc(postRef);
     if(postSnap.exists()) {
       const currentCount = postSnap.data().commentsCount || 0;
       await updateDoc(postRef, { commentsCount: currentCount + 1 });
     }
-
     sendNotification(authorId, "a commenté votre publication.");
     loadComments(postId); 
   } catch(e) { alert("Erreur : " + e.message); }
@@ -610,6 +638,14 @@ if($('btn-save-profile')) $('btn-save-profile').addEventListener('click', async 
   await updateDoc(doc(db, 'users', currentUser.uid), { bio: $('edit-bio').value.trim(), photoURL });
   userProfile.bio = $('edit-bio').value.trim();
   userProfile.photoURL = photoURL;
+  
+  // Mettre à jour l'avatar de la zone de création
+  const createAvatar = $('create-post-avatar');
+  if (createAvatar) {
+    if (photoURL) { createAvatar.style.backgroundImage = `url(${photoURL})`; createAvatar.textContent = ''; }
+    else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = userProfile.username[0].toUpperCase(); }
+  }
+
   $('modal-profile').classList.add('hidden');
   renderProfile();
   $('btn-save-profile').textContent = "Enregistrer";
