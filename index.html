@@ -13,7 +13,6 @@
   <div class="auth-box">
     <h1 class="logo">Blue<span>Nexus</span></h1>
     <p class="tagline">Le réseau social des communautés</p>
-    
     <div id="login-form">
       <input id="auth-email" type="email" placeholder="Email" />
       <input id="auth-pass" type="password" placeholder="Mot de passe" />
@@ -23,7 +22,6 @@
         Pas de compte ? <a href="#" id="link-to-signup" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">S'inscrire</a>
       </p>
     </div>
-
     <div id="signup-form" style="display: none;">
       <input id="auth-name" type="text" placeholder="Nom d'utilisateur" />
       <input id="auth-email-signup" type="email" placeholder="Email" />
@@ -39,7 +37,7 @@
 
 <div id="app-screen" class="screen">
   
-  <!-- BARRE DU HAUT (Titre + Messages, Recherche, Profil, Paramètres) -->
+  <!-- BARRE DU HAUT -->
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <div style="display: flex; gap: 15px; align-items: center;">
@@ -69,6 +67,7 @@
       </div>
 
       <div id="global-feed-list" class="media-list"></div>
+      <button id="btn-load-more" class="btn-secondary" style="width: 100%; margin-top: 1rem; display: none;">Charger plus de publications</button>
     </section>
 
     <!-- 2. COMMUNAUTÉS -->
@@ -104,31 +103,45 @@
     <!-- 4. MUSIQUE -->
     <section id="view-music" class="view">
       <h3>Bibliothèque Musicale</h3>
-      <p class="muted" style="margin-bottom: 1rem;">Tous les audios partagés sur le réseau.</p>
-      <div id="music-list" class="media-list"></div>
+      <div id="music-list" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
     <!-- 5. VIDÉO -->
     <section id="view-video" class="view">
       <h3>Découvertes Vidéo</h3>
-      <p class="muted" style="margin-bottom: 1rem;">Toutes les vidéos partagées sur le réseau.</p>
-      <div id="video-list" class="media-list"></div>
+      <div id="video-list" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 6. MESSAGES (Vide pour l'instant, en attente partie 2) -->
+    <!-- 6. MESSAGERIE (LISTE DES CONTACTS) -->
     <section id="view-messages" class="view">
       <h3>Messages Privés</h3>
-      <p class="muted" style="margin-top: 1rem;">La messagerie sera disponible dans la prochaine mise à jour.</p>
+      <p class="muted" style="margin-bottom: 1rem;">Sélectionnez un membre pour discuter.</p>
+      <div id="users-list" class="card-grid"></div>
     </section>
 
-    <!-- 7. RECHERCHE -->
+    <!-- 7. MESSAGERIE (CHAT ACTIF) -->
+    <section id="view-chat" class="view">
+      <div class="comm-header-fixed" style="background: var(--bg-2);">
+        <button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button>
+        <h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2>
+      </div>
+      <div id="chat-messages" class="media-list" style="padding: 1rem; padding-bottom: 80px; min-height: calc(100vh - 120px);"></div>
+      <div class="chat-input-bar">
+        <div style="flex: 1;">
+          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
+        </div>
+        <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
+      </div>
+    </section>
+
+    <!-- 8. RECHERCHE -->
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />
       <div id="search-results-users" class="media-list" style="margin-top:1rem;"></div>
       <div id="search-results-communities" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 8. PROFIL -->
+    <!-- 9. PROFIL -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
@@ -143,7 +156,6 @@
           <button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button>
         </div>
         
-        <!-- SECTION ÉPINGLÉE -->
         <div style="padding: 1rem; border-top: 1px solid var(--border);">
           <h3 style="margin-bottom: 1rem;">📌 Publications épinglées</h3>
           <div id="profile-pinned" class="media-list"></div>
@@ -151,7 +163,7 @@
       </div>
     </section>
     
-    <!-- 9. PARAMÈTRES -->
+    <!-- 10. PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
@@ -163,7 +175,7 @@
 
   </main>
 
-  <!-- BARRE DU BAS (Uniquement Accueil, Musique, Vidéo) -->
+  <!-- BARRE DU BAS -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
@@ -171,7 +183,7 @@
   </nav>
 </div>
 
-<!-- MODALES -->
+<!-- MODALES (Inchangées) -->
 <div id="modal-community" class="modal hidden">
   <div class="modal-content">
     <h3>Créer une communauté</h3>

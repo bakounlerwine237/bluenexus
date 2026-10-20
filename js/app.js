@@ -1,13 +1,13 @@
 import { firebaseConfig } from './firebase-config.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit, serverTimestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, orderBy, limit, startAfter, serverTimestamp, updateDoc, arrayUnion, arrayRemove, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const CLOUDINARY_CLOUD_NAME = "uotg2qg2"; 
+const CLOUDINARY_CLOUD_NAME = "uot2qg2"; // Attention, j'ai corrigé une faute de frappe (uot2qg2)
 const CLOUDINARY_UPLOAD_PRESET = "bluenexus"; 
 
 let currentUser = null;
@@ -16,6 +16,9 @@ let currentCommunityId = null;
 let currentCommunityMembers = []; 
 let unsubscribeGlobal = null;
 let unsubscribeComm = null; 
+let unsubscribeChat = null;
+let currentChatId = null;
+let lastVisiblePost = null; // Pour le chargement infini
 const $ = (id) => document.getElementById(id);
 
 // ================= UI / LOGIN / SIGNUP =================
@@ -33,7 +36,7 @@ function switchView(viewId) {
   const navBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
   if(navBtn) navBtn.classList.add('active');
 
-  if (viewId === 'community') {
+  if (viewId === 'community' || viewId === 'chat') {
     $('main-nav').style.display = 'none'; $('main-header').style.display = 'none';
   } else {
     $('main-nav').style.display = 'flex'; $('main-header').style.display = 'flex';
@@ -41,14 +44,16 @@ function switchView(viewId) {
     $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
-  if (viewId === 'home') loadGlobalFeed();
+  if (viewId === 'home') loadGlobalFeed(true);
   if (viewId === 'communities') renderCommunitiesList();
   if (viewId === 'profile') renderProfile();
   if (viewId === 'music') loadMedia('audio');
   if (viewId === 'video') loadMedia('video');
+  if (viewId === 'messages') renderUsersList();
   
   if (viewId !== 'home' && unsubscribeGlobal) { unsubscribeGlobal(); unsubscribeGlobal = null; }
   if (viewId !== 'community' && unsubscribeComm) { unsubscribeComm(); unsubscribeComm = null; }
+  if (viewId !== 'chat' && unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
 }
 
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
@@ -56,6 +61,7 @@ $('btn-settings-top').addEventListener('click', () => switchView('settings'));
 $('btn-go-communities').addEventListener('click', () => switchView('communities'));
 $('btn-back-home-comm').addEventListener('click', () => switchView('home'));
 $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
+$('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
 // ================= CLOUDINARY =================
 async function uploadFile(file) {
@@ -119,7 +125,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ================= PUBLIER & FEED GLOBAL =================
+// ================= FEED & CHARGEMENT INFINI =================
 $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
 $('btn-global-publish').addEventListener('click', async () => {
   const content = $('global-post-content').value.trim();
@@ -143,18 +149,41 @@ $('btn-global-publish').addEventListener('click', async () => {
   
   $('global-post-content').value = ''; $('global-post-file').value = '';
   $('btn-global-publish').textContent = "Publier";
+  loadGlobalFeed(true);
 });
 
-function loadGlobalFeed() {
+async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
-  list.innerHTML = '<p class="muted">Chargement...</p>';
-  const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
+  const btnMore = $('btn-load-more');
   
-  unsubscribeGlobal = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted">Aucun message.</p>';
-    list.innerHTML = snap.docs.map(d => generatePostHTML(d)).join('');
+  if (reset) {
+    list.innerHTML = '<p class="muted">Chargement...</p>';
+    lastVisiblePost = null;
+  }
+  
+  let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(10));
+  if (lastVisiblePost && !reset) {
+    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(lastVisiblePost), limit(10));
+  }
+
+  const snap = await getDocs(q);
+  if (snap.empty && reset) {
+    list.innerHTML = '<p class="muted">Aucun message.</p>';
+    btnMore.style.display = 'none';
+    return;
+  }
+  
+  if (reset) list.innerHTML = '';
+  lastVisiblePost = snap.docs[snap.docs.length - 1];
+  
+  snap.docs.forEach(d => {
+    list.innerHTML += generatePostHTML(d);
   });
+  
+  btnMore.style.display = snap.docs.length < 10 ? 'none' : 'block';
 }
+
+$('btn-load-more').addEventListener('click', () => loadGlobalFeed(false));
 
 // ================= MUSIQUE & VIDÉO =================
 async function loadMedia(type) {
@@ -179,7 +208,7 @@ async function loadMedia(type) {
   }).join('');
 }
 
-// ================= HTML POSTS & LIKE & ÉPINGLAGE =================
+// ================= POSTS & COMMENTAIRES =================
 function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -196,7 +225,6 @@ function generatePostHTML(docSnap) {
   const pinBtn = (p.authorId === currentUser.uid) 
     ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌 Épinglé' : '📍 Épingler'}</button>` 
     : '';
-
   const deleteBtn = (p.authorId === currentUser.uid) 
     ? `<button onclick="window.deletePost('${docSnap.id}')" class="btn-secondary small" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️</button>` 
     : '';
@@ -207,11 +235,60 @@ function generatePostHTML(docSnap) {
     ${mediaHtml}
     <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:10px;">
       <button onclick="window.likePost('${docSnap.id}', ${isLiked})" class="btn-secondary small">${isLiked?'💙':'🤍'} ${p.likes?.length || 0}</button>
+      <button onclick="window.toggleComments('${docSnap.id}')" class="btn-secondary small">💬 Commenter</button>
       ${pinBtn}
       ${deleteBtn}
     </div>
+
+    <!-- ZONE COMMENTAIRES CACHEE -->
+    <div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;">
+      <div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div>
+      <div class="comment-input-row">
+        <input type="text" id="comment-input-${docSnap.id}" placeholder="Votre commentaire...">
+        <button onclick="window.addComment('${docSnap.id}')" class="btn-primary small">Envoyer</button>
+      </div>
+    </div>
   </div>`;
 }
+
+window.toggleComments = (postId) => {
+  const section = $(`comments-section-${postId}`);
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    loadComments(postId);
+  } else {
+    section.style.display = 'none';
+  }
+};
+
+async function loadComments(postId) {
+  const list = $(`comments-list-${postId}`);
+  list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Chargement...</p>';
+  const q = query(collection(db, 'comments'), where('postId', '==', postId));
+  const snap = await getDocs(q);
+  
+  if (snap.empty) {
+    list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Soyez le premier à commenter !</p>';
+    return;
+  }
+  
+  const comments = snap.docs.map(d => d.data());
+  comments.sort((a, b) => a.createdAt - b.createdAt);
+  list.innerHTML = comments.map(c => `<div class="comment-item"><strong>@${c.authorName}</strong> : ${c.content}</div>`).join('');
+}
+
+window.addComment = async (postId) => {
+  const input = $(`comment-input-${postId}`);
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = ''; 
+  try {
+    await addDoc(collection(db, 'comments'), {
+      postId: postId, content: content, authorId: currentUser.uid, authorName: userProfile.username, createdAt: Date.now() 
+    });
+    loadComments(postId); 
+  } catch(e) { alert("Erreur : " + e.message); }
+};
 
 window.likePost = async (postId, isLiked) => {
   const ref = doc(db, 'posts', postId);
@@ -239,6 +316,58 @@ window.deletePost = async (postId) => {
     if(el) el.remove();
   }
 };
+
+// ================= MESSAGERIE PRIVÉE =================
+async function renderUsersList() {
+  const list = $('users-list');
+  list.innerHTML = '<p class="muted">Chargement...</p>';
+  const snap = await getDocs(collection(db, 'users'));
+  
+  const otherUsers = snap.docs.filter(d => d.id !== currentUser.uid).map(d => ({ id: d.id, ...d.data() }));
+  if(otherUsers.length === 0) return list.innerHTML = '<p class="muted">Aucun autre membre.</p>';
+
+  list.innerHTML = otherUsers.map(u => {
+    const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-weight:bold;">${u.username[0].toUpperCase()}</div>`;
+    return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startChat('${u.id}', '${u.username}')">
+      ${avatar}
+      <div><h4 style="margin:0">${u.username}</h4></div>
+    </div>`;
+  }).join('');
+}
+
+window.startChat = async (targetId, targetName) => {
+  const chatId = [currentUser.uid, targetId].sort().join('_');
+  currentChatId = chatId;
+  
+  $('chat-with-name').textContent = targetName;
+  switchView('chat');
+  
+  const list = $('chat-messages');
+  list.innerHTML = '<p class="muted">Chargement...</p>';
+  const q = query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc'));
+  
+  if (unsubscribeChat) unsubscribeChat();
+  unsubscribeChat = onSnapshot(q, snap => {
+    if (snap.empty) return list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Dites bonjour ! 👋</p>';
+    list.innerHTML = snap.docs.map(d => {
+      const m = d.data();
+      const isMine = m.senderId === currentUser.uid;
+      return `<div class="chat-msg ${isMine ? 'mine' : 'theirs'}">${m.text}</div>`;
+    }).join('');
+    window.scrollTo(0, document.body.scrollHeight);
+  });
+};
+
+$('btn-send-chat').addEventListener('click', async () => {
+  const text = $('chat-input').value.trim();
+  if(!text || !currentChatId) return;
+  $('chat-input').value = '';
+  try {
+    await addDoc(collection(db, 'messages'), { 
+      chatId: currentChatId, text: text, senderId: currentUser.uid, createdAt: serverTimestamp() 
+    });
+  } catch(e) { alert("Erreur : " + e.message); }
+});
 
 // ================= COMMUNAUTÉS =================
 $('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
@@ -294,7 +423,7 @@ $('btn-publish-post').addEventListener('click', async () => {
   });
 });
 
-// ================= PROFIL & ÉPINGLAGE =================
+// ================= PROFIL & FOLLOW =================
 function renderProfile() {
   if(!userProfile) return;
   $('profile-name').textContent = userProfile.username;
@@ -349,8 +478,15 @@ $('search-input').addEventListener('input', async (e) => {
   if(!term) { usersDiv.innerHTML = ''; commsDiv.innerHTML = ''; return; }
   
   const snapU = await getDocs(collection(db, 'users'));
-  usersDiv.innerHTML = '<h4>Utilisateurs</h4>' + snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="card">👤 ${d.data().username}</div>`).join('');
+  usersDiv.innerHTML = '<h4>Utilisateurs</h4>' + snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="card" onclick="window.followUser('${d.id}')">👤 ${d.data().username}</div>`).join('');
   
   const snapC = await getDocs(collection(db, 'communities'));
   commsDiv.innerHTML = '<h4>Communautés</h4>' + snapC.docs.filter(d => d.data().name.toLowerCase().includes(term)).map(d => `<div class="card" onclick="window.openCommunity('${d.id}')">🌐 ${d.data().name}</div>`).join('');
 });
+
+window.followUser = async (targetId) => {
+  if(targetId === currentUser.uid) return alert("C'est votre propre profil.");
+  await updateDoc(doc(db, 'users', currentUser.uid), { following: arrayUnion(targetId) });
+  await updateDoc(doc(db, 'users', targetId), { followers: arrayUnion(currentUser.uid) });
+  alert("Vous êtes maintenant abonné à cet utilisateur !");
+};
