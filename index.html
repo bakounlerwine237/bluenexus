@@ -3,13 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BlueNexus - Réseau Social</title>
-  <meta name="description" content="Rejoignez BlueNexus, le réseau social des communautés." />
-  
-  <!-- PWA Configuration -->
-  <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#0a0e1a">
-
+  <title>BlueNexus</title>
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -25,26 +19,26 @@
       <input id="auth-pass" type="password" placeholder="Mot de passe" />
       <button id="btn-login" class="btn-primary">Se connecter</button>
       <button id="btn-forgot-password" class="btn-secondary" style="border:none;color:var(--blue-light);font-size:0.8rem;">Mot de passe oublié ?</button>
-      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted);">
-        Pas encore de compte ? <a href="#" id="link-to-signup" style="color: var(--blue-light); text-decoration: none; font-weight: bold;">S'inscrire</a>
+      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">
+        Pas de compte ? <a href="#" id="link-to-signup" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">S'inscrire</a>
       </p>
     </div>
 
     <div id="signup-form" style="display: none;">
       <input id="auth-name" type="text" placeholder="Nom d'utilisateur" />
       <input id="auth-email-signup" type="email" placeholder="Email" />
-      <input id="auth-pass-signup" type="password" placeholder="Mot de passe" />
+      <input id="auth-pass-signup" type="password" placeholder="Mot de passe (6 car. min)" />
       <button id="btn-signup" class="btn-primary">Créer mon compte</button>
-      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted);">
-        Déjà un compte ? <a href="#" id="link-to-login" style="color: var(--blue-light); text-decoration: none; font-weight: bold;">Se connecter</a>
+      <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">
+        Déjà un compte ? <a href="#" id="link-to-login" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">Se connecter</a>
       </p>
     </div>
-    <p id="auth-error" class="error"></p>
+    
+    <p id="auth-error" class="error" style="text-align: center; margin-top: 10px; font-weight: bold;"></p>
   </div>
 </div>
 
 <div id="app-screen" class="screen">
-  
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <button id="btn-settings-top" class="icon-btn">⚙️</button>
@@ -52,7 +46,6 @@
 
   <main id="main-content">
     
-    <!-- ACCUEIL -->
     <section id="view-home" class="view active">
       <div class="action-row" style="justify-content: space-between; align-items: center;">
         <h3>Fil d'actualité</h3>
@@ -69,24 +62,8 @@
       </div>
 
       <div id="global-feed-list" class="media-list"></div>
-      <button id="btn-load-more" class="btn-secondary" style="width:100%; margin-top:1rem;">Charger plus de publications</button>
     </section>
 
-    <!-- MUSIQUE -->
-    <section id="view-music" class="view">
-      <h3>Bibliothèque Musicale</h3>
-      <p class="muted">Tous les audios partagés sur le réseau.</p>
-      <div id="music-list" class="media-list" style="margin-top:1rem;"></div>
-    </section>
-
-    <!-- VIDÉO -->
-    <section id="view-video" class="view">
-      <h3>Découvertes Vidéo</h3>
-      <p class="muted">Toutes les vidéos partagées sur le réseau.</p>
-      <div id="video-list" class="media-list" style="margin-top:1rem;"></div>
-    </section>
-
-    <!-- COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
       <div class="action-row">
@@ -95,7 +72,6 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -116,14 +92,12 @@
       </div>
     </section>
 
-    <!-- RECHERCHE -->
     <section id="view-search" class="view">
-      <input id="search-input" type="text" placeholder="Rechercher des personnes, des communautés..." />
+      <input id="search-input" type="text" placeholder="Rechercher..." />
       <div id="search-results-users" class="media-list" style="margin-top:1rem;"></div>
       <div id="search-results-communities" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- PROFIL (Mise à jour avec Follow) -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
@@ -132,7 +106,6 @@
           <div>
             <h2 id="profile-name">—</h2>
             <p id="profile-bio" class="muted"></p>
-            <p id="profile-followers" class="muted" style="font-size:0.8rem; margin-top:5px;">0 abonnés</p>
           </div>
         </div>
         <div style="padding: 0 1rem; margin-bottom: 1rem; display:flex; gap:10px;">
@@ -141,11 +114,10 @@
       </div>
     </section>
     
-    <!-- PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
-        <h4 style="margin-bottom: 0.5rem;">Créer un nouveau compte</h4>
+        <h4 style="margin-bottom: 0.5rem;">Créer un compte</h4>
         <button id="btn-settings-signup" class="btn-primary" style="width: 100%;">Créer un autre compte</button>
       </div>
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b;">Se déconnecter</button>
@@ -153,17 +125,13 @@
 
   </main>
 
-  <!-- NAVIGATION -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
-    <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
-    <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
     <button data-view="search" class="nav-btn">🔍<span>Recherche</span></button>
     <button data-view="profile" class="nav-btn">👤<span>Profil</span></button>
   </nav>
 </div>
 
-<!-- MODALES -->
 <div id="modal-community" class="modal hidden">
   <div class="modal-content">
     <h3>Créer une communauté</h3>
@@ -186,6 +154,7 @@
   </div>
 </div>
 
+<!-- ON RETIRE type="module" POUR TESTER -->
 <script type="module" src="./js/app.js"></script>
 </body>
 </html>
