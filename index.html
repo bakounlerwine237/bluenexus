@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BlueNexus</title>
+  <title>BlueNexus - Le réseau social des communautés</title>
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -33,7 +33,6 @@
         Déjà un compte ? <a href="#" id="link-to-login" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">Se connecter</a>
       </p>
     </div>
-    
     <p id="auth-error" class="error" style="text-align: center; margin-top: 10px; font-weight: bold;"></p>
   </div>
 </div>
@@ -46,6 +45,7 @@
 
   <main id="main-content">
     
+    <!-- 1. ACCUEIL -->
     <section id="view-home" class="view active">
       <div class="action-row" style="justify-content: space-between; align-items: center;">
         <h3>Fil d'actualité</h3>
@@ -64,6 +64,7 @@
       <div id="global-feed-list" class="media-list"></div>
     </section>
 
+    <!-- 2. COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
       <div class="action-row">
@@ -72,6 +73,7 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
+    <!-- 3. VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -92,12 +94,28 @@
       </div>
     </section>
 
+    <!-- 4. MUSIQUE (Fonctionnel) -->
+    <section id="view-music" class="view">
+      <h3>Bibliothèque Musicale</h3>
+      <p class="muted" style="margin-bottom: 1rem;">Tous les audios partagés sur le réseau.</p>
+      <div id="music-list" class="media-list"></div>
+    </section>
+
+    <!-- 5. VIDÉO (Fonctionnel) -->
+    <section id="view-video" class="view">
+      <h3>Découvertes Vidéo</h3>
+      <p class="muted" style="margin-bottom: 1rem;">Toutes les vidéos partagées sur le réseau.</p>
+      <div id="video-list" class="media-list"></div>
+    </section>
+
+    <!-- 6. RECHERCHE -->
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />
       <div id="search-results-users" class="media-list" style="margin-top:1rem;"></div>
       <div id="search-results-communities" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
+    <!-- 7. PROFIL (Vitrine avec Épinglage) -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
@@ -111,9 +129,16 @@
         <div style="padding: 0 1rem; margin-bottom: 1rem; display:flex; gap:10px;">
           <button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button>
         </div>
+        
+        <!-- SECTION ÉPINGLÉE -->
+        <div style="padding: 1rem; border-top: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1rem;">📌 Publications épinglées</h3>
+          <div id="profile-pinned" class="media-list"></div>
+        </div>
       </div>
     </section>
     
+    <!-- 8. PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
@@ -125,13 +150,18 @@
 
   </main>
 
+  <!-- NAVIGATION (6 boutons) -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
+    <button data-view="messages" class="nav-btn">✉️<span>Messages</span></button>
+    <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
+    <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
     <button data-view="search" class="nav-btn">🔍<span>Recherche</span></button>
     <button data-view="profile" class="nav-btn">👤<span>Profil</span></button>
   </nav>
 </div>
 
+<!-- MODALES -->
 <div id="modal-community" class="modal hidden">
   <div class="modal-content">
     <h3>Créer une communauté</h3>
@@ -154,7 +184,6 @@
   </div>
 </div>
 
-<!-- ON RETIRE type="module" POUR TESTER -->
 <script type="module" src="./js/app.js"></script>
 </body>
 </html>
