@@ -7,7 +7,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const CLOUDINARY_CLOUD_NAME = "uot2qg2"; 
+const CLOUDINARY_CLOUD_NAME = "uotg2qg2"; 
 const CLOUDINARY_UPLOAD_PRESET = "bluenexus"; 
 
 let currentUser = null;
@@ -24,10 +24,11 @@ let lastVisiblePost = null;
 let currentFeedMode = 'discovery';
 const $ = (id) => document.getElementById(id);
 
-// ================= MODE CLAIR / SOMBRE (DANS LES PARAMÈTRES) =================
+// ================= MODE CLAIR / SOMBRE (BLINDÉ) =================
 const themeToggleBtn = $('btn-theme-toggle-settings');
 
 function updateThemeBtnText() {
+  if(!themeToggleBtn) return; // Si le bouton n'existe pas, on ne fait rien
   if(document.body.classList.contains('light-mode')) {
     themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
   } else {
@@ -40,20 +41,22 @@ if(localStorage.getItem('theme') === 'light') {
 }
 updateThemeBtnText();
 
-themeToggleBtn.addEventListener('click', () => {
-  document.body.classList.toggle('light-mode');
-  if(document.body.classList.contains('light-mode')) {
-    localStorage.setItem('theme', 'light');
-  } else {
-    localStorage.setItem('theme', 'dark');
-  }
-  updateThemeBtnText();
-});
+if (themeToggleBtn) {
+  themeToggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('light-mode');
+    if(document.body.classList.contains('light-mode')) {
+      localStorage.setItem('theme', 'light');
+    } else {
+      localStorage.setItem('theme', 'dark');
+    }
+    updateThemeBtnText();
+  });
+}
 
 // ================= UI / LOGIN / SIGNUP =================
-$('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
-$('link-to-login').addEventListener('click', (e) => { e.preventDefault(); $('signup-form').style.display = 'none'; $('login-form').style.display = 'block'; });
-$('btn-settings-signup').addEventListener('click', async () => { await signOut(auth); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
+if($('link-to-signup')) $('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
+if($('link-to-login')) $('link-to-login').addEventListener('click', (e) => { e.preventDefault(); $('signup-form').style.display = 'none'; $('login-form').style.display = 'block'; });
+if($('btn-settings-signup')) $('btn-settings-signup').addEventListener('click', async () => { await signOut(auth); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
 
 // ================= NAVIGATION =================
 function switchView(viewId) {
@@ -66,11 +69,13 @@ function switchView(viewId) {
   if(navBtn) navBtn.classList.add('active');
 
   if (viewId === 'community' || viewId === 'chat') {
-    $('main-nav').style.display = 'none'; $('main-header').style.display = 'none';
+    if($('main-nav')) $('main-nav').style.display = 'none'; 
+    if($('main-header')) $('main-header').style.display = 'none';
   } else {
-    $('main-nav').style.display = 'flex'; $('main-header').style.display = 'flex';
+    if($('main-nav')) $('main-nav').style.display = 'flex'; 
+    if($('main-header')) $('main-header').style.display = 'flex';
     const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", music: "Musique", video: "Vidéo", messages: "Messages", notifications: "Notifications" };
-    $('page-title').textContent = titles[viewId] || "BlueNexus";
+    if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
   if (viewId === 'home') loadGlobalFeed(true);
@@ -87,23 +92,23 @@ function switchView(viewId) {
 }
 
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
-$('btn-settings-top').addEventListener('click', () => switchView('settings'));
-$('btn-go-communities').addEventListener('click', () => switchView('communities'));
-$('btn-back-home-comm').addEventListener('click', () => switchView('home'));
-$('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
-$('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
+if($('btn-settings-top')) $('btn-settings-top').addEventListener('click', () => switchView('settings'));
+if($('btn-go-communities')) $('btn-go-communities').addEventListener('click', () => switchView('communities'));
+if($('btn-back-home-comm')) $('btn-back-home-comm').addEventListener('click', () => switchView('home'));
+if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
+if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
 // Onglets du fil d'actualité
-$('tab-discovery').addEventListener('click', () => {
+if($('tab-discovery')) $('tab-discovery').addEventListener('click', () => {
   currentFeedMode = 'discovery';
   $('tab-discovery').className = 'btn-primary small';
-  $('tab-following').className = 'btn-secondary small';
+  if($('tab-following')) $('tab-following').className = 'btn-secondary small';
   loadGlobalFeed(true);
 });
-$('tab-following').addEventListener('click', () => {
+if($('tab-following')) $('tab-following').addEventListener('click', () => {
   currentFeedMode = 'following';
   $('tab-following').className = 'btn-primary small';
-  $('tab-discovery').className = 'btn-secondary small';
+  if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
   loadGlobalFeed(true);
 });
 
@@ -123,6 +128,7 @@ document.querySelectorAll('.btn-mic').forEach(btn => {
     e.preventDefault();
     const targetId = btn.getAttribute('data-target');
     const targetInput = $(targetId);
+    if (!targetInput) return;
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Non supporté.");
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -135,7 +141,7 @@ document.querySelectorAll('.btn-mic').forEach(btn => {
 });
 
 // ================= AUTHENTIFICATION =================
-$('btn-signup').addEventListener('click', async () => {
+if($('btn-signup')) $('btn-signup').addEventListener('click', async () => {
   const email = $('auth-email-signup').value.trim(), pass = $('auth-pass-signup').value.trim(), name = $('auth-name').value.trim();
   if (!email || !pass || !name) return $('auth-error').textContent = "Remplissez tous les champs.";
   $('auth-error').textContent = "Création...";
@@ -147,7 +153,7 @@ $('btn-signup').addEventListener('click', async () => {
   } catch (e) { $('auth-error').textContent = e.message; }
 });
 
-$('btn-login').addEventListener('click', async () => {
+if($('btn-login')) $('btn-login').addEventListener('click', async () => {
   const email = $('auth-email').value.trim(), pass = $('auth-pass').value.trim();
   if (!email || !pass) return $('auth-error').textContent = "Entrez email et mot de passe.";
   $('auth-error').textContent = "Connexion...";
@@ -155,14 +161,14 @@ $('btn-login').addEventListener('click', async () => {
   catch (e) { $('auth-error').textContent = "Email ou mot de passe incorrect."; }
 });
 
-$('btn-forgot-password').addEventListener('click', async () => {
+if($('btn-forgot-password')) $('btn-forgot-password').addEventListener('click', async () => {
   const email = $('auth-email').value.trim();
   if (!email) return $('auth-error').textContent = "Entrez votre email.";
   try { await sendPasswordResetEmail(auth, email); alert("Email envoyé !"); } 
   catch (e) { $('auth-error').textContent = e.message; }
 });
 
-$('btn-logout').addEventListener('click', () => signOut(auth));
+if($('btn-logout')) $('btn-logout').addEventListener('click', () => signOut(auth));
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -199,6 +205,7 @@ function listenToNotifications() {
   const q = query(collection(db, 'notifications'), where('toUser', '==', currentUser.uid), where('read', '==', false));
   unsubscribeNotifs = onSnapshot(q, snap => {
     const badge = $('notif-badge');
+    if(!badge) return;
     if(snap.docs.length > 0) {
       badge.style.display = 'block';
       badge.textContent = snap.docs.length;
@@ -217,6 +224,7 @@ async function sendNotification(toUser, text) {
 
 async function loadNotifications() {
   const list = $('notif-list');
+  if(!list) return;
   const q = query(collection(db, 'notifications'), where('toUser', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(20));
   const snap = await getDocs(q);
   
@@ -230,8 +238,8 @@ async function loadNotifications() {
 }
 
 // ================= FEED =================
-$('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
-$('btn-global-publish').addEventListener('click', async () => {
+if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
+if($('btn-global-publish')) $('btn-global-publish').addEventListener('click', async () => {
   const content = $('global-post-content').value.trim();
   const file = $('global-post-file').files[0];
   if (!content && !file) return;
@@ -259,6 +267,7 @@ $('btn-global-publish').addEventListener('click', async () => {
 async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
   const btnMore = $('btn-load-more');
+  if(!list) return;
   
   if (reset) {
     list.innerHTML = '<p class="muted">Chargement...</p>';
@@ -273,7 +282,7 @@ async function loadGlobalFeed(reset = false) {
   const snap = await getDocs(q);
   if (snap.empty && reset) {
     list.innerHTML = '<p class="muted">Aucun message.</p>';
-    btnMore.style.display = 'none';
+    if(btnMore) btnMore.style.display = 'none';
     return;
   }
   
@@ -290,14 +299,15 @@ async function loadGlobalFeed(reset = false) {
   }
 
   postsToShow.forEach(d => { list.innerHTML += generatePostHTML(d); });
-  btnMore.style.display = snap.docs.length < 20 ? 'none' : 'block';
+  if(btnMore) btnMore.style.display = snap.docs.length < 20 ? 'none' : 'block';
 }
 
-$('btn-load-more').addEventListener('click', () => loadGlobalFeed(false));
+if($('btn-load-more')) $('btn-load-more').addEventListener('click', () => loadGlobalFeed(false));
 
 // ================= MUSIQUE & VIDÉO =================
 async function loadMedia(type) {
   const list = $(`${type}-list`);
+  if(!list) return;
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const q = query(collection(db, 'posts'), where('mediaType', '==', type), orderBy('createdAt', 'desc'), limit(30));
   const snap = await getDocs(q);
@@ -352,7 +362,9 @@ function generatePostHTML(docSnap) {
 }
 
 window.speakText = (elementId) => {
-  const text = $(elementId).textContent;
+  const el = $(elementId);
+  if(!el) return;
+  const text = el.textContent;
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'fr-FR'; window.speechSynthesis.speak(utterance);
@@ -361,6 +373,7 @@ window.speakText = (elementId) => {
 
 window.translateText = async (elementId) => {
   const el = $(elementId);
+  if(!el) return;
   if (el.dataset.translated === 'true') { el.textContent = el.dataset.original; el.dataset.translated = 'false'; return; }
   const originalText = el.textContent; el.dataset.original = originalText; el.textContent = "Traduction...";
   try {
@@ -371,12 +384,14 @@ window.translateText = async (elementId) => {
 
 window.toggleComments = (postId) => {
   const section = $(`comments-section-${postId}`);
+  if(!section) return;
   if (section.style.display === 'none') { section.style.display = 'block'; loadComments(postId); }
   else { section.style.display = 'none'; }
 };
 
 async function loadComments(postId) {
   const list = $(`comments-list-${postId}`);
+  if(!list) return;
   list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Chargement...</p>';
   const q = query(collection(db, 'comments'), where('postId', '==', postId));
   const snap = await getDocs(q);
@@ -388,6 +403,7 @@ async function loadComments(postId) {
 
 window.addComment = async (postId, authorId) => {
   const input = $(`comment-input-${postId}`);
+  if(!input) return;
   const content = input.value.trim();
   if (!content) return;
   input.value = ''; 
@@ -431,6 +447,7 @@ window.deletePost = async (postId) => {
 // ================= MESSAGERIE =================
 async function renderUsersList() {
   const list = $('users-list');
+  if(!list) return;
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const snap = await getDocs(collection(db, 'users'));
   const otherUsers = snap.docs.filter(d => d.id !== currentUser.uid).map(d => ({ id: d.id, ...d.data() }));
@@ -449,6 +466,7 @@ window.startChat = async (targetId, targetName) => {
   switchView('chat');
   
   const list = $('chat-messages');
+  if(!list) return;
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const q = query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc'));
   
@@ -463,7 +481,7 @@ window.startChat = async (targetId, targetName) => {
   });
 };
 
-$('btn-send-chat').addEventListener('click', async () => {
+if($('btn-send-chat')) $('btn-send-chat').addEventListener('click', async () => {
   const text = $('chat-input').value.trim();
   if(!text || !currentChatId) return;
   $('chat-input').value = '';
@@ -472,9 +490,9 @@ $('btn-send-chat').addEventListener('click', async () => {
 });
 
 // ================= COMMUNAUTÉS =================
-$('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
-$('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
-$('comm-save').addEventListener('click', async () => {
+if($('btn-new-community')) $('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
+if($('comm-cancel')) $('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
+if($('comm-save')) $('comm-save').addEventListener('click', async () => {
   const name = $('comm-name').value.trim();
   if (!name) return;
   await addDoc(collection(db, 'communities'), {
@@ -490,6 +508,7 @@ $('comm-save').addEventListener('click', async () => {
 
 async function renderCommunitiesList() {
   const list = $('communities-list');
+  if(!list) return;
   const snap = await getDocs(collection(db, 'communities'));
   list.innerHTML = snap.docs.map(c => `<div class="card" onclick="window.openCommunity('${c.id}')"><h4>${c.data().name}</h4><p class="muted">${c.data().description}</p></div>`).join('');
 }
@@ -511,12 +530,12 @@ window.openCommunity = async (id) => {
   });
 };
 
-$('btn-join-community').addEventListener('click', async () => {
+if($('btn-join-community')) $('btn-join-community').addEventListener('click', async () => {
   await updateDoc(doc(db, 'communities', currentCommunityId), { members: arrayUnion(currentUser.uid) });
   window.openCommunity(currentCommunityId);
 });
 
-$('btn-publish-post').addEventListener('click', async () => {
+if($('btn-publish-post')) $('btn-publish-post').addEventListener('click', async () => {
   const content = $('post-content').value.trim();
   if (!content) return;
   $('post-content').value = '';
@@ -529,15 +548,18 @@ $('btn-publish-post').addEventListener('click', async () => {
 // ================= PROFIL =================
 function renderProfile() {
   if(!userProfile) return;
-  $('profile-name').textContent = userProfile.username;
-  $('profile-bio').textContent = userProfile.bio || 'Aucune bio.';
+  if($('profile-name')) $('profile-name').textContent = userProfile.username;
+  if($('profile-bio')) $('profile-bio').textContent = userProfile.bio || 'Aucune bio.';
   const av = $('profile-avatar');
-  if (userProfile.photoURL) { av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = ''; } 
-  else { av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase(); }
+  if (av) {
+    if (userProfile.photoURL) { av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = ''; } 
+    else { av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase(); }
+  }
 
-  $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
+  if($('profile-badges')) $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
 
   const pinnedContainer = $('profile-pinned');
+  if(!pinnedContainer) return;
   pinnedContainer.innerHTML = '';
   if (userProfile.pinned && userProfile.pinned.length > 0) {
     pinnedContainer.innerHTML = '<p class="muted">Chargement...</p>';
@@ -548,9 +570,9 @@ function renderProfile() {
   } else { pinnedContainer.innerHTML = '<p class="muted">Aucune publication épinglée.</p>'; }
 }
 
-$('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
-$('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
-$('btn-save-profile').addEventListener('click', async () => {
+if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
+if($('btn-cancel-profile')) $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
+if($('btn-save-profile')) $('btn-save-profile').addEventListener('click', async () => {
   const file = $('edit-avatar').files[0];
   let photoURL = userProfile.photoURL;
   $('btn-save-profile').textContent = "Patientez...";
@@ -564,10 +586,11 @@ $('btn-save-profile').addEventListener('click', async () => {
 });
 
 // ================= RECHERCHE =================
-$('search-input').addEventListener('input', async (e) => {
+if($('search-input')) $('search-input').addEventListener('input', async (e) => {
   const term = e.target.value.toLowerCase();
   const usersDiv = $('search-results-users');
   const commsDiv = $('search-results-communities');
+  if(!usersDiv || !commsDiv) return;
   if(!term) { usersDiv.innerHTML = ''; commsDiv.innerHTML = ''; return; }
   
   const snapU = await getDocs(collection(db, 'users'));
