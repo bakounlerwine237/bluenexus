@@ -38,9 +38,16 @@
 </div>
 
 <div id="app-screen" class="screen">
+  
+  <!-- BARRE DU HAUT (Titre + Messages, Recherche, Profil, Paramètres) -->
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
-    <button id="btn-settings-top" class="icon-btn">⚙️</button>
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <button data-view="messages" class="nav-btn top-btn">✉️</button>
+      <button data-view="search" class="nav-btn top-btn">🔍</button>
+      <button data-view="profile" class="nav-btn top-btn">👤</button>
+      <button id="btn-settings-top" class="icon-btn">⚙️</button>
+    </div>
   </header>
 
   <main id="main-content">
@@ -94,28 +101,34 @@
       </div>
     </section>
 
-    <!-- 4. MUSIQUE (Fonctionnel) -->
+    <!-- 4. MUSIQUE -->
     <section id="view-music" class="view">
       <h3>Bibliothèque Musicale</h3>
       <p class="muted" style="margin-bottom: 1rem;">Tous les audios partagés sur le réseau.</p>
       <div id="music-list" class="media-list"></div>
     </section>
 
-    <!-- 5. VIDÉO (Fonctionnel) -->
+    <!-- 5. VIDÉO -->
     <section id="view-video" class="view">
       <h3>Découvertes Vidéo</h3>
       <p class="muted" style="margin-bottom: 1rem;">Toutes les vidéos partagées sur le réseau.</p>
       <div id="video-list" class="media-list"></div>
     </section>
 
-    <!-- 6. RECHERCHE -->
+    <!-- 6. MESSAGES (Vide pour l'instant, en attente partie 2) -->
+    <section id="view-messages" class="view">
+      <h3>Messages Privés</h3>
+      <p class="muted" style="margin-top: 1rem;">La messagerie sera disponible dans la prochaine mise à jour.</p>
+    </section>
+
+    <!-- 7. RECHERCHE -->
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />
       <div id="search-results-users" class="media-list" style="margin-top:1rem;"></div>
       <div id="search-results-communities" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 7. PROFIL (Vitrine avec Épinglage) -->
+    <!-- 8. PROFIL -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
@@ -138,7 +151,7 @@
       </div>
     </section>
     
-    <!-- 8. PARAMÈTRES -->
+    <!-- 9. PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
@@ -150,14 +163,11 @@
 
   </main>
 
-  <!-- NAVIGATION (6 boutons) -->
+  <!-- BARRE DU BAS (Uniquement Accueil, Musique, Vidéo) -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
-    <button data-view="messages" class="nav-btn">✉️<span>Messages</span></button>
     <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
-    <button data-view="search" class="nav-btn">🔍<span>Recherche</span></button>
-    <button data-view="profile" class="nav-btn">👤<span>Profil</span></button>
   </nav>
 </div>
 

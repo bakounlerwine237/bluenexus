@@ -37,7 +37,7 @@ function switchView(viewId) {
     $('main-nav').style.display = 'none'; $('main-header').style.display = 'none';
   } else {
     $('main-nav').style.display = 'flex'; $('main-header').style.display = 'flex';
-    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", music: "Musique", video: "Vidéo" };
+    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", music: "Musique", video: "Vidéo", messages: "Messages" };
     $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
@@ -192,7 +192,6 @@ function generatePostHTML(docSnap) {
     else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
   }
 
-  // Boutons d'action
   const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
   const pinBtn = (p.authorId === currentUser.uid) 
     ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌 Épinglé' : '📍 Épingler'}</button>` 
@@ -230,7 +229,6 @@ window.togglePin = async (postId, isPinned) => {
     if(!userProfile.pinned) userProfile.pinned = [];
     userProfile.pinned.push(postId);
   }
-  // Recharger l'affichage actuel (si on est sur le profil)
   if($('view-profile').classList.contains('active')) renderProfile();
 };
 
@@ -309,7 +307,6 @@ function renderProfile() {
     av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
   }
 
-  // Affichage des posts épinglés
   const pinnedContainer = $('profile-pinned');
   pinnedContainer.innerHTML = '';
   
