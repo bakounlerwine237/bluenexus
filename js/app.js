@@ -24,31 +24,20 @@ let lastVisiblePost = null;
 let currentFeedMode = 'discovery';
 const $ = (id) => document.getElementById(id);
 
-// ================= MODE CLAIR / SOMBRE (BLINDÉ) =================
+// ================= MODE CLAIR / SOMBRE =================
 const themeToggleBtn = $('btn-theme-toggle-settings');
-
 function updateThemeBtnText() {
-  if(!themeToggleBtn) return; // Si le bouton n'existe pas, on ne fait rien
-  if(document.body.classList.contains('light-mode')) {
-    themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
-  } else {
-    themeToggleBtn.textContent = 'Passer en mode clair ☀️';
-  }
+  if(!themeToggleBtn) return;
+  if(document.body.classList.contains('light-mode')) themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
+  else themeToggleBtn.textContent = 'Passer en mode clair ☀️';
 }
-
-if(localStorage.getItem('theme') === 'light') {
-  document.body.classList.add('light-mode');
-}
+if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
 updateThemeBtnText();
-
 if (themeToggleBtn) {
   themeToggleBtn.addEventListener('click', () => {
     document.body.classList.toggle('light-mode');
-    if(document.body.classList.contains('light-mode')) {
-      localStorage.setItem('theme', 'light');
-    } else {
-      localStorage.setItem('theme', 'dark');
-    }
+    if(document.body.classList.contains('light-mode')) localStorage.setItem('theme', 'light');
+    else localStorage.setItem('theme', 'dark');
     updateThemeBtnText();
   });
 }
@@ -63,7 +52,6 @@ function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const target = $(`view-${viewId}`);
   if(target) target.classList.add('active');
-  
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const navBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
   if(navBtn) navBtn.classList.add('active');
@@ -98,7 +86,6 @@ if($('btn-back-home-comm')) $('btn-back-home-comm').addEventListener('click', ()
 if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
 if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
-// Onglets du fil d'actualité
 if($('tab-discovery')) $('tab-discovery').addEventListener('click', () => {
   currentFeedMode = 'discovery';
   $('tab-discovery').className = 'btn-primary small';
@@ -110,6 +97,13 @@ if($('tab-following')) $('tab-following').addEventListener('click', () => {
   $('tab-following').className = 'btn-primary small';
   if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
   loadGlobalFeed(true);
+});
+
+// NOUVEAU : Bouton actualiser
+if($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
+  $('btn-refresh-feed').textContent = "⏳";
+  loadGlobalFeed(true);
+  setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
 });
 
 // ================= CLOUDINARY =================
@@ -182,9 +176,7 @@ onAuthStateChanged(auth, async (user) => {
       userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [] };
       await setDoc(doc(db, 'users', user.uid), userProfile);
     }
-    
     listenToNotifications();
-
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
     $('auth-error').textContent = "";
@@ -206,12 +198,8 @@ function listenToNotifications() {
   unsubscribeNotifs = onSnapshot(q, snap => {
     const badge = $('notif-badge');
     if(!badge) return;
-    if(snap.docs.length > 0) {
-      badge.style.display = 'block';
-      badge.textContent = snap.docs.length;
-    } else {
-      badge.style.display = 'none';
-    }
+    if(snap.docs.length > 0) { badge.style.display = 'block'; badge.textContent = snap.docs.length; } 
+    else { badge.style.display = 'none'; }
   });
 }
 
@@ -227,23 +215,17 @@ async function loadNotifications() {
   if(!list) return;
   const q = query(collection(db, 'notifications'), where('toUser', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(20));
   const snap = await getDocs(q);
-  
   if(snap.empty) return list.innerHTML = '<p class="muted">Aucune notification.</p>';
-  
   list.innerHTML = snap.docs.map(d => `<div class="media-item" style="padding:10px;"><strong>@${d.data().fromUsername}</strong> ${d.data().text}</div>`).join('');
-  
-  for (const docSnap of snap.docs) {
-    await updateDoc(doc(db, 'notifications', docSnap.id), { read: true });
-  }
+  for (const docSnap of snap.docs) { await updateDoc(doc(db, 'notifications', docSnap.id), { read: true }); }
 }
 
-// ================= FEED =================
+// ================= FEED (Avec Skeleton Loader) =================
 if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
 if($('btn-global-publish')) $('btn-global-publish').addEventListener('click', async () => {
   const content = $('global-post-content').value.trim();
   const file = $('global-post-file').files[0];
   if (!content && !file) return;
-  
   $('btn-global-publish').textContent = "Publication...";
   let mediaUrl = null, mediaType = null;
   if (file) {
@@ -252,13 +234,11 @@ if($('btn-global-publish')) $('btn-global-publish').addEventListener('click', as
     else if (file.type.startsWith('video')) mediaType = 'video';
     else mediaType = 'audio';
   }
-  
   await addDoc(collection(db, 'posts'), {
     communityId: 'global', communityType: 'global', content, 
     authorId: currentUser.uid, authorName: userProfile.username, authorPhoto: userProfile.photoURL || "",
-    mediaUrl, mediaType, likes: [], createdAt: serverTimestamp()
+    mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp()
   });
-  
   $('global-post-content').value = ''; $('global-post-file').value = '';
   $('btn-global-publish').textContent = "Publier";
   loadGlobalFeed(true);
@@ -270,14 +250,16 @@ async function loadGlobalFeed(reset = false) {
   if(!list) return;
   
   if (reset) {
-    list.innerHTML = '<p class="muted">Chargement...</p>';
+    // NOUVEAU : Animation Skeleton (faux posts qui chargent)
+    list.innerHTML = `
+      <div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
+      <div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
+    `;
     lastVisiblePost = null;
   }
   
   let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
-  if (lastVisiblePost && !reset) {
-    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(lastVisiblePost), limit(20));
-  }
+  if (lastVisiblePost && !reset) q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(lastVisiblePost), limit(20));
 
   const snap = await getDocs(q);
   if (snap.empty && reset) {
@@ -290,12 +272,9 @@ async function loadGlobalFeed(reset = false) {
   lastVisiblePost = snap.docs[snap.docs.length - 1];
   
   let postsToShow = snap.docs;
-  
   if (currentFeedMode === 'following') {
     postsToShow = snap.docs.filter(d => userProfile.following.includes(d.data().authorId));
-    if(postsToShow.length === 0 && reset) {
-      list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
-    }
+    if(postsToShow.length === 0 && reset) list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
   }
 
   postsToShow.forEach(d => { list.innerHTML += generatePostHTML(d); });
@@ -326,7 +305,17 @@ function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(currentUser.uid);
+  const likeCount = p.likes?.length || 0;
   
+  let timeAgo = "À l'instant";
+  if (p.createdAt) {
+    const diff = Date.now() - (p.createdAt.toMillis ? p.createdAt.toMillis() : p.createdAt);
+    const mins = Math.floor(diff / 60000);
+    if (mins > 0 && mins < 60) timeAgo = `Il y a ${mins} min`;
+    else if (mins >= 60 && mins < 1440) timeAgo = `Il y a ${Math.floor(mins/60)} h`;
+    else if (mins >= 1440) timeAgo = `Il y a ${Math.floor(mins/1440)} j`;
+  }
+
   let mediaHtml = '';
   if (p.mediaUrl) {
     if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media">`;
@@ -335,22 +324,35 @@ function generatePostHTML(docSnap) {
   }
 
   const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
-  const pinBtn = (p.authorId === currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌' : '📍'}</button>` : '';
+  const pinBtn = (p.authorId === currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="action-btn" title="Épingler">${isPinned ? '📌' : '📍'}</button>` : '';
   const canDelete = (p.authorId === currentUser.uid) || (currentCommunityId && userProfile.username === currentCommunityOwner);
-  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" class="btn-secondary small" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️</button>` : '';
+  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete" title="Supprimer">🗑️</button>` : '';
 
   return `<div class="media-item" id="post-${docSnap.id}">
-    <div class="post-header">${avatar} @${p.authorName}</div>
+    <div class="post-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        ${avatar} <strong>@${p.authorName}</strong>
+      </div>
+      <span class="post-time">${timeAgo}</span>
+    </div>
     <p id="text-${docSnap.id}">${p.content}</p>
     ${mediaHtml}
-    <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:10px;">
-      <button onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="btn-secondary small">${isLiked?'💙':'🤍'} ${p.likes?.length || 0}</button>
-      <button onclick="window.toggleComments('${docSnap.id}')" class="btn-secondary small">💬</button>
-      <button onclick="window.speakText('text-${docSnap.id}')" class="btn-secondary small">🔊</button>
-      <button onclick="window.translateText('text-${docSnap.id}')" class="btn-secondary small">🌐</button>
+    
+    <div class="post-actions">
+      <button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};">
+        <span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> 
+        <span id="like-count-${docSnap.id}">${likeCount}</span>
+      </button>
+      <button onclick="window.toggleComments('${docSnap.id}')" class="action-btn">
+        💬 ${p.commentsCount || 0}
+      </button>
+      <button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button>
+      <button onclick="window.speakText('text-${docSnap.id}')" class="action-btn" title="Écouter">🔊</button>
+      <button onclick="window.translateText('text-${docSnap.id}')" class="action-btn" title="Traduire">🌐</button>
       ${pinBtn}
       ${deleteBtn}
     </div>
+
     <div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;">
       <div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div>
       <div class="comment-input-row">
@@ -360,6 +362,16 @@ function generatePostHTML(docSnap) {
     </div>
   </div>`;
 }
+
+// NOUVEAU : Fonction Partager
+window.sharePost = (postId) => {
+  const url = window.location.origin + window.location.pathname + "?post=" + postId;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("Lien du post copié dans le presse-papiers ! Partagez-le partout.");
+  }).catch(() => {
+    alert("Impossible de copier le lien. Voici le lien : " + url);
+  });
+};
 
 window.speakText = (elementId) => {
   const el = $(elementId);
@@ -409,6 +421,14 @@ window.addComment = async (postId, authorId) => {
   input.value = ''; 
   try {
     await addDoc(collection(db, 'comments'), { postId, content, authorId: currentUser.uid, authorName: userProfile.username, createdAt: Date.now() });
+    
+    const postRef = doc(db, 'posts', postId);
+    const postSnap = await getDoc(postRef);
+    if(postSnap.exists()) {
+      const currentCount = postSnap.data().commentsCount || 0;
+      await updateDoc(postRef, { commentsCount: currentCount + 1 });
+    }
+
     sendNotification(authorId, "a commenté votre publication.");
     loadComments(postId); 
   } catch(e) { alert("Erreur : " + e.message); }
@@ -416,23 +436,35 @@ window.addComment = async (postId, authorId) => {
 
 window.likePost = async (postId, authorId, isLiked) => {
   const ref = doc(db, 'posts', postId);
-  if (isLiked) await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
-  else {
-    await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
-    sendNotification(authorId, "a aimé votre publication.");
+  const iconEl = $(`like-icon-${postId}`);
+  const countEl = $(`like-count-${postId}`);
+  const btnEl = $(`like-btn-${postId}`);
+  let currentCount = parseInt(countEl.textContent) || 0;
+
+  if (isLiked) {
+    iconEl.textContent = '🤍'; countEl.textContent = currentCount > 0 ? currentCount - 1 : 0; btnEl.style.color = 'var(--text)';
+  } else {
+    iconEl.textContent = '💙'; countEl.textContent = currentCount + 1; btnEl.style.color = 'var(--blue-light)';
+  }
+
+  try {
+    if (isLiked) await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
+    else {
+      await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
+      sendNotification(authorId, "a aimé votre publication.");
+    }
+    const btn = $(`like-btn-${postId}`);
+    btn.setAttribute('onclick', `window.likePost('${postId}', '${authorId}', ${!isLiked})`);
+  } catch(e) { 
+    if (isLiked) { iconEl.textContent = '💙'; countEl.textContent = currentCount + 1; }
+    else { iconEl.textContent = '🤍'; countEl.textContent = currentCount - 1; }
   }
 };
 
 window.togglePin = async (postId, isPinned) => {
   const ref = doc(db, 'users', currentUser.uid);
-  if (isPinned) {
-    await updateDoc(ref, { pinned: arrayRemove(postId) });
-    userProfile.pinned = userProfile.pinned.filter(id => id !== postId);
-  } else {
-    await updateDoc(ref, { pinned: arrayUnion(postId) });
-    if(!userProfile.pinned) userProfile.pinned = [];
-    userProfile.pinned.push(postId);
-  }
+  if (isPinned) { await updateDoc(ref, { pinned: arrayRemove(postId) }); userProfile.pinned = userProfile.pinned.filter(id => id !== postId); } 
+  else { await updateDoc(ref, { pinned: arrayUnion(postId) }); if(!userProfile.pinned) userProfile.pinned = []; userProfile.pinned.push(postId); }
   if($('view-profile').classList.contains('active')) renderProfile();
 };
 
@@ -541,7 +573,7 @@ if($('btn-publish-post')) $('btn-publish-post').addEventListener('click', async 
   $('post-content').value = '';
   await addDoc(collection(db, 'posts'), {
     communityId: currentCommunityId, communityType: 'public', content, 
-    authorId: currentUser.uid, authorName: userProfile.username, likes: [], createdAt: serverTimestamp()
+    authorId: currentUser.uid, authorName: userProfile.username, likes: [], commentsCount: 0, createdAt: serverTimestamp()
   });
 });
 
@@ -555,9 +587,7 @@ function renderProfile() {
     if (userProfile.photoURL) { av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = ''; } 
     else { av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase(); }
   }
-
   if($('profile-badges')) $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
-
   const pinnedContainer = $('profile-pinned');
   if(!pinnedContainer) return;
   pinnedContainer.innerHTML = '';
@@ -592,10 +622,8 @@ if($('search-input')) $('search-input').addEventListener('input', async (e) => {
   const commsDiv = $('search-results-communities');
   if(!usersDiv || !commsDiv) return;
   if(!term) { usersDiv.innerHTML = ''; commsDiv.innerHTML = ''; return; }
-  
   const snapU = await getDocs(collection(db, 'users'));
   usersDiv.innerHTML = '<h4>Utilisateurs</h4>' + snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="card" onclick="window.followUser('${d.id}')">👤 ${d.data().username}</div>`).join('');
-  
   const snapC = await getDocs(collection(db, 'communities'));
   commsDiv.innerHTML = '<h4>Communautés</h4>' + snapC.docs.filter(d => d.data().name.toLowerCase().includes(term)).map(d => `<div class="card" onclick="window.openCommunity('${d.id}')">🌐 ${d.data().name}</div>`).join('');
 });
