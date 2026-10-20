@@ -36,8 +36,6 @@
 </div>
 
 <div id="app-screen" class="screen">
-  
-  <!-- BARRE DU HAUT -->
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <div style="display: flex; gap: 15px; align-items: center;">
@@ -50,7 +48,7 @@
 
   <main id="main-content">
     
-    <!-- 1. ACCUEIL -->
+    <!-- ACCUEIL -->
     <section id="view-home" class="view active">
       <div class="action-row" style="justify-content: space-between; align-items: center;">
         <h3>Fil d'actualité</h3>
@@ -59,10 +57,12 @@
       
       <div class="post-creation-box">
         <textarea id="global-post-content" placeholder="Quoi de neuf ?"></textarea>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; align-items: center;">
           <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
-          <button id="btn-global-attach" class="btn-secondary small">📎 Fichier</button>
-          <button id="btn-global-publish" class="btn-primary small">Publier</button>
+          <button id="btn-global-attach" class="btn-secondary small">📎</button>
+          <!-- BOUTON MICRO -->
+          <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
+          <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
         </div>
       </div>
 
@@ -70,7 +70,7 @@
       <button id="btn-load-more" class="btn-secondary" style="width: 100%; margin-top: 1rem; display: none;">Charger plus de publications</button>
     </section>
 
-    <!-- 2. COMMUNAUTÉS -->
+    <!-- COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
       <div class="action-row">
@@ -79,7 +79,7 @@
       <div id="communities-list" class="card-grid"></div>
     </section>
 
-    <!-- 3. VUE COMMUNAUTÉ -->
+    <!-- VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -92,34 +92,33 @@
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;">
-          <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 40px; border-radius: 20px;"></textarea>
+          <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 60px; border-radius: 20px;"></textarea>
           <input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;">
-          <button id="btn-attach-file" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button>
+          <button id="btn-attach-file" style="position: absolute; right: 35px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button>
+          <button class="btn-mic" data-target="post-content" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">🎤</button>
         </div>
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
       </div>
     </section>
 
-    <!-- 4. MUSIQUE -->
+    <!-- MUSIQUE -->
     <section id="view-music" class="view">
       <h3>Bibliothèque Musicale</h3>
       <div id="music-list" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 5. VIDÉO -->
+    <!-- VIDÉO -->
     <section id="view-video" class="view">
       <h3>Découvertes Vidéo</h3>
       <div id="video-list" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 6. MESSAGERIE (LISTE DES CONTACTS) -->
+    <!-- MESSAGERIE -->
     <section id="view-messages" class="view">
       <h3>Messages Privés</h3>
-      <p class="muted" style="margin-bottom: 1rem;">Sélectionnez un membre pour discuter.</p>
-      <div id="users-list" class="card-grid"></div>
+      <div id="users-list" class="card-grid" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 7. MESSAGERIE (CHAT ACTIF) -->
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);">
         <button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -127,21 +126,22 @@
       </div>
       <div id="chat-messages" class="media-list" style="padding: 1rem; padding-bottom: 80px; min-height: calc(100vh - 120px);"></div>
       <div class="chat-input-bar">
-        <div style="flex: 1;">
-          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
+        <div style="flex: 1; position: relative;">
+          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="padding-right: 40px; border-radius: 20px;"></textarea>
+          <button class="btn-mic" data-target="chat-input" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">🎤</button>
         </div>
         <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
     </section>
 
-    <!-- 8. RECHERCHE -->
+    <!-- RECHERCHE -->
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />
       <div id="search-results-users" class="media-list" style="margin-top:1rem;"></div>
       <div id="search-results-communities" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- 9. PROFIL -->
+    <!-- PROFIL -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
@@ -150,6 +150,8 @@
           <div>
             <h2 id="profile-name">—</h2>
             <p id="profile-bio" class="muted"></p>
+            <!-- BADGES -->
+            <div id="profile-badges" style="display:flex; gap:5px; margin-top:5px;"></div>
           </div>
         </div>
         <div style="padding: 0 1rem; margin-bottom: 1rem; display:flex; gap:10px;">
@@ -163,7 +165,7 @@
       </div>
     </section>
     
-    <!-- 10. PARAMÈTRES -->
+    <!-- PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
@@ -175,7 +177,6 @@
 
   </main>
 
-  <!-- BARRE DU BAS -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
@@ -183,7 +184,7 @@
   </nav>
 </div>
 
-<!-- MODALES (Inchangées) -->
+<!-- MODALES -->
 <div id="modal-community" class="modal hidden">
   <div class="modal-content">
     <h3>Créer une communauté</h3>

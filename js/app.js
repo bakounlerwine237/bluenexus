@@ -7,18 +7,19 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const CLOUDINARY_CLOUD_NAME = "uot2qg2"; // Attention, j'ai corrigé une faute de frappe (uot2qg2)
+const CLOUDINARY_CLOUD_NAME = "uot2qg2"; 
 const CLOUDINARY_UPLOAD_PRESET = "bluenexus"; 
 
 let currentUser = null;
 let userProfile = null;
 let currentCommunityId = null; 
 let currentCommunityMembers = []; 
+let currentCommunityOwner = null; // NOUVEAU
 let unsubscribeGlobal = null;
 let unsubscribeComm = null; 
 let unsubscribeChat = null;
 let currentChatId = null;
-let lastVisiblePost = null; // Pour le chargement infini
+let lastVisiblePost = null; 
 const $ = (id) => document.getElementById(id);
 
 // ================= UI / LOGIN / SIGNUP =================
@@ -73,6 +74,36 @@ async function uploadFile(file) {
   return data.secure_url;
 }
 
+// ================= DICTÉE VOCALE (PARTIE 3) =================
+document.querySelectorAll('.btn-mic').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const targetId = btn.getAttribute('data-target');
+    const targetInput = $(targetId);
+    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      return alert("La dictée vocale n'est pas supportée par votre navigateur.");
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-FR';
+    recognition.interimResults = false;
+    
+    btn.textContent = "🔴"; // Indicateur d'enregistrement
+    recognition.start();
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      targetInput.value += (targetInput.value ? " " : "") + transcript;
+      btn.textContent = "🎤";
+    };
+    
+    recognition.onerror = () => { btn.textContent = "🎤"; };
+    recognition.onend = () => { btn.textContent = "🎤"; };
+  });
+});
+
 // ================= AUTHENTIFICATION =================
 $('btn-signup').addEventListener('click', async () => {
   const email = $('auth-email-signup').value.trim(), pass = $('auth-pass-signup').value.trim(), name = $('auth-name').value.trim();
@@ -81,7 +112,7 @@ $('btn-signup').addEventListener('click', async () => {
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await setDoc(doc(db, 'users', cred.user.uid), {
-      username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: []
+      username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: []
     });
   } catch (e) { $('auth-error').textContent = e.message; }
 });
@@ -107,9 +138,11 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = user;
     const snap = await getDoc(doc(db, 'users', user.uid));
-    if (snap.exists()) userProfile = snap.data();
-    else {
-      userProfile = { username: user.email.split('@')[0], bio: "Nouveau sur BlueNexus", photoURL: "", pinned: [] };
+    if (snap.exists()) {
+      userProfile = snap.data();
+      if(!userProfile.badges) userProfile.badges = [];
+    } else {
+      userProfile = { username: user.email.split('@')[0], bio: "Nouveau sur BlueNexus", photoURL: "", pinned: [], badges: [] };
       await setDoc(doc(db, 'users', user.uid), userProfile);
     }
     $('auth-screen').classList.remove('active');
@@ -125,7 +158,7 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-// ================= FEED & CHARGEMENT INFINI =================
+// ================= FEED =================
 $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
 $('btn-global-publish').addEventListener('click', async () => {
   const content = $('global-post-content').value.trim();
@@ -176,10 +209,7 @@ async function loadGlobalFeed(reset = false) {
   if (reset) list.innerHTML = '';
   lastVisiblePost = snap.docs[snap.docs.length - 1];
   
-  snap.docs.forEach(d => {
-    list.innerHTML += generatePostHTML(d);
-  });
-  
+  snap.docs.forEach(d => { list.innerHTML += generatePostHTML(d); });
   btnMore.style.display = snap.docs.length < 10 ? 'none' : 'block';
 }
 
@@ -199,16 +229,11 @@ async function loadMedia(type) {
     let mediaHtml = '';
     if (type === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
     if (type === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media"></video>`;
-    
-    return `<div class="media-item">
-      <div class="post-header">👤 @${p.authorName}</div>
-      <p>${p.content}</p>
-      ${mediaHtml}
-    </div>`;
+    return `<div class="media-item"><div class="post-header">👤 @${p.authorName}</div><p>${p.content}</p>${mediaHtml}</div>`;
   }).join('');
 }
 
-// ================= POSTS & COMMENTAIRES =================
+// ================= POSTS & COMMENTAIRES & TRADUCTION & MODÉRATION =================
 function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -223,24 +248,25 @@ function generatePostHTML(docSnap) {
 
   const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
   const pinBtn = (p.authorId === currentUser.uid) 
-    ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌 Épinglé' : '📍 Épingler'}</button>` 
-    : '';
-  const deleteBtn = (p.authorId === currentUser.uid) 
-    ? `<button onclick="window.deletePost('${docSnap.id}')" class="btn-secondary small" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️</button>` 
-    : '';
+    ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌' : '📍'}</button>` : '';
+    
+  // MODÉRATION : On peut supprimer si c'est notre post OU si on est l'admin du groupe
+  const canDelete = (p.authorId === currentUser.uid) || (currentCommunityId && userProfile.username === currentCommunityOwner);
+  const deleteBtn = canDelete 
+    ? `<button onclick="window.deletePost('${docSnap.id}')" class="btn-secondary small" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️</button>` : '';
 
   return `<div class="media-item" id="post-${docSnap.id}">
     <div class="post-header">${avatar} @${p.authorName}</div>
-    <p>${p.content}</p>
+    <p id="text-${docSnap.id}">${p.content}</p>
     ${mediaHtml}
     <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:10px;">
       <button onclick="window.likePost('${docSnap.id}', ${isLiked})" class="btn-secondary small">${isLiked?'💙':'🤍'} ${p.likes?.length || 0}</button>
-      <button onclick="window.toggleComments('${docSnap.id}')" class="btn-secondary small">💬 Commenter</button>
+      <button onclick="window.toggleComments('${docSnap.id}')" class="btn-secondary small">💬</button>
+      <button onclick="window.speakText('text-${docSnap.id}')" class="btn-secondary small" title="Écouter">🔊</button>
+      <button onclick="window.translateText('text-${docSnap.id}')" class="btn-secondary small" title="Traduire">🌐</button>
       ${pinBtn}
       ${deleteBtn}
     </div>
-
-    <!-- ZONE COMMENTAIRES CACHEE -->
     <div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;">
       <div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div>
       <div class="comment-input-row">
@@ -251,14 +277,39 @@ function generatePostHTML(docSnap) {
   </div>`;
 }
 
+// --- LECTURE VOCALE (TTS) ---
+window.speakText = (elementId) => {
+  const text = $(elementId).textContent;
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-FR'; 
+    window.speechSynthesis.speak(utterance);
+  } else { alert("Non supporté par votre navigateur."); }
+};
+
+// --- TRADUCTION (API MYMEMORY) ---
+window.translateText = async (elementId) => {
+  const el = $(elementId);
+  if (el.dataset.translated === 'true') {
+    el.textContent = el.dataset.original;
+    el.dataset.translated = 'false';
+    return;
+  }
+  const originalText = el.textContent;
+  el.dataset.original = originalText;
+  el.textContent = "Traduction...";
+  try {
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=autodetect|fr`);
+    const data = await res.json();
+    el.textContent = data.responseData.translatedText;
+    el.dataset.translated = 'true';
+  } catch (e) { el.textContent = originalText; alert("Erreur de traduction"); }
+};
+
 window.toggleComments = (postId) => {
   const section = $(`comments-section-${postId}`);
-  if (section.style.display === 'none') {
-    section.style.display = 'block';
-    loadComments(postId);
-  } else {
-    section.style.display = 'none';
-  }
+  if (section.style.display === 'none') { section.style.display = 'block'; loadComments(postId); }
+  else { section.style.display = 'none'; }
 };
 
 async function loadComments(postId) {
@@ -266,12 +317,7 @@ async function loadComments(postId) {
   list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Chargement...</p>';
   const q = query(collection(db, 'comments'), where('postId', '==', postId));
   const snap = await getDocs(q);
-  
-  if (snap.empty) {
-    list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Soyez le premier à commenter !</p>';
-    return;
-  }
-  
+  if (snap.empty) return list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Soyez le premier à commenter !</p>';
   const comments = snap.docs.map(d => d.data());
   comments.sort((a, b) => a.createdAt - b.createdAt);
   list.innerHTML = comments.map(c => `<div class="comment-item"><strong>@${c.authorName}</strong> : ${c.content}</div>`).join('');
@@ -283,9 +329,7 @@ window.addComment = async (postId) => {
   if (!content) return;
   input.value = ''; 
   try {
-    await addDoc(collection(db, 'comments'), {
-      postId: postId, content: content, authorId: currentUser.uid, authorName: userProfile.username, createdAt: Date.now() 
-    });
+    await addDoc(collection(db, 'comments'), { postId, content, authorId: currentUser.uid, authorName: userProfile.username, createdAt: Date.now() });
     loadComments(postId); 
   } catch(e) { alert("Erreur : " + e.message); }
 };
@@ -328,10 +372,7 @@ async function renderUsersList() {
 
   list.innerHTML = otherUsers.map(u => {
     const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-weight:bold;">${u.username[0].toUpperCase()}</div>`;
-    return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startChat('${u.id}', '${u.username}')">
-      ${avatar}
-      <div><h4 style="margin:0">${u.username}</h4></div>
-    </div>`;
+    return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startChat('${u.id}', '${u.username}')">${avatar}<div><h4 style="margin:0">${u.username}</h4></div></div>`;
   }).join('');
 }
 
@@ -362,11 +403,8 @@ $('btn-send-chat').addEventListener('click', async () => {
   const text = $('chat-input').value.trim();
   if(!text || !currentChatId) return;
   $('chat-input').value = '';
-  try {
-    await addDoc(collection(db, 'messages'), { 
-      chatId: currentChatId, text: text, senderId: currentUser.uid, createdAt: serverTimestamp() 
-    });
-  } catch(e) { alert("Erreur : " + e.message); }
+  try { await addDoc(collection(db, 'messages'), { chatId: currentChatId, text, senderId: currentUser.uid, createdAt: serverTimestamp() }); } 
+  catch(e) { alert("Erreur : " + e.message); }
 });
 
 // ================= COMMUNAUTÉS =================
@@ -375,9 +413,17 @@ $('comm-cancel').addEventListener('click', () => $('modal-community').classList.
 $('comm-save').addEventListener('click', async () => {
   const name = $('comm-name').value.trim();
   if (!name) return;
-  await addDoc(collection(db, 'communities'), {
-    name, description: $('comm-desc').value.trim(), ownerId: currentUser.uid, members: [currentUser.uid], createdAt: serverTimestamp()
+  const commRef = await addDoc(collection(db, 'communities'), {
+    name, description: $('comm-desc').value.trim(), ownerId: currentUser.uid, ownerName: userProfile.username, members: [currentUser.uid], createdAt: serverTimestamp()
   });
+  
+  // AJOUT DU BADGE FONDATEUR
+  if(!userProfile.badges) userProfile.badges = [];
+  if(!userProfile.badges.includes("👑 Fondateur")) {
+    userProfile.badges.push("👑 Fondateur");
+    await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("👑 Fondateur") });
+  }
+  
   $('modal-community').classList.add('hidden');
   renderCommunitiesList();
 });
@@ -395,6 +441,8 @@ window.openCommunity = async (id) => {
   
   const data = snap.data();
   currentCommunityMembers = data.members;
+  currentCommunityOwner = data.ownerName; // Sauvegarde le nom du propriétaire pour la modération
+  
   $('comm-title-display').textContent = data.name;
   $('members-count').textContent = `${data.members.length} membres`;
   
@@ -423,7 +471,7 @@ $('btn-publish-post').addEventListener('click', async () => {
   });
 });
 
-// ================= PROFIL & FOLLOW =================
+// ================= PROFIL =================
 function renderProfile() {
   if(!userProfile) return;
   $('profile-name').textContent = userProfile.username;
@@ -436,22 +484,22 @@ function renderProfile() {
     av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
   }
 
+  // AFFICHAGE DES BADGES
+  const badgesDiv = $('profile-badges');
+  badgesDiv.innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
+
   const pinnedContainer = $('profile-pinned');
   pinnedContainer.innerHTML = '';
-  
   if (userProfile.pinned && userProfile.pinned.length > 0) {
     pinnedContainer.innerHTML = '<p class="muted">Chargement...</p>';
     Promise.all(userProfile.pinned.map(id => getDoc(doc(db, 'posts', id)))).then(docs => {
       pinnedContainer.innerHTML = '';
       docs.forEach(d => {
-        if (d.exists()) {
-          const p = d.data();
-          pinnedContainer.innerHTML += `<div class="media-item" style="border-color: var(--blue-light);"><p style="font-size:0.9rem;">${p.content}</p></div>`;
-        }
+        if (d.exists()) pinnedContainer.innerHTML += `<div class="media-item" style="border-color: var(--blue-light);"><p style="font-size:0.9rem;">${d.data().content}</p></div>`;
       });
     });
   } else {
-    pinnedContainer.innerHTML = '<p class="muted">Aucune publication épinglée pour le moment.</p>';
+    pinnedContainer.innerHTML = '<p class="muted">Aucune publication épinglée.</p>';
   }
 }
 

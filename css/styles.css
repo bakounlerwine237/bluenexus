@@ -64,3 +64,12 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal.hidden { display: none !important; }
 .modal-content { background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); width: 90%; max-width: 400px; }
+/* NOUVEAU : Badges de profil */
+.badge-item {
+  background: linear-gradient(135deg, #f59e0b, #b45309);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
