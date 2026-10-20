@@ -14,13 +14,32 @@ let currentUser = null;
 let userProfile = null;
 let currentCommunityId = null; 
 let currentCommunityMembers = []; 
-let currentCommunityOwner = null; // NOUVEAU
+let currentCommunityOwner = null; 
 let unsubscribeGlobal = null;
 let unsubscribeComm = null; 
 let unsubscribeChat = null;
+let unsubscribeNotifs = null;
 let currentChatId = null;
 let lastVisiblePost = null; 
+let currentFeedMode = 'discovery'; 
 const $ = (id) => document.getElementById(id);
+
+// ================= MODE CLAIR / SOMBRE =================
+const themeToggleBtn = $('btn-theme-toggle');
+if(localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light-mode');
+  if(themeToggleBtn) themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
+}
+themeToggleBtn.addEventListener('click', () => {
+  document.body.classList.toggle('light-mode');
+  if(document.body.classList.contains('light-mode')) {
+    localStorage.setItem('theme', 'light');
+    themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
+  } else {
+    localStorage.setItem('theme', 'dark');
+    themeToggleBtn.textContent = 'Passer en mode clair ☀️';
+  }
+});
 
 // ================= UI / LOGIN / SIGNUP =================
 $('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
@@ -41,7 +60,7 @@ function switchView(viewId) {
     $('main-nav').style.display = 'none'; $('main-header').style.display = 'none';
   } else {
     $('main-nav').style.display = 'flex'; $('main-header').style.display = 'flex';
-    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", music: "Musique", video: "Vidéo", messages: "Messages" };
+    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", music: "Musique", video: "Vidéo", messages: "Messages", notifications: "Notifications" };
     $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
@@ -51,6 +70,7 @@ function switchView(viewId) {
   if (viewId === 'music') loadMedia('audio');
   if (viewId === 'video') loadMedia('video');
   if (viewId === 'messages') renderUsersList();
+  if (viewId === 'notifications') loadNotifications();
   
   if (viewId !== 'home' && unsubscribeGlobal) { unsubscribeGlobal(); unsubscribeGlobal = null; }
   if (viewId !== 'community' && unsubscribeComm) { unsubscribeComm(); unsubscribeComm = null; }
@@ -64,6 +84,19 @@ $('btn-back-home-comm').addEventListener('click', () => switchView('home'));
 $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
 $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
+$('tab-discovery').addEventListener('click', () => {
+  currentFeedMode = 'discovery';
+  $('tab-discovery').className = 'btn-primary small';
+  $('tab-following').className = 'btn-secondary small';
+  loadGlobalFeed(true);
+});
+$('tab-following').addEventListener('click', () => {
+  currentFeedMode = 'following';
+  $('tab-following').className = 'btn-primary small';
+  $('tab-discovery').className = 'btn-secondary small';
+  loadGlobalFeed(true);
+});
+
 // ================= CLOUDINARY =================
 async function uploadFile(file) {
   const formData = new FormData();
@@ -74,31 +107,18 @@ async function uploadFile(file) {
   return data.secure_url;
 }
 
-// ================= DICTÉE VOCALE (PARTIE 3) =================
+// ================= DICTÉE VOCALE =================
 document.querySelectorAll('.btn-mic').forEach(btn => {
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     const targetId = btn.getAttribute('data-target');
     const targetInput = $(targetId);
-    
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      return alert("La dictée vocale n'est pas supportée par votre navigateur.");
-    }
-    
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) return alert("Non supporté.");
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.lang = 'fr-FR';
-    recognition.interimResults = false;
-    
-    btn.textContent = "🔴"; // Indicateur d'enregistrement
-    recognition.start();
-    
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      targetInput.value += (targetInput.value ? " " : "") + transcript;
-      btn.textContent = "🎤";
-    };
-    
+    recognition.lang = 'fr-FR'; recognition.interimResults = false;
+    btn.textContent = "🔴"; recognition.start();
+    recognition.onresult = (event) => { targetInput.value += (targetInput.value ? " " : "") + event.results[0][0].transcript; btn.textContent = "🎤"; };
     recognition.onerror = () => { btn.textContent = "🎤"; };
     recognition.onend = () => { btn.textContent = "🎤"; };
   });
@@ -141,22 +161,63 @@ onAuthStateChanged(auth, async (user) => {
     if (snap.exists()) {
       userProfile = snap.data();
       if(!userProfile.badges) userProfile.badges = [];
+      if(!userProfile.following) userProfile.following = [];
     } else {
-      userProfile = { username: user.email.split('@')[0], bio: "Nouveau sur BlueNexus", photoURL: "", pinned: [], badges: [] };
+      userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [] };
       await setDoc(doc(db, 'users', user.uid), userProfile);
     }
+    
+    listenToNotifications();
+
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
     $('auth-error').textContent = "";
     switchView('home');
   } else {
     currentUser = null; userProfile = null;
+    if(unsubscribeNotifs) unsubscribeNotifs();
     $('app-screen').classList.remove('active');
     $('auth-screen').classList.add('active');
     $('login-form').style.display = 'block';
     $('signup-form').style.display = 'none';
   }
 });
+
+// ================= NOTIFICATIONS =================
+function listenToNotifications() {
+  if(unsubscribeNotifs) unsubscribeNotifs();
+  const q = query(collection(db, 'notifications'), where('toUser', '==', currentUser.uid), where('read', '==', false));
+  unsubscribeNotifs = onSnapshot(q, snap => {
+    const badge = $('notif-badge');
+    if(snap.docs.length > 0) {
+      badge.style.display = 'block';
+      badge.textContent = snap.docs.length;
+    } else {
+      badge.style.display = 'none';
+    }
+  });
+}
+
+async function sendNotification(toUser, text) {
+  if(toUser === currentUser.uid) return; 
+  await addDoc(collection(db, 'notifications'), {
+    toUser: toUser, fromUser: currentUser.uid, fromUsername: userProfile.username, text: text, read: false, createdAt: serverTimestamp()
+  });
+}
+
+async function loadNotifications() {
+  const list = $('notif-list');
+  const q = query(collection(db, 'notifications'), where('toUser', '==', currentUser.uid), orderBy('createdAt', 'desc'), limit(20));
+  const snap = await getDocs(q);
+  
+  if(snap.empty) return list.innerHTML = '<p class="muted">Aucune notification.</p>';
+  
+  list.innerHTML = snap.docs.map(d => `<div class="media-item" style="padding:10px;"><strong>@${d.data().fromUsername}</strong> ${d.data().text}</div>`).join('');
+  
+  for (const docSnap of snap.docs) {
+    await updateDoc(doc(db, 'notifications', docSnap.id), { read: true });
+  }
+}
 
 // ================= FEED =================
 $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
@@ -194,9 +255,9 @@ async function loadGlobalFeed(reset = false) {
     lastVisiblePost = null;
   }
   
-  let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(10));
+  let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
   if (lastVisiblePost && !reset) {
-    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(lastVisiblePost), limit(10));
+    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(lastVisiblePost), limit(20));
   }
 
   const snap = await getDocs(q);
@@ -209,8 +270,17 @@ async function loadGlobalFeed(reset = false) {
   if (reset) list.innerHTML = '';
   lastVisiblePost = snap.docs[snap.docs.length - 1];
   
-  snap.docs.forEach(d => { list.innerHTML += generatePostHTML(d); });
-  btnMore.style.display = snap.docs.length < 10 ? 'none' : 'block';
+  let postsToShow = snap.docs;
+  
+  if (currentFeedMode === 'following') {
+    postsToShow = snap.docs.filter(d => userProfile.following.includes(d.data().authorId));
+    if(postsToShow.length === 0 && reset) {
+      list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
+    }
+  }
+
+  postsToShow.forEach(d => { list.innerHTML += generatePostHTML(d); });
+  btnMore.style.display = snap.docs.length < 20 ? 'none' : 'block';
 }
 
 $('btn-load-more').addEventListener('click', () => loadGlobalFeed(false));
@@ -221,9 +291,7 @@ async function loadMedia(type) {
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const q = query(collection(db, 'posts'), where('mediaType', '==', type), orderBy('createdAt', 'desc'), limit(30));
   const snap = await getDocs(q);
-  
   if (snap.empty) return list.innerHTML = `<p class="muted">Aucun fichier ${type} disponible.</p>`;
-  
   list.innerHTML = snap.docs.map(d => {
     const p = d.data();
     let mediaHtml = '';
@@ -233,7 +301,7 @@ async function loadMedia(type) {
   }).join('');
 }
 
-// ================= POSTS & COMMENTAIRES & TRADUCTION & MODÉRATION =================
+// ================= POSTS & COMMENTAIRES =================
 function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -247,63 +315,48 @@ function generatePostHTML(docSnap) {
   }
 
   const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
-  const pinBtn = (p.authorId === currentUser.uid) 
-    ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌' : '📍'}</button>` : '';
-    
-  // MODÉRATION : On peut supprimer si c'est notre post OU si on est l'admin du groupe
+  const pinBtn = (p.authorId === currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned})" class="btn-secondary small">${isPinned ? '📌' : '📍'}</button>` : '';
   const canDelete = (p.authorId === currentUser.uid) || (currentCommunityId && userProfile.username === currentCommunityOwner);
-  const deleteBtn = canDelete 
-    ? `<button onclick="window.deletePost('${docSnap.id}')" class="btn-secondary small" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️</button>` : '';
+  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" class="btn-secondary small" style="color:#ff6b6b; border-color:#ff6b6b;">🗑️</button>` : '';
 
   return `<div class="media-item" id="post-${docSnap.id}">
     <div class="post-header">${avatar} @${p.authorName}</div>
     <p id="text-${docSnap.id}">${p.content}</p>
     ${mediaHtml}
     <div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:10px;">
-      <button onclick="window.likePost('${docSnap.id}', ${isLiked})" class="btn-secondary small">${isLiked?'💙':'🤍'} ${p.likes?.length || 0}</button>
+      <button onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="btn-secondary small">${isLiked?'💙':'🤍'} ${p.likes?.length || 0}</button>
       <button onclick="window.toggleComments('${docSnap.id}')" class="btn-secondary small">💬</button>
-      <button onclick="window.speakText('text-${docSnap.id}')" class="btn-secondary small" title="Écouter">🔊</button>
-      <button onclick="window.translateText('text-${docSnap.id}')" class="btn-secondary small" title="Traduire">🌐</button>
+      <button onclick="window.speakText('text-${docSnap.id}')" class="btn-secondary small">🔊</button>
+      <button onclick="window.translateText('text-${docSnap.id}')" class="btn-secondary small">🌐</button>
       ${pinBtn}
       ${deleteBtn}
     </div>
     <div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;">
       <div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div>
       <div class="comment-input-row">
-        <input type="text" id="comment-input-${docSnap.id}" placeholder="Votre commentaire...">
-        <button onclick="window.addComment('${docSnap.id}')" class="btn-primary small">Envoyer</button>
+        <input type="text" id="comment-input-${docSnap.id}" placeholder="Commenter...">
+        <button onclick="window.addComment('${docSnap.id}', '${p.authorId}')" class="btn-primary small">Envoyer</button>
       </div>
     </div>
   </div>`;
 }
 
-// --- LECTURE VOCALE (TTS) ---
 window.speakText = (elementId) => {
   const text = $(elementId).textContent;
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'fr-FR'; 
-    window.speechSynthesis.speak(utterance);
-  } else { alert("Non supporté par votre navigateur."); }
+    utterance.lang = 'fr-FR'; window.speechSynthesis.speak(utterance);
+  } else { alert("Non supporté."); }
 };
 
-// --- TRADUCTION (API MYMEMORY) ---
 window.translateText = async (elementId) => {
   const el = $(elementId);
-  if (el.dataset.translated === 'true') {
-    el.textContent = el.dataset.original;
-    el.dataset.translated = 'false';
-    return;
-  }
-  const originalText = el.textContent;
-  el.dataset.original = originalText;
-  el.textContent = "Traduction...";
+  if (el.dataset.translated === 'true') { el.textContent = el.dataset.original; el.dataset.translated = 'false'; return; }
+  const originalText = el.textContent; el.dataset.original = originalText; el.textContent = "Traduction...";
   try {
     const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=autodetect|fr`);
-    const data = await res.json();
-    el.textContent = data.responseData.translatedText;
-    el.dataset.translated = 'true';
-  } catch (e) { el.textContent = originalText; alert("Erreur de traduction"); }
+    const data = await res.json(); el.textContent = data.responseData.translatedText; el.dataset.translated = 'true';
+  } catch (e) { el.textContent = originalText; }
 };
 
 window.toggleComments = (postId) => {
@@ -323,21 +376,25 @@ async function loadComments(postId) {
   list.innerHTML = comments.map(c => `<div class="comment-item"><strong>@${c.authorName}</strong> : ${c.content}</div>`).join('');
 }
 
-window.addComment = async (postId) => {
+window.addComment = async (postId, authorId) => {
   const input = $(`comment-input-${postId}`);
   const content = input.value.trim();
   if (!content) return;
   input.value = ''; 
   try {
     await addDoc(collection(db, 'comments'), { postId, content, authorId: currentUser.uid, authorName: userProfile.username, createdAt: Date.now() });
+    sendNotification(authorId, "a commenté votre publication.");
     loadComments(postId); 
   } catch(e) { alert("Erreur : " + e.message); }
 };
 
-window.likePost = async (postId, isLiked) => {
+window.likePost = async (postId, authorId, isLiked) => {
   const ref = doc(db, 'posts', postId);
   if (isLiked) await updateDoc(ref, { likes: arrayRemove(currentUser.uid) });
-  else await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
+  else {
+    await updateDoc(ref, { likes: arrayUnion(currentUser.uid) });
+    sendNotification(authorId, "a aimé votre publication.");
+  }
 };
 
 window.togglePin = async (postId, isPinned) => {
@@ -366,12 +423,11 @@ async function renderUsersList() {
   const list = $('users-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
   const snap = await getDocs(collection(db, 'users'));
-  
   const otherUsers = snap.docs.filter(d => d.id !== currentUser.uid).map(d => ({ id: d.id, ...d.data() }));
   if(otherUsers.length === 0) return list.innerHTML = '<p class="muted">Aucun autre membre.</p>';
 
   list.innerHTML = otherUsers.map(u => {
-    const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-weight:bold;">${u.username[0].toUpperCase()}</div>`;
+    const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-weight:bold;color:white;">${u.username[0].toUpperCase()}</div>`;
     return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startChat('${u.id}', '${u.username}')">${avatar}<div><h4 style="margin:0">${u.username}</h4></div></div>`;
   }).join('');
 }
@@ -379,7 +435,6 @@ async function renderUsersList() {
 window.startChat = async (targetId, targetName) => {
   const chatId = [currentUser.uid, targetId].sort().join('_');
   currentChatId = chatId;
-  
   $('chat-with-name').textContent = targetName;
   switchView('chat');
   
@@ -391,8 +446,7 @@ window.startChat = async (targetId, targetName) => {
   unsubscribeChat = onSnapshot(q, snap => {
     if (snap.empty) return list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Dites bonjour ! 👋</p>';
     list.innerHTML = snap.docs.map(d => {
-      const m = d.data();
-      const isMine = m.senderId === currentUser.uid;
+      const m = d.data(); const isMine = m.senderId === currentUser.uid;
       return `<div class="chat-msg ${isMine ? 'mine' : 'theirs'}">${m.text}</div>`;
     }).join('');
     window.scrollTo(0, document.body.scrollHeight);
@@ -413,17 +467,13 @@ $('comm-cancel').addEventListener('click', () => $('modal-community').classList.
 $('comm-save').addEventListener('click', async () => {
   const name = $('comm-name').value.trim();
   if (!name) return;
-  const commRef = await addDoc(collection(db, 'communities'), {
+  await addDoc(collection(db, 'communities'), {
     name, description: $('comm-desc').value.trim(), ownerId: currentUser.uid, ownerName: userProfile.username, members: [currentUser.uid], createdAt: serverTimestamp()
   });
-  
-  // AJOUT DU BADGE FONDATEUR
-  if(!userProfile.badges) userProfile.badges = [];
   if(!userProfile.badges.includes("👑 Fondateur")) {
     userProfile.badges.push("👑 Fondateur");
     await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("👑 Fondateur") });
   }
-  
   $('modal-community').classList.add('hidden');
   renderCommunitiesList();
 });
@@ -438,17 +488,12 @@ window.openCommunity = async (id) => {
   currentCommunityId = id;
   const snap = await getDoc(doc(db, 'communities', id));
   if (!snap.exists()) return;
-  
   const data = snap.data();
-  currentCommunityMembers = data.members;
-  currentCommunityOwner = data.ownerName; // Sauvegarde le nom du propriétaire pour la modération
-  
+  currentCommunityMembers = data.members; currentCommunityOwner = data.ownerName;
   $('comm-title-display').textContent = data.name;
   $('members-count').textContent = `${data.members.length} membres`;
-  
   if (data.members.includes(currentUser.uid)) $('post-form-container').style.display = 'flex';
   else $('post-form-container').style.display = 'none';
-
   switchView('community');
   
   unsubscribeComm = onSnapshot(query(collection(db, 'posts'), where('communityId', '==', id), orderBy('createdAt', 'desc')), snap => {
@@ -471,22 +516,16 @@ $('btn-publish-post').addEventListener('click', async () => {
   });
 });
 
-// ================= PROFIL =================
+// ================= PROFIL & FOLLOW =================
 function renderProfile() {
   if(!userProfile) return;
   $('profile-name').textContent = userProfile.username;
   $('profile-bio').textContent = userProfile.bio || 'Aucune bio.';
-  
   const av = $('profile-avatar');
-  if (userProfile.photoURL) {
-    av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = '';
-  } else {
-    av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase();
-  }
+  if (userProfile.photoURL) { av.style.backgroundImage = `url(${userProfile.photoURL})`; av.textContent = ''; } 
+  else { av.style.backgroundImage = 'none'; av.textContent = userProfile.username[0].toUpperCase(); }
 
-  // AFFICHAGE DES BADGES
-  const badgesDiv = $('profile-badges');
-  badgesDiv.innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
+  $('profile-badges').innerHTML = (userProfile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
 
   const pinnedContainer = $('profile-pinned');
   pinnedContainer.innerHTML = '';
@@ -494,13 +533,9 @@ function renderProfile() {
     pinnedContainer.innerHTML = '<p class="muted">Chargement...</p>';
     Promise.all(userProfile.pinned.map(id => getDoc(doc(db, 'posts', id)))).then(docs => {
       pinnedContainer.innerHTML = '';
-      docs.forEach(d => {
-        if (d.exists()) pinnedContainer.innerHTML += `<div class="media-item" style="border-color: var(--blue-light);"><p style="font-size:0.9rem;">${d.data().content}</p></div>`;
-      });
+      docs.forEach(d => { if (d.exists()) pinnedContainer.innerHTML += `<div class="media-item" style="border-color: var(--blue-light);"><p style="font-size:0.9rem;">${d.data().content}</p></div>`; });
     });
-  } else {
-    pinnedContainer.innerHTML = '<p class="muted">Aucune publication épinglée.</p>';
-  }
+  } else { pinnedContainer.innerHTML = '<p class="muted">Aucune publication épinglée.</p>'; }
 }
 
 $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
@@ -536,5 +571,8 @@ window.followUser = async (targetId) => {
   if(targetId === currentUser.uid) return alert("C'est votre propre profil.");
   await updateDoc(doc(db, 'users', currentUser.uid), { following: arrayUnion(targetId) });
   await updateDoc(doc(db, 'users', targetId), { followers: arrayUnion(currentUser.uid) });
+  if(!userProfile.following) userProfile.following = [];
+  userProfile.following.push(targetId);
   alert("Vous êtes maintenant abonné à cet utilisateur !");
+  sendNotification(targetId, "s'est abonné à vous.");
 };
