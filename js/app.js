@@ -21,24 +21,33 @@ let unsubscribeChat = null;
 let unsubscribeNotifs = null;
 let currentChatId = null;
 let lastVisiblePost = null; 
-let currentFeedMode = 'discovery'; 
+let currentFeedMode = 'discovery';
 const $ = (id) => document.getElementById(id);
 
-// ================= MODE CLAIR / SOMBRE =================
-const themeToggleBtn = $('btn-theme-toggle');
+// ================= MODE CLAIR / SOMBRE (DANS LES PARAMÈTRES) =================
+const themeToggleBtn = $('btn-theme-toggle-settings');
+
+function updateThemeBtnText() {
+  if(document.body.classList.contains('light-mode')) {
+    themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
+  } else {
+    themeToggleBtn.textContent = 'Passer en mode clair ☀️';
+  }
+}
+
 if(localStorage.getItem('theme') === 'light') {
   document.body.classList.add('light-mode');
-  if(themeToggleBtn) themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
 }
+updateThemeBtnText();
+
 themeToggleBtn.addEventListener('click', () => {
   document.body.classList.toggle('light-mode');
   if(document.body.classList.contains('light-mode')) {
     localStorage.setItem('theme', 'light');
-    themeToggleBtn.textContent = 'Passer en mode sombre 🌙';
   } else {
     localStorage.setItem('theme', 'dark');
-    themeToggleBtn.textContent = 'Passer en mode clair ☀️';
   }
+  updateThemeBtnText();
 });
 
 // ================= UI / LOGIN / SIGNUP =================
@@ -84,6 +93,7 @@ $('btn-back-home-comm').addEventListener('click', () => switchView('home'));
 $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
 $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
+// Onglets du fil d'actualité
 $('tab-discovery').addEventListener('click', () => {
   currentFeedMode = 'discovery';
   $('tab-discovery').className = 'btn-primary small';
@@ -301,7 +311,7 @@ async function loadMedia(type) {
   }).join('');
 }
 
-// ================= POSTS & COMMENTAIRES =================
+// ================= POSTS =================
 function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -418,7 +428,7 @@ window.deletePost = async (postId) => {
   }
 };
 
-// ================= MESSAGERIE PRIVÉE =================
+// ================= MESSAGERIE =================
 async function renderUsersList() {
   const list = $('users-list');
   list.innerHTML = '<p class="muted">Chargement...</p>';
@@ -516,7 +526,7 @@ $('btn-publish-post').addEventListener('click', async () => {
   });
 });
 
-// ================= PROFIL & FOLLOW =================
+// ================= PROFIL =================
 function renderProfile() {
   if(!userProfile) return;
   $('profile-name').textContent = userProfile.username;
