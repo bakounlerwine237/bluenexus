@@ -71,7 +71,6 @@ export function generatePostHTML(docSnap) {
   
   let mediaHtml = '';
   if (p.mediaUrl) {
-    // CHARGEMENT DIFFÉRÉ (LAZY LOADING) AJOUTÉ ICI
     if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media" loading="lazy">`;
     else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media" preload="metadata"></video>`;
     else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;" preload="metadata"></audio>`;
@@ -82,7 +81,9 @@ export function generatePostHTML(docSnap) {
   const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner);
   const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer</button>` : '';
 
-  return `<div class="media-item" id="post-${docSnap.id}">
+  return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})">
+    <div class="heart-animation" id="heart-${docSnap.id}">❤️</div>
+    
     <div class="post-header">
       <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">
         ${avatar} <strong>@${p.authorName}</strong>
@@ -197,8 +198,6 @@ export function initFeed() {
     $('global-file-preview').classList.add('hidden');
     
     $('btn-global-publish').textContent = "Publier";
-    
-    // NOTIFICATION DE SUCCÈS
     showToast("✅ Publication réussie !", "success");
     loadGlobalFeed(true);
   });
@@ -218,6 +217,36 @@ export function initFeed() {
     }, { rootMargin: '200px' });
     observer.observe(sentinel);
   }
+
+  // --- LOGIQUE DU BOUTON RETOUR EN HAUT ---
+  const btnBackToTop = $('btn-back-to-top');
+  if (btnBackToTop) {
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 300) {
+        btnBackToTop.classList.add('show');
+      } else {
+        btnBackToTop.classList.remove('show');
+      }
+    });
+    btnBackToTop.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  // --- LOGIQUE DU DOUBLE TAP ---
+  window.doubleTapLike = async (postId, authorId, isLiked) => {
+    // Animation du cœur
+    const heart = $(`heart-${postId}`);
+    if (heart) {
+      heart.classList.add('animate');
+      setTimeout(() => heart.classList.remove('animate'), 600);
+    }
+    
+    // Si ce n'est pas déjà liké, on like
+    if (!isLiked) {
+      window.likePost(postId, authorId, false);
+    }
+  };
 
   window.likePost = async (postId, authorId, isLiked) => {
     const ref = doc(db, 'posts', postId);
@@ -242,7 +271,7 @@ export function initFeed() {
       await deleteDoc(doc(db, 'posts', postId));
       const el = document.getElementById(`post-${postId}`);
       if(el) el.remove();
-      showToast("🗑️ Post supprimé.", "error"); // TOAST DE SUPPRESSION
+      showToast("🗑️ Post supprimé.", "error");
     }
   };
 

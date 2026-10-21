@@ -37,7 +37,7 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .post-creation-box textarea { border: none; background: transparent; font-size: 1rem; padding: 8px; margin: 0; resize: none; }
 
 .media-list { display: flex; flex-direction: column; gap: 0.8rem; }
-.media-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem; box-shadow: var(--card-shadow); transition: transform 0.2s, box-shadow 0.2s; }
+.media-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem; box-shadow: var(--card-shadow); transition: transform 0.2s, box-shadow 0.2s; position: relative; overflow: hidden; }
 .media-item:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
 .post-header { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px; }
@@ -111,36 +111,52 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .skeleton-line.short { width: 50%; }
 @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-/* ================= NOUVEAU : TOAST NOTIFICATIONS ================= */
-#toast-container {
-  position: fixed;
-  bottom: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  pointer-events: none;
-}
-.toast {
-  background: var(--bg-2);
-  color: var(--text);
-  padding: 12px 24px;
-  border-radius: 30px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  border: 1px solid var(--border);
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.3s ease;
-  text-align: center;
-  white-space: nowrap;
-}
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* TOASTS */
+#toast-container { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { background: var(--bg-2); color: var(--text); padding: 12px 24px; border-radius: 30px; font-size: 0.9rem; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid var(--border); opacity: 0; transform: translateY(20px); transition: all 0.3s ease; text-align: center; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateY(0); }
 .toast.success { border-left: 4px solid #10b981; }
 .toast.error { border-left: 4px solid #ef4444; }
+
+/* ================= NOUVEAU : BOUTON RETOUR EN HAUT & DOUBLE TAP ================= */
+#btn-back-to-top {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: white;
+  border: none;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: none; /* Caché par défaut */
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  transition: opacity 0.3s;
+}
+#btn-back-to-top.show { display: flex; }
+
+.heart-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: 5rem;
+  color: #ff2d55;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+.heart-animation.animate {
+  animation: heart-burst 0.6s ease-out forwards;
+}
+@keyframes heart-burst {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+}
