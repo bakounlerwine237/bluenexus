@@ -63,7 +63,7 @@ export function generatePostHTML(docSnap) {
 
   return `<div class="media-item" id="post-${docSnap.id}">
     <div class="post-header">
-      <div style="display:flex; align-items:center; gap:10px;">
+      <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">
         ${avatar} <strong>@${p.authorName}</strong>
       </div>
       <span class="post-time">${timeAgo(p.createdAt)}</span>
