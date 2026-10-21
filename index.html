@@ -61,7 +61,7 @@
       </div>
 
       <div class="post-creation-box">
-        <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0;">?</div>
+        <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
         <div style="flex: 1;">
           <textarea id="global-post-content" placeholder="Quoi de neuf ?"></textarea>
           <div style="display: flex; gap: 10px; align-items: center;">
@@ -83,24 +83,20 @@
       <div id="notif-list" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- COMMUNAUTÉS (NOUVEL ONGLET) -->
+    <!-- COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h3>Mes Communautés</h3>
         <button id="btn-discover-communities" class="btn-primary small">Découvrir</button>
       </div>
-
-      <!-- Vue : Mes communautés -->
       <div id="my-communities-list" class="tg-list"></div>
-
-      <!-- Vue : Découvrir toutes les communautés (Cachée par défaut) -->
       <div id="discover-communities-section" style="display:none;">
         <button id="btn-back-to-my-comms" class="btn-secondary small" style="margin-bottom:1rem;">← Retour à mes communautés</button>
         <div id="all-communities-list" class="tg-list"></div>
       </div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ (CHAT) -->
+    <!-- VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -194,7 +190,6 @@
 
   </main>
 
-  <!-- NAVIGATION : Musique remplacé par Communautés -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>

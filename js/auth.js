@@ -4,7 +4,6 @@ import { switchView } from './navigation.js';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
-// Initialisation Tencent
 async function initTencentChat(userId) {
   try {
     const response = await fetch('https://bluenexus-backend.vercel.app/api/tencent/usersig', {
@@ -14,7 +13,6 @@ async function initTencentChat(userId) {
     });
     if (!response.ok) throw new Error("Erreur UserSig");
     const data = await response.json();
-    
     state.tencentChat = TIM.create({ SDKAppID: TENCENT_SDK_APP_ID });
     await state.tencentChat.login({ userID: userId, userSig: data.userSig });
     console.log("Tencent Chat connecté !");
@@ -68,10 +66,16 @@ export function initAuth() {
         await setDoc(doc(db, 'users', user.uid), state.userProfile);
       }
       
+      // METTRE À JOUR L'AVATAR DE LA ZONE DE CRÉATION
       const createAvatar = $('create-post-avatar');
       if (createAvatar) {
-        if (state.userProfile.photoURL) { createAvatar.style.backgroundImage = `url(${state.userProfile.photoURL})`; createAvatar.textContent = ''; }
-        else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = state.userProfile.username[0].toUpperCase(); }
+        if (state.userProfile.photoURL) { 
+          createAvatar.style.backgroundImage = `url(${state.userProfile.photoURL})`; 
+          createAvatar.textContent = ''; 
+        } else { 
+          createAvatar.style.backgroundImage = 'none'; 
+          createAvatar.textContent = state.userProfile.username[0].toUpperCase(); 
+        }
       }
 
       await initTencentChat(user.uid);
@@ -81,7 +85,6 @@ export function initAuth() {
       $('auth-error').textContent = "";
       switchView('home');
       
-      // On prévient l'application qu'on est connecté
       document.dispatchEvent(new Event('userReady'));
     } else {
       state.currentUser = null; state.userProfile = null;
