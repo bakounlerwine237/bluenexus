@@ -31,11 +31,8 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .top-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--text); padding: 0; }
 .top-btn:hover { color: var(--blue-light); }
 
-/* NOUVEAU : ZONE DE CRÉATION DE POST */
 .post-creation-box { display: flex; gap: 10px; align-items: flex-start; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 1rem; }
 .post-creation-box textarea { border: none; background: transparent; font-size: 1rem; padding: 10px; margin: 0; resize: none; }
-
-/* POSTS ET ACTIONS */
 .media-list { display: flex; flex-direction: column; gap: 1rem; }
 .media-item { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
 .post-header { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 10px; }
@@ -47,15 +44,16 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .action-btn:hover { background: rgba(255,255,255,0.05); }
 .action-btn.delete { color: #ff6b6b; }
 
-/* NOUVEAU : MENU DÉROULANT "..." */
-.more-menu-container { position: relative; display: flex; }
-.more-menu { position: absolute; bottom: 100%; right: 0; background: var(--bg-2); border: 1px solid var(--border); border-radius: 8px; padding: 5px; display: none; flex-direction: column; z-index: 10; min-width: 120px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
-.more-menu.active { display: flex; }
-.more-menu button { background: none; border: none; color: var(--text); padding: 8px; text-align: left; border-radius: 5px; cursor: pointer; font-size: 0.85rem; width: 100%; }
-.more-menu button:hover { background: rgba(255,255,255,0.1); }
+/* STYLE TELEGRAM POUR LES LISTES (COMMUNAUTÉS & MESSAGES) */
+.tg-list { display: flex; flex-direction: column; background: var(--bg-2); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+.tg-item { display: flex; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+.tg-item:last-child { border-bottom: none; }
+.tg-item:hover { background: rgba(255,255,255,0.05); }
+.tg-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.2rem; margin-right: 15px; flex-shrink: 0; object-fit: cover; }
+.tg-content { flex: 1; min-width: 0; }
+.tg-title { font-weight: bold; font-size: 1rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tg-subtitle { font-size: 0.85rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.card { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; cursor: pointer; }
 .comm-header-fixed { position: sticky; top: 0; background: var(--bg); display: flex; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border); }
 .chat-input-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-2); border-top: 1px solid var(--border); padding: 10px; display: flex; gap: 10px; align-items: flex-end; z-index: 100; }
 .chat-input-bar.hidden { display: none !important; }
@@ -87,7 +85,6 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 
 .badge-item { background: linear-gradient(135deg, #f59e0b, #b45309); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; }
 
-/* SKELETON LOADER */
 .skeleton-post { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
 .skeleton-line { background: var(--border); height: 15px; border-radius: 5px; margin-bottom: 10px; animation: pulse 1.5s infinite; }
 .skeleton-line.short { width: 50%; }

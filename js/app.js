@@ -64,14 +64,13 @@ function switchView(viewId) {
   } else {
     if($('main-nav')) $('main-nav').style.display = 'flex'; 
     if($('main-header')) $('main-header').style.display = 'flex';
-    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", music: "Musique", video: "Vidéo", messages: "Messages", notifications: "Notifications" };
+    const titles = { home: "Accueil", communities: "Mes Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", video: "Vidéo", messages: "Messages", notifications: "Notifications" };
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
   if (viewId === 'home') loadGlobalFeed(true);
-  if (viewId === 'communities') renderCommunitiesList();
+  if (viewId === 'communities') renderMyCommunities();
   if (viewId === 'profile') renderProfile();
-  if (viewId === 'music') loadMedia('audio');
   if (viewId === 'video') loadMedia('video');
   if (viewId === 'messages') renderUsersList();
   if (viewId === 'notifications') loadNotifications();
@@ -88,52 +87,80 @@ if($('btn-back-home-comm')) $('btn-back-home-comm').addEventListener('click', ()
 if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
 if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
-if($('tab-discovery')) $('tab-discovery').addEventListener('click', () => {
-  currentFeedMode = 'discovery';
-  $('tab-discovery').className = 'btn-primary small';
-  if($('tab-following')) $('tab-following').className = 'btn-secondary small';
-  loadGlobalFeed(true);
+// ================= GESTION DES COMMUNAUTÉS (MES GROUPES VS DÉCOUVRIR) =================
+if($('btn-discover-communities')) $('btn-discover-communities').addEventListener('click', () => {
+  $('my-communities-list').style.display = 'none';
+  $('btn-discover-communities').style.display = 'none';
+  $('discover-communities-section').style.display = 'block';
+  renderAllCommunities();
 });
-if($('tab-following')) $('tab-following').addEventListener('click', () => {
-  currentFeedMode = 'following';
-  $('tab-following').className = 'btn-primary small';
-  if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
-  loadGlobalFeed(true);
-});
-
-if($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
-  $('btn-refresh-feed').textContent = "⏳";
-  loadGlobalFeed(true);
-  setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
+if($('btn-back-to-my-comms')) $('btn-back-to-my-comms').addEventListener('click', () => {
+  $('discover-communities-section').style.display = 'none';
+  $('my-communities-list').style.display = 'flex';
+  $('btn-discover-communities').style.display = 'block';
 });
 
-// ================= INITIALISATION TENCENT CHAT (API SÉCURISÉE) =================
+async function renderMyCommunities() {
+  const list = $('my-communities-list');
+  list.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
+  $('my-communities-list').style.display = 'flex';
+  $('btn-discover-communities').style.display = 'block';
+  $('discover-communities-section').style.display = 'none';
+
+  // Requête : On ne récupère QUE les communautés où je suis membre
+  const q = query(collection(db, 'communities'), where('members', 'array-contains', currentUser.uid));
+  const snap = await getDocs(q);
+  
+  if (snap.empty) return list.innerHTML = '<p class="muted" style="padding: 1rem;">Vous n\'avez rejoint aucune communauté pour le moment.</p>';
+  
+  list.innerHTML = snap.docs.map(c => {
+    const data = c.data();
+    const initial = data.name[0].toUpperCase();
+    return `<div class="tg-item" onclick="window.openCommunity('${c.id}')">
+      <div class="tg-avatar">${initial}</div>
+      <div class="tg-content">
+        <div class="tg-title">${data.name}</div>
+        <div class="tg-subtitle">${data.description || 'Aucune description'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function renderAllCommunities() {
+  const list = $('all-communities-list');
+  list.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
+  const snap = await getDocs(collection(db, 'communities'));
+  
+  if (snap.empty) return list.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune communauté sur le réseau.</p>';
+  
+  list.innerHTML = snap.docs.map(c => {
+    const data = c.data();
+    const initial = data.name[0].toUpperCase();
+    const isMember = data.members.includes(currentUser.uid);
+    return `<div class="tg-item" onclick="window.openCommunity('${c.id}')">
+      <div class="tg-avatar">${initial}</div>
+      <div class="tg-content">
+        <div class="tg-title">${data.name}</div>
+        <div class="tg-subtitle">${data.members.length} membres ${isMember ? '· Déjà rejoint' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ================= INITIALISATION TENCENT CHAT =================
 async function initTencentChat(userId) {
   try {
-    // Appel à ton backend Vercel sécurisé
     const response = await fetch('https://bluenexus-backend.vercel.app/api/tencent/usersig', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: userId })
     });
-    
     if (!response.ok) throw new Error("Erreur de récupération du UserSig");
     const data = await response.json();
-    
-    // Initialisation de Tencent
     tencentChat = TIM.create({ SDKAppID: TENCENT_SDK_APP_ID });
-    
-    // Connexion avec la signature du serveur
-    await tencentChat.login({
-      userID: userId,
-      userSig: data.userSig 
-    });
-    
-    console.log("Tencent Chat connecté via l'API sécurisée !");
-    
-  } catch (error) {
-    console.error("Erreur Tencent:", error);
-  }
+    await tencentChat.login({ userID: userId, userSig: data.userSig });
+    console.log("Tencent Chat connecté !");
+  } catch (error) { console.error("Erreur Tencent:", error); }
 }
 
 // ================= CLOUDINARY =================
@@ -207,14 +234,12 @@ onAuthStateChanged(auth, async (user) => {
       await setDoc(doc(db, 'users', user.uid), userProfile);
     }
     
-    // Mettre l'avatar dans la zone de création
     const createAvatar = $('create-post-avatar');
     if (createAvatar) {
       if (userProfile.photoURL) { createAvatar.style.backgroundImage = `url(${userProfile.photoURL})`; createAvatar.textContent = ''; }
       else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = userProfile.username[0].toUpperCase(); }
     }
 
-    // Initialiser Tencent
     await initTencentChat(user.uid);
     listenToNotifications();
     
@@ -532,39 +557,37 @@ window.deletePost = async (postId) => {
   }
 };
 
-// ================= MESSAGERIE (TENCENT) =================
+// ================= MESSAGERIE =================
 async function renderUsersList() {
   const list = $('users-list');
   if(!list) return;
-  list.innerHTML = '<p class="muted">Chargement...</p>';
+  list.innerHTML = '<p class="muted" style="padding:1rem;">Chargement...</p>';
   const snap = await getDocs(collection(db, 'users'));
   const otherUsers = snap.docs.filter(d => d.id !== currentUser.uid).map(d => ({ id: d.id, ...d.data() }));
-  if(otherUsers.length === 0) return list.innerHTML = '<p class="muted">Aucun autre membre.</p>';
+  if(otherUsers.length === 0) return list.innerHTML = '<p class="muted" style="padding:1rem;">Aucun autre membre.</p>';
 
   list.innerHTML = otherUsers.map(u => {
-    const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-weight:bold;color:white;">${u.username[0].toUpperCase()}</div>`;
-    return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startTencentChat('${u.id}', '${u.username}')">${avatar}<div><h4 style="margin:0">${u.username}</h4></div></div>`;
+    const avatar = u.photoURL ? `<img src="${u.photoURL}" class="tg-avatar">` : `<div class="tg-avatar">${u.username[0].toUpperCase()}</div>`;
+    return `<div class="tg-item" onclick="window.startTencentChat('${u.id}', '${u.username}')">
+      ${avatar}
+      <div class="tg-content">
+        <div class="tg-title">${u.username}</div>
+        <div class="tg-subtitle">Appuyez pour discuter</div>
+      </div>
+    </div>`;
   }).join('');
 }
 
 window.startTencentChat = async (targetId, targetName) => {
   if (!tencentChat) { alert("La messagerie se connecte..."); return; }
-  
   currentChatId = targetId;
   $('chat-with-name').textContent = targetName;
   switchView('chat');
-  
   const list = $('chat-messages');
   if(!list) return;
-  list.innerHTML = '<p class="muted">Chargement de la conversation...</p>';
-  
-  try {
-    // Note: L'historique complet nécessite une version plus poussée, ici on affiche les nouveaux messages
-    list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Dites bonjour ! 👋</p>';
-  } catch(e) { console.error(e); }
+  list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Dites bonjour ! 👋</p>';
   
   if (window.tencentMessageListener) tencentChat.off(TIM.EVENT.MESSAGE_RECEIVED, window.tencentMessageListener);
-  
   window.tencentMessageListener = (event) => {
     event.data.forEach(msg => {
       if (msg.conversationID === `C2C${targetId}` || msg.from === targetId) {
@@ -574,16 +597,13 @@ window.startTencentChat = async (targetId, targetName) => {
       }
     });
   };
-  
   tencentChat.on(TIM.EVENT.MESSAGE_RECEIVED, window.tencentMessageListener);
 };
 
 if($('btn-send-chat')) $('btn-send-chat').addEventListener('click', async () => {
   const text = $('chat-input').value.trim();
   if(!text || !currentChatId || !tencentChat) return;
-  
   $('chat-input').value = '';
-  
   try {
     const message = tencentChat.createTextMessage({
       to: currentChatId,
@@ -591,7 +611,6 @@ if($('btn-send-chat')) $('btn-send-chat').addEventListener('click', async () => 
       payload: { text: text }
     });
     await tencentChat.sendMessage(message);
-    
     const list = $('chat-messages');
     if (list) {
       list.innerHTML += `<div class="chat-msg mine">${text}</div>`;
@@ -600,7 +619,7 @@ if($('btn-send-chat')) $('btn-send-chat').addEventListener('click', async () => 
   } catch(e) { console.error(e); alert("Erreur d'envoi Tencent."); }
 });
 
-// ================= COMMUNAUTÉS =================
+// ================= OUVRIR UNE COMMUNAUTÉ =================
 if($('btn-new-community')) $('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
 if($('comm-cancel')) $('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
 if($('comm-save')) $('comm-save').addEventListener('click', async () => {
@@ -614,15 +633,8 @@ if($('comm-save')) $('comm-save').addEventListener('click', async () => {
     await updateDoc(doc(db, 'users', currentUser.uid), { badges: arrayUnion("👑 Fondateur") });
   }
   $('modal-community').classList.add('hidden');
-  renderCommunitiesList();
+  renderMyCommunities();
 });
-
-async function renderCommunitiesList() {
-  const list = $('communities-list');
-  if(!list) return;
-  const snap = await getDocs(collection(db, 'communities'));
-  list.innerHTML = snap.docs.map(c => `<div class="card" onclick="window.openCommunity('${c.id}')"><h4>${c.data().name}</h4><p class="muted">${c.data().description}</p></div>`).join('');
-}
 
 window.openCommunity = async (id) => {
   currentCommunityId = id;
@@ -708,10 +720,12 @@ if($('search-input')) $('search-input').addEventListener('input', async (e) => {
   const commsDiv = $('search-results-communities');
   if(!usersDiv || !commsDiv) return;
   if(!term) { usersDiv.innerHTML = ''; commsDiv.innerHTML = ''; return; }
+  
   const snapU = await getDocs(collection(db, 'users'));
-  usersDiv.innerHTML = '<h4>Utilisateurs</h4>' + snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="card" onclick="window.followUser('${d.id}')">👤 ${d.data().username}</div>`).join('');
+  usersDiv.innerHTML = '<h4 style="padding: 5px 0;">Utilisateurs</h4>' + snapU.docs.filter(d => d.data().username.toLowerCase().includes(term)).map(d => `<div class="tg-item" onclick="window.followUser('${d.id}')"><div class="tg-avatar">${d.data().username[0].toUpperCase()}</div><div class="tg-content"><div class="tg-title">${d.data().username}</div></div></div>`).join('');
+  
   const snapC = await getDocs(collection(db, 'communities'));
-  commsDiv.innerHTML = '<h4>Communautés</h4>' + snapC.docs.filter(d => d.data().name.toLowerCase().includes(term)).map(d => `<div class="card" onclick="window.openCommunity('${d.id}')">🌐 ${d.data().name}</div>`).join('');
+  commsDiv.innerHTML = '<h4 style="padding: 5px 0;">Communautés</h4>' + snapC.docs.filter(d => d.data().name.toLowerCase().includes(term)).map(d => `<div class="tg-item" onclick="window.openCommunity('${d.id}')"><div class="tg-avatar">${d.data().name[0].toUpperCase()}</div><div class="tg-content"><div class="tg-title">${d.data().name}</div></div></div>`).join('');
 });
 
 window.followUser = async (targetId) => {

@@ -39,7 +39,7 @@
   
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
-    <div style="display: flex; gap: 15px; align-items: center;">
+    <div style="display: flex; gap: 12px; align-items: center;">
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;" title="Notifications">
         🔔<span id="notif-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span>
       </button>
@@ -54,14 +54,12 @@
     
     <!-- ACCUEIL -->
     <section id="view-home" class="view active">
-      
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;" title="Actualiser">🔄</button>
       </div>
 
-      <!-- NOUVEAU : ZONE DE CRÉATION AVEC PHOTO DE PROFIL -->
       <div class="post-creation-box">
         <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0;">?</div>
         <div style="flex: 1;">
@@ -85,16 +83,24 @@
       <div id="notif-list" class="media-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- COMMUNAUTÉS -->
+    <!-- COMMUNAUTÉS (NOUVEL ONGLET) -->
     <section id="view-communities" class="view">
-      <button id="btn-back-home-comm" class="btn-secondary small" style="margin-bottom: 1rem;">← Retour</button>
-      <div class="action-row">
-        <button id="btn-new-community" class="btn-primary small">+ Créer une communauté</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3>Mes Communautés</h3>
+        <button id="btn-discover-communities" class="btn-primary small">Découvrir</button>
       </div>
-      <div id="communities-list" class="card-grid"></div>
+
+      <!-- Vue : Mes communautés -->
+      <div id="my-communities-list" class="tg-list"></div>
+
+      <!-- Vue : Découvrir toutes les communautés (Cachée par défaut) -->
+      <div id="discover-communities-section" style="display:none;">
+        <button id="btn-back-to-my-comms" class="btn-secondary small" style="margin-bottom:1rem;">← Retour à mes communautés</button>
+        <div id="all-communities-list" class="tg-list"></div>
+      </div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ -->
+    <!-- VUE COMMUNAUTÉ (CHAT) -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
@@ -116,12 +122,6 @@
       </div>
     </section>
 
-    <!-- MUSIQUE -->
-    <section id="view-music" class="view">
-      <h3>Bibliothèque Musicale</h3>
-      <div id="music-list" class="media-list" style="margin-top:1rem;"></div>
-    </section>
-
     <!-- VIDÉO -->
     <section id="view-video" class="view">
       <h3>Découvertes Vidéo</h3>
@@ -131,7 +131,7 @@
     <!-- MESSAGERIE -->
     <section id="view-messages" class="view">
       <h3>Messages Privés</h3>
-      <div id="users-list" class="card-grid" style="margin-top:1rem;"></div>
+      <div id="users-list" class="tg-list" style="margin-top:1rem;"></div>
     </section>
 
     <section id="view-chat" class="view">
@@ -152,8 +152,8 @@
     <!-- RECHERCHE -->
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />
-      <div id="search-results-users" class="media-list" style="margin-top:1rem;"></div>
-      <div id="search-results-communities" class="media-list" style="margin-top:1rem;"></div>
+      <div id="search-results-users" class="tg-list" style="margin-top:1rem;"></div>
+      <div id="search-results-communities" class="tg-list" style="margin-top:1rem;"></div>
     </section>
 
     <!-- PROFIL -->
@@ -194,9 +194,10 @@
 
   </main>
 
+  <!-- NAVIGATION : Musique remplacé par Communautés -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
-    <button data-view="music" class="nav-btn">🎵<span>Musique</span></button>
+    <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
   </nav>
 </div>
