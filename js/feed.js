@@ -127,6 +127,21 @@ export function generatePostHTML(docSnap) {
 }
 
 export function initFeed() {
+  // --- GESTION DES BROUILLONS (DRAFTS) ---
+  const postTextarea = $('global-post-content');
+  if (postTextarea) {
+    // 1. Restaurer le brouillon au chargement
+    const savedDraft = localStorage.getItem('bluenexus_draft');
+    if (savedDraft) {
+      postTextarea.value = savedDraft;
+    }
+
+    // 2. Sauvegarder à chaque frappe
+    postTextarea.addEventListener('input', () => {
+      localStorage.setItem('bluenexus_draft', postTextarea.value);
+    });
+  }
+
   if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
   
   if($('global-post-file')) {
@@ -192,10 +207,12 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp()
     });
     
+    // --- NETTOYER APRÈS PUBLICATION (TEXTE, FICHIER ET BROUILLON) ---
     $('global-post-content').value = ''; 
     $('global-post-file').value = '';
     $('global-file-preview').innerHTML = '';
     $('global-file-preview').classList.add('hidden');
+    localStorage.removeItem('bluenexus_draft'); // On efface le brouillon sauvegardé
     
     $('btn-global-publish').textContent = "Publier";
     showToast("✅ Publication réussie !", "success");
@@ -218,7 +235,6 @@ export function initFeed() {
     observer.observe(sentinel);
   }
 
-  // --- LOGIQUE DU BOUTON RETOUR EN HAUT ---
   const btnBackToTop = $('btn-back-to-top');
   if (btnBackToTop) {
     window.addEventListener('scroll', () => {
@@ -233,16 +249,12 @@ export function initFeed() {
     });
   }
 
-  // --- LOGIQUE DU DOUBLE TAP ---
   window.doubleTapLike = async (postId, authorId, isLiked) => {
-    // Animation du cœur
     const heart = $(`heart-${postId}`);
     if (heart) {
       heart.classList.add('animate');
       setTimeout(() => heart.classList.remove('animate'), 600);
     }
-    
-    // Si ce n'est pas déjà liké, on like
     if (!isLiked) {
       window.likePost(postId, authorId, false);
     }
