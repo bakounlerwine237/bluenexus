@@ -9,6 +9,7 @@ const db = getFirestore(app);
 
 const CLOUDINARY_CLOUD_NAME = "uotg2qg2"; 
 const CLOUDINARY_UPLOAD_PRESET = "bluenexus"; 
+const TENCENT_SDK_APP_ID = 20049692; 
 
 let currentUser = null;
 let userProfile = null;
@@ -22,6 +23,7 @@ let unsubscribeNotifs = null;
 let currentChatId = null;
 let lastVisiblePost = null; 
 let currentFeedMode = 'discovery';
+let tencentChat = null;
 const $ = (id) => document.getElementById(id);
 
 // ================= MODE CLAIR / SOMBRE =================
@@ -105,6 +107,35 @@ if($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => 
   setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
 });
 
+// ================= INITIALISATION TENCENT CHAT (API SÉCURISÉE) =================
+async function initTencentChat(userId) {
+  try {
+    // Appel à ton backend Vercel sécurisé
+    const response = await fetch('https://bluenexus-backend.vercel.app/api/tencent/usersig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: userId })
+    });
+    
+    if (!response.ok) throw new Error("Erreur de récupération du UserSig");
+    const data = await response.json();
+    
+    // Initialisation de Tencent
+    tencentChat = TIM.create({ SDKAppID: TENCENT_SDK_APP_ID });
+    
+    // Connexion avec la signature du serveur
+    await tencentChat.login({
+      userID: userId,
+      userSig: data.userSig 
+    });
+    
+    console.log("Tencent Chat connecté via l'API sécurisée !");
+    
+  } catch (error) {
+    console.error("Erreur Tencent:", error);
+  }
+}
+
 // ================= CLOUDINARY =================
 async function uploadFile(file) {
   const formData = new FormData();
@@ -176,14 +207,17 @@ onAuthStateChanged(auth, async (user) => {
       await setDoc(doc(db, 'users', user.uid), userProfile);
     }
     
-    // NOUVEAU : Mettre l'avatar dans la zone de création
+    // Mettre l'avatar dans la zone de création
     const createAvatar = $('create-post-avatar');
     if (createAvatar) {
       if (userProfile.photoURL) { createAvatar.style.backgroundImage = `url(${userProfile.photoURL})`; createAvatar.textContent = ''; }
       else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = userProfile.username[0].toUpperCase(); }
     }
 
+    // Initialiser Tencent
+    await initTencentChat(user.uid);
     listenToNotifications();
+    
     $('auth-screen').classList.remove('active');
     $('app-screen').classList.add('active');
     $('auth-error').textContent = "";
@@ -306,7 +340,7 @@ async function loadMedia(type) {
   }).join('');
 }
 
-// ================= POSTS (AVEC MENU "..." POUR LES OPTIONS CACHÉES) =================
+// ================= POSTS =================
 function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -329,7 +363,6 @@ function generatePostHTML(docSnap) {
     else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
   }
 
-  // Préparation des boutons du menu caché
   const isPinned = userProfile.pinned && userProfile.pinned.includes(docSnap.id);
   const pinBtn = (p.authorId === currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned}); window.toggleMoreMenu('${docSnap.id}')">${isPinned ? '📌 Désépingler' : '📍 Épingler'}</button>` : '';
   const canDelete = (p.authorId === currentUser.uid) || (currentCommunityId && userProfile.username === currentCommunityOwner);
@@ -346,7 +379,6 @@ function generatePostHTML(docSnap) {
     ${mediaHtml}
     
     <div class="post-actions">
-      <!-- BOUTONS PRINCIPAUX VISIBLES -->
       <button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};">
         <span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> 
         <span id="like-count-${docSnap.id}">${likeCount}</span>
@@ -356,7 +388,6 @@ function generatePostHTML(docSnap) {
       </button>
       <button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button>
 
-      <!-- BOUTON MENU "..." POUR LES OPTIONS CACHÉES -->
       <div class="more-menu-container">
         <button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button>
         <div id="more-menu-${docSnap.id}" class="more-menu">
@@ -378,16 +409,13 @@ function generatePostHTML(docSnap) {
   </div>`;
 }
 
-// Fonction pour ouvrir/fermer le menu "⋮"
 window.toggleMoreMenu = (postId) => {
   const menu = $(`more-menu-${postId}`);
   if(!menu) return;
-  // Fermer les autres menus ouverts
   document.querySelectorAll('.more-menu').forEach(m => { if(m !== menu) m.classList.remove('active'); });
   menu.classList.toggle('active');
 };
 
-// Fermer le menu si on clique ailleurs
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.more-menu-container')) {
     document.querySelectorAll('.more-menu').forEach(m => m.classList.remove('active'));
@@ -504,7 +532,7 @@ window.deletePost = async (postId) => {
   }
 };
 
-// ================= MESSAGERIE =================
+// ================= MESSAGERIE (TENCENT) =================
 async function renderUsersList() {
   const list = $('users-list');
   if(!list) return;
@@ -515,38 +543,61 @@ async function renderUsersList() {
 
   list.innerHTML = otherUsers.map(u => {
     const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;">` : `<div style="width:40px;height:40px;border-radius:50%;background:var(--blue);display:inline-flex;align-items:center;justify-content:center;margin-right:10px;font-weight:bold;color:white;">${u.username[0].toUpperCase()}</div>`;
-    return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startChat('${u.id}', '${u.username}')">${avatar}<div><h4 style="margin:0">${u.username}</h4></div></div>`;
+    return `<div class="card" style="flex-direction:row; align-items:center; padding:10px;" onclick="window.startTencentChat('${u.id}', '${u.username}')">${avatar}<div><h4 style="margin:0">${u.username}</h4></div></div>`;
   }).join('');
 }
 
-window.startChat = async (targetId, targetName) => {
-  const chatId = [currentUser.uid, targetId].sort().join('_');
-  currentChatId = chatId;
+window.startTencentChat = async (targetId, targetName) => {
+  if (!tencentChat) { alert("La messagerie se connecte..."); return; }
+  
+  currentChatId = targetId;
   $('chat-with-name').textContent = targetName;
   switchView('chat');
   
   const list = $('chat-messages');
   if(!list) return;
-  list.innerHTML = '<p class="muted">Chargement...</p>';
-  const q = query(collection(db, 'messages'), where('chatId', '==', chatId), orderBy('createdAt', 'asc'));
+  list.innerHTML = '<p class="muted">Chargement de la conversation...</p>';
   
-  if (unsubscribeChat) unsubscribeChat();
-  unsubscribeChat = onSnapshot(q, snap => {
-    if (snap.empty) return list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Dites bonjour ! 👋</p>';
-    list.innerHTML = snap.docs.map(d => {
-      const m = d.data(); const isMine = m.senderId === currentUser.uid;
-      return `<div class="chat-msg ${isMine ? 'mine' : 'theirs'}">${m.text}</div>`;
-    }).join('');
-    window.scrollTo(0, document.body.scrollHeight);
-  });
+  try {
+    // Note: L'historique complet nécessite une version plus poussée, ici on affiche les nouveaux messages
+    list.innerHTML = '<p class="muted" style="text-align:center; margin-top:2rem;">Dites bonjour ! 👋</p>';
+  } catch(e) { console.error(e); }
+  
+  if (window.tencentMessageListener) tencentChat.off(TIM.EVENT.MESSAGE_RECEIVED, window.tencentMessageListener);
+  
+  window.tencentMessageListener = (event) => {
+    event.data.forEach(msg => {
+      if (msg.conversationID === `C2C${targetId}` || msg.from === targetId) {
+        const isMine = msg.from === currentUser.uid;
+        list.innerHTML += `<div class="chat-msg ${isMine ? 'mine' : 'theirs'}">${msg.payload.text || '[Média]'}</div>`;
+        window.scrollTo(0, document.body.scrollHeight);
+      }
+    });
+  };
+  
+  tencentChat.on(TIM.EVENT.MESSAGE_RECEIVED, window.tencentMessageListener);
 };
 
 if($('btn-send-chat')) $('btn-send-chat').addEventListener('click', async () => {
   const text = $('chat-input').value.trim();
-  if(!text || !currentChatId) return;
+  if(!text || !currentChatId || !tencentChat) return;
+  
   $('chat-input').value = '';
-  try { await addDoc(collection(db, 'messages'), { chatId: currentChatId, text, senderId: currentUser.uid, createdAt: serverTimestamp() }); } 
-  catch(e) { alert("Erreur : " + e.message); }
+  
+  try {
+    const message = tencentChat.createTextMessage({
+      to: currentChatId,
+      conversationType: TIM.TYPES.CONV_C2C,
+      payload: { text: text }
+    });
+    await tencentChat.sendMessage(message);
+    
+    const list = $('chat-messages');
+    if (list) {
+      list.innerHTML += `<div class="chat-msg mine">${text}</div>`;
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+  } catch(e) { console.error(e); alert("Erreur d'envoi Tencent."); }
 });
 
 // ================= COMMUNAUTÉS =================
@@ -639,7 +690,6 @@ if($('btn-save-profile')) $('btn-save-profile').addEventListener('click', async 
   userProfile.bio = $('edit-bio').value.trim();
   userProfile.photoURL = photoURL;
   
-  // Mettre à jour l'avatar de la zone de création
   const createAvatar = $('create-post-avatar');
   if (createAvatar) {
     if (photoURL) { createAvatar.style.backgroundImage = `url(${photoURL})`; createAvatar.textContent = ''; }
