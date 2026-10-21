@@ -107,6 +107,53 @@ export function generatePostHTML(docSnap) {
 export function initFeed() {
   if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
   
+  // --- GESTION DE L'APERÇU DU FICHIER ---
+  if($('global-post-file')) {
+    $('global-post-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      const previewContainer = $('global-file-preview');
+      
+      if (!file) {
+        previewContainer.innerHTML = '';
+        previewContainer.classList.add('hidden');
+        return;
+      }
+
+      previewContainer.innerHTML = '';
+      previewContainer.classList.remove('hidden');
+
+      if (file.type.startsWith('image')) {
+        const img = document.createElement('img');
+        img.className = 'file-preview-img';
+        img.src = URL.createObjectURL(file);
+        previewContainer.appendChild(img);
+      } else {
+        // Pour les vidéos/audios, afficher un icône et le nom
+        const icon = document.createElement('span');
+        icon.textContent = file.type.startsWith('video') ? '🎬' : '🎵';
+        icon.style.fontSize = '1.5rem';
+        previewContainer.appendChild(icon);
+      }
+
+      // Nom du fichier
+      const fileName = document.createElement('div');
+      fileName.className = 'file-preview-name';
+      fileName.textContent = file.name;
+      previewContainer.appendChild(fileName);
+
+      // Bouton Annuler (Croix rouge)
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'file-preview-remove';
+      removeBtn.textContent = '✕';
+      removeBtn.onclick = () => {
+        $('global-post-file').value = ''; // Vide l'input
+        previewContainer.innerHTML = '';
+        previewContainer.classList.add('hidden');
+      };
+      previewContainer.appendChild(removeBtn);
+    });
+  }
+  
   if($('btn-global-publish')) $('btn-global-publish').addEventListener('click', async () => {
     const content = $('global-post-content').value.trim();
     const file = $('global-post-file').files[0];
@@ -127,7 +174,12 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp()
     });
     
-    $('global-post-content').value = ''; $('global-post-file').value = '';
+    // --- NETTOYER APRÈS PUBLICATION ---
+    $('global-post-content').value = ''; 
+    $('global-post-file').value = '';
+    $('global-file-preview').innerHTML = '';
+    $('global-file-preview').classList.add('hidden');
+    
     $('btn-global-publish').textContent = "Publier";
     loadGlobalFeed(true);
   });
