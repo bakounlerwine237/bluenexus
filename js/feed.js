@@ -2,9 +2,12 @@ import { db, state } from './state.js';
 import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
 import { collection, addDoc, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
+// Variables pour gérer le défilement
+let isFetchingFeed = false;
+let noMorePosts = false;
+
 export async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
-  const btnMore = $('btn-load-more');
   if(!list) return;
   
   if (reset) {
@@ -13,34 +16,54 @@ export async function loadGlobalFeed(reset = false) {
       <div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
     `;
     state.lastVisiblePost = null;
+    noMorePosts = false;
   }
+
+  // Si on a déjà tout chargé ou si une requête est en cours, on ne fait rien
+  if (noMorePosts || isFetchingFeed) return;
+  isFetchingFeed = true;
   
   let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
   if (state.lastVisiblePost && !reset) {
     q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(20));
   }
 
-  const snap = await getDocs(q);
-  if (snap.empty && reset) {
-    list.innerHTML = '<p class="muted">Aucun message.</p>';
-    if(btnMore) btnMore.style.display = 'none';
-    return;
-  }
-  
-  if (reset) list.innerHTML = '';
-  state.lastVisiblePost = snap.docs[snap.docs.length - 1];
-  
-  let postsToShow = snap.docs;
-  
-  if (state.currentFeedMode === 'following') {
-    postsToShow = snap.docs.filter(d => state.userProfile.following.includes(d.data().authorId));
-    if(postsToShow.length === 0 && reset) {
-      list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
+  try {
+    const snap = await getDocs(q);
+    
+    if (snap.empty && reset) {
+      list.innerHTML = '<p class="muted">Aucun message.</p>';
+      noMorePosts = true;
+      return;
     }
-  }
+    
+    if (reset) list.innerHTML = '';
+    
+    if (snap.docs.length > 0) {
+      state.lastVisiblePost = snap.docs[snap.docs.length - 1];
+    }
+    
+    // Si on reçoit moins de 20 posts, c'est qu'on est arrivé à la fin
+    if (snap.docs.length < 20) {
+      noMorePosts = true;
+    }
+    
+    let postsToShow = snap.docs;
+    
+    if (state.currentFeedMode === 'following') {
+      postsToShow = snap.docs.filter(d => state.userProfile.following.includes(d.data().authorId));
+      if(postsToShow.length === 0 && reset) {
+        list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
+      }
+    }
 
-  postsToShow.forEach(d => { list.innerHTML += generatePostHTML(d); });
-  if(btnMore) btnMore.style.display = snap.docs.length < 20 ? 'none' : 'block';
+    postsToShow.forEach(d => { list.innerHTML += generatePostHTML(d); });
+
+  } catch (error) {
+    console.error("Erreur de chargement du feed:", error);
+  } finally {
+    isFetchingFeed = false;
+  }
 }
 
 export function generatePostHTML(docSnap) {
@@ -128,25 +151,22 @@ export function initFeed() {
         img.src = URL.createObjectURL(file);
         previewContainer.appendChild(img);
       } else {
-        // Pour les vidéos/audios, afficher un icône et le nom
         const icon = document.createElement('span');
         icon.textContent = file.type.startsWith('video') ? '🎬' : '🎵';
         icon.style.fontSize = '1.5rem';
         previewContainer.appendChild(icon);
       }
 
-      // Nom du fichier
       const fileName = document.createElement('div');
       fileName.className = 'file-preview-name';
       fileName.textContent = file.name;
       previewContainer.appendChild(fileName);
 
-      // Bouton Annuler (Croix rouge)
       const removeBtn = document.createElement('button');
       removeBtn.className = 'file-preview-remove';
       removeBtn.textContent = '✕';
       removeBtn.onclick = () => {
-        $('global-post-file').value = ''; // Vide l'input
+        $('global-post-file').value = ''; 
         previewContainer.innerHTML = '';
         previewContainer.classList.add('hidden');
       };
@@ -174,7 +194,6 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp()
     });
     
-    // --- NETTOYER APRÈS PUBLICATION ---
     $('global-post-content').value = ''; 
     $('global-post-file').value = '';
     $('global-file-preview').innerHTML = '';
@@ -184,12 +203,24 @@ export function initFeed() {
     loadGlobalFeed(true);
   });
 
-  if($('btn-load-more')) $('btn-load-more').addEventListener('click', () => loadGlobalFeed(false));
   if($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
     $('btn-refresh-feed').textContent = "⏳";
     loadGlobalFeed(true);
     setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
   });
+
+  // --- DÉFILEMENT INFINI (INFINITE SCROLL) ---
+  const sentinel = $('feed-sentinel');
+  if (sentinel) {
+    const observer = new IntersectionObserver((entries) => {
+      // Si le détecteur est visible ET qu'on est sur la page d'accueil
+      if (entries[0].isIntersecting && $('view-home').classList.contains('active')) {
+        loadGlobalFeed(false); // Charge les 20 suivants
+      }
+    }, { rootMargin: '200px' }); // Se déclenche 200px avant d'atteindre le bas
+
+    observer.observe(sentinel);
+  }
 
   window.likePost = async (postId, authorId, isLiked) => {
     const ref = doc(db, 'posts', postId);

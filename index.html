@@ -70,13 +70,13 @@
             <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
             <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
           </div>
-          <!-- CONTENEUR D'APERÇU ICI -->
           <div id="global-file-preview" class="file-preview-container hidden"></div>
         </div>
       </div>
 
       <div id="global-feed-list" class="media-list"></div>
-      <button id="btn-load-more" class="btn-secondary" style="width: 100%; margin-top: 1rem; display: none;">Charger plus de publications</button>
+      <!-- LE DÉTECTEUR POUR LE DÉFILEMENT INFINI -->
+      <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
 
     <!-- NOTIFICATIONS -->
