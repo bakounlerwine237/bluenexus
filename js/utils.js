@@ -2,7 +2,28 @@ import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from './state.js';
 
 export const $ = (id) => document.getElementById(id);
 
-// Upload d'image vers Cloudinary
+// ================= NOUVEAU : FONCTION TOAST =================
+export function showToast(message, type = 'success') {
+  const container = $('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  
+  container.appendChild(toast);
+  
+  // Déclencher l'animation d'apparition (après un tout petit délai)
+  setTimeout(() => toast.classList.add('show'), 10);
+
+  // Faire disparaître et supprimer après 3 secondes
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// ================= UPLOAD =================
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -12,7 +33,7 @@ export async function uploadFile(file) {
   return data.secure_url;
 }
 
-// Formatage du temps (Il y a 5 min...)
+// ================= TEMPS =================
 export function timeAgo(createdAt) {
   if (!createdAt) return "À l'instant";
   const diff = Date.now() - (createdAt.toMillis ? createdAt.toMillis() : createdAt);
@@ -23,7 +44,7 @@ export function timeAgo(createdAt) {
   return "À l'instant";
 }
 
-// Lecture vocale (TTS)
+// ================= TTS & TRADUCTION =================
 export function speakText(elementId) {
   const el = $(elementId);
   if(!el) return;
@@ -34,7 +55,6 @@ export function speakText(elementId) {
   } else { alert("Non supporté."); }
 }
 
-// Traduction (MyMemory)
 export async function translateText(elementId) {
   const el = $(elementId);
   if(!el) return;
@@ -46,7 +66,7 @@ export async function translateText(elementId) {
   } catch (e) { el.textContent = originalText; }
 }
 
-// Fermer les menus "..." des posts
+// ================= MENU & PARTAGE =================
 export function toggleMoreMenu(postId) {
   const menu = $(`more-menu-${postId}`);
   if(!menu) return;
@@ -62,5 +82,5 @@ document.addEventListener('click', (e) => {
 
 export function sharePost(postId) {
   const url = window.location.origin + window.location.pathname + "?post=" + postId;
-  navigator.clipboard.writeText(url).then(() => alert("Lien du post copié !"));
+  navigator.clipboard.writeText(url).then(() => showToast("Lien copié dans le presse-papiers !"));
 }

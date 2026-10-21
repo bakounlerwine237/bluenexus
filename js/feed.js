@@ -1,8 +1,7 @@
 import { db, state } from './state.js';
-import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
+import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast } from './utils.js';
 import { collection, addDoc, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
-// Variables pour gérer le défilement
 let isFetchingFeed = false;
 let noMorePosts = false;
 
@@ -19,7 +18,6 @@ export async function loadGlobalFeed(reset = false) {
     noMorePosts = false;
   }
 
-  // Si on a déjà tout chargé ou si une requête est en cours, on ne fait rien
   if (noMorePosts || isFetchingFeed) return;
   isFetchingFeed = true;
   
@@ -43,7 +41,6 @@ export async function loadGlobalFeed(reset = false) {
       state.lastVisiblePost = snap.docs[snap.docs.length - 1];
     }
     
-    // Si on reçoit moins de 20 posts, c'est qu'on est arrivé à la fin
     if (snap.docs.length < 20) {
       noMorePosts = true;
     }
@@ -68,15 +65,16 @@ export async function loadGlobalFeed(reset = false) {
 
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
-  const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
+  const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
   
   let mediaHtml = '';
   if (p.mediaUrl) {
-    if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media">`;
-    else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media"></video>`;
-    else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;"></audio>`;
+    // CHARGEMENT DIFFÉRÉ (LAZY LOADING) AJOUTÉ ICI
+    if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media" loading="lazy">`;
+    else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media" preload="metadata"></video>`;
+    else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;" preload="metadata"></audio>`;
   }
 
   const isPinned = state.userProfile.pinned && state.userProfile.pinned.includes(docSnap.id);
@@ -130,7 +128,6 @@ export function generatePostHTML(docSnap) {
 export function initFeed() {
   if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
   
-  // --- GESTION DE L'APERÇU DU FICHIER ---
   if($('global-post-file')) {
     $('global-post-file').addEventListener('change', (e) => {
       const file = e.target.files[0];
@@ -200,6 +197,9 @@ export function initFeed() {
     $('global-file-preview').classList.add('hidden');
     
     $('btn-global-publish').textContent = "Publier";
+    
+    // NOTIFICATION DE SUCCÈS
+    showToast("✅ Publication réussie !", "success");
     loadGlobalFeed(true);
   });
 
@@ -209,16 +209,13 @@ export function initFeed() {
     setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
   });
 
-  // --- DÉFILEMENT INFINI (INFINITE SCROLL) ---
   const sentinel = $('feed-sentinel');
   if (sentinel) {
     const observer = new IntersectionObserver((entries) => {
-      // Si le détecteur est visible ET qu'on est sur la page d'accueil
       if (entries[0].isIntersecting && $('view-home').classList.contains('active')) {
-        loadGlobalFeed(false); // Charge les 20 suivants
+        loadGlobalFeed(false);
       }
-    }, { rootMargin: '200px' }); // Se déclenche 200px avant d'atteindre le bas
-
+    }, { rootMargin: '200px' });
     observer.observe(sentinel);
   }
 
@@ -245,6 +242,7 @@ export function initFeed() {
       await deleteDoc(doc(db, 'posts', postId));
       const el = document.getElementById(`post-${postId}`);
       if(el) el.remove();
+      showToast("🗑️ Post supprimé.", "error"); // TOAST DE SUPPRESSION
     }
   };
 
