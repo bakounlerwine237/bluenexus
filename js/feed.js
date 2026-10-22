@@ -1,20 +1,17 @@
 import { db, state } from './state.js';
-import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast } from './utils.js';
+import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast, formatPostText } from './utils.js';
 import { collection, addDoc, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let isFetchingFeed = false;
 let noMorePosts = false;
 
-// ================= L'ALGORITHME DE PERTINENCE =================
 function calculatePostScore(post) {
   const now = Date.now();
   const postTime = post.createdAt ? (post.createdAt.toMillis ? post.createdAt.toMillis() : post.createdAt) : now;
-  
   const likesPoints = (post.likes?.length || 0) * 2;
   const commentsPoints = (post.commentsCount || 0) * 3;
   const hoursSincePost = (now - postTime) / (1000 * 60 * 60);
   const freshnessPoints = Math.max(0, 50 - (hoursSincePost * 2)); 
-
   return likesPoints + commentsPoints + freshnessPoints;
 }
 
@@ -34,7 +31,6 @@ export async function loadGlobalFeed(reset = false) {
   if (noMorePosts || isFetchingFeed) return;
   isFetchingFeed = true;
   
-  // On récupère un large éventail de posts récents pour pouvoir les trier
   let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
   if (state.lastVisiblePost && !reset) {
     q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(50));
@@ -44,58 +40,56 @@ export async function loadGlobalFeed(reset = false) {
     const snap = await getDocs(q);
     
     if (snap.empty && reset) {
-      list.innerHTML = '<p class="muted">Aucun message sur le réseau pour le moment.</p>';
+      list.innerHTML = '<p class="muted">Aucun message sur le réseau.</p>';
       noMorePosts = true;
       return;
     }
     
     if (reset) list.innerHTML = '';
-    
-    if (snap.docs.length > 0) {
-      state.lastVisiblePost = snap.docs[snap.docs.length - 1];
-    }
-    
-    if (snap.docs.length < 50) {
-      noMorePosts = true;
-    }
+    if (snap.docs.length > 0) state.lastVisiblePost = snap.docs[snap.docs.length - 1];
+    if (snap.docs.length < 50) noMorePosts = true;
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
 
-    // Calcul du score pour tous les posts
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
-    postsToShow.sort((a, b) => b.score - a.score); // Tri du plus pertinent au moins pertinent
+    postsToShow.sort((a, b) => b.score - a.score);
 
-    // --- FILTRAGE SELON L'ONGLET ACTIF ---
+    // --- FILTRAGE ET EMPTY STATE ---
     if (state.currentFeedMode === 'following') {
-      // MODE ABONNEMENTS : Uniquement les profils et pages suivis
       postsToShow = postsToShow.filter(p => {
         const isUserFollowed = state.userProfile.following?.includes(p.data.authorId);
         const isPageFollowed = p.data.pageId && state.userProfile.following?.includes(p.data.pageId);
         return isUserFollowed || isPageFollowed;
       });
       
+      // BEAU MESSAGE SI VIDE
       if(postsToShow.length === 0 && reset) {
-        list.innerHTML = '<p class="muted">Vous ne suivez encore personne ou les personnes que vous suivez n\'ont rien publié.</p>';
+        list.innerHTML = `
+          <div style="text-align: center; padding: 3rem 1rem; color: var(--muted);">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">👀</div>
+            <h3 style="color: var(--text); margin-bottom: 10px;">C'est bien calme par ici...</h3>
+            <p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Abonnez-vous à des profils ou des pages pour voir leurs publications.</p>
+            <button onclick="window.switchToDiscovery()" class="btn-primary small">Découvrir du contenu</button>
+          </div>
+        `;
+        return;
       }
     } else {
-      // MODE DÉCOUVERTES : On EXCLUT ce qu'on suit déjà pour proposer du nouveau
       postsToShow = postsToShow.filter(p => {
         const isUserFollowed = state.userProfile.following?.includes(p.data.authorId);
         const isPageFollowed = p.data.pageId && state.userProfile.following?.includes(p.data.pageId);
-        return !isUserFollowed && !isPageFollowed; // Seulement ce qu'on ne suit pas
+        return !isUserFollowed && !isPageFollowed;
       });
-
       if(postsToShow.length === 0 && reset) {
-        list.innerHTML = '<p class="muted">Vous suivez déjà tous les créateurs actifs ! Revenez plus tard.</p>';
+        list.innerHTML = '<p class="muted" style="text-align:center; padding:2rem;">Vous suivez déjà tous les créateurs actifs !</p>';
       }
     }
 
-    // Affichage des 20 meilleurs posts filtrés
     const bestPosts = postsToShow.slice(0, 20);
     bestPosts.forEach(p => { list.innerHTML += generatePostHTML(p.ref); });
 
   } catch (error) {
-    console.error("Erreur de chargement du feed:", error);
+    console.error("Erreur de chargement:", error);
   } finally {
     isFetchingFeed = false;
   }
@@ -106,6 +100,9 @@ export function generatePostHTML(docSnap) {
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
+  
+  // APPLICATION DE LA FONCTION POUR LES @ ET #
+  const formattedContent = formatPostText(p.content);
   
   let mediaHtml = '';
   if (p.mediaUrl) {
@@ -120,20 +117,22 @@ export function generatePostHTML(docSnap) {
   const isAdmin = state.userProfile.role === 'admin';
   const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner) || isAdmin;
   const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer ${isAdmin && p.authorId !== state.currentUser.uid ? '(Admin)' : ''}</button>` : '';
-
-  // Si le post vient d'une page, on affiche un petit badge
-  const pageBadge = p.pageName ? `<span style="font-size:0.7rem; background:var(--blue); color:white; padding:2px 6px; border-radius:5px; margin-left:5px;">📄 ${p.pageName}</span>` : '';
+  
+  // NOUVEAU : BOUTON SAUVEGARDER
+  const isSaved = state.userProfile.savedPosts?.includes(docSnap.id);
+  const saveBtn = `<button onclick="window.toggleSavePost('${docSnap.id}', ${isSaved}); window.toggleMoreMenu('${docSnap.id}')">${isSaved ? '🔖 Retirer des favoris' : '🔖 Sauvegarder'}</button>`;
 
   return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})">
     <div class="heart-animation" id="heart-${docSnap.id}">❤️</div>
     
     <div class="post-header">
       <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">
-        ${avatar} <strong>@${p.authorName}</strong> ${pageBadge}
+        ${avatar} <strong>@${p.authorName}</strong>
       </div>
       <span class="post-time">${timeAgo(p.createdAt)}</span>
     </div>
-    <p id="text-${docSnap.id}">${p.content}</p>
+    <!-- UTILISATION DU TEXTE FORMATÉ ICI -->
+    <p id="text-${docSnap.id}">${formattedContent}</p>
     ${mediaHtml}
     
     <div class="post-actions">
@@ -153,6 +152,7 @@ export function generatePostHTML(docSnap) {
         <div id="more-menu-${docSnap.id}" class="more-menu">
           <button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button>
           <button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>
+          ${saveBtn}
           ${pinBtn}
           ${deleteBtn}
         </div>
@@ -211,7 +211,6 @@ export function initFeed() {
       else mediaType = 'audio';
     }
     
-    // Ici on pourrait ajouter pageId si on publie en tant que page
     await addDoc(collection(db, 'posts'), {
       communityId: 'global', communityType: 'global', content, 
       authorId: state.currentUser.uid, authorName: state.userProfile.username, authorPhoto: state.userProfile.photoURL || "",
@@ -248,6 +247,24 @@ export function initFeed() {
     const heart = $(`heart-${postId}`);
     if (heart) { heart.classList.add('animate'); setTimeout(() => heart.classList.remove('animate'), 600); }
     if (!isLiked) window.likePost(postId, authorId, false);
+  };
+
+  // NOUVELLE FONCTION : SAUVEGARDER
+  window.toggleSavePost = async (postId, isSaved) => {
+    const ref = doc(db, 'users', state.currentUser.uid);
+    if (isSaved) {
+      await updateDoc(ref, { savedPosts: arrayRemove(postId) });
+      state.userProfile.savedPosts = state.userProfile.savedPosts.filter(id => id !== postId);
+      showToast("Retiré des favoris.", "error");
+    } else {
+      await updateDoc(ref, { savedPosts: arrayUnion(postId) });
+      if(!state.userProfile.savedPosts) state.userProfile.savedPosts = [];
+      state.userProfile.savedPosts.push(postId);
+      showToast("🔖 Post sauvegardé !", "success");
+    }
+    // Rafraichir le bouton dans le menu
+    const btn = document.querySelector(`#more-menu-${postId} button:nth-child(3)`);
+    if (btn) btn.textContent = isSaved ? '🔖 Sauvegarder' : '🔖 Retirer des favoris';
   };
 
   window.likePost = async (postId, authorId, isLiked) => {

@@ -2,28 +2,20 @@ import { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET } from './state.js';
 
 export const $ = (id) => document.getElementById(id);
 
-// ================= NOUVEAU : FONCTION TOAST =================
 export function showToast(message, type = 'success') {
   const container = $('toast-container');
   if (!container) return;
-
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
   toast.textContent = message;
-  
   container.appendChild(toast);
-  
-  // Déclencher l'animation d'apparition (après un tout petit délai)
   setTimeout(() => toast.classList.add('show'), 10);
-
-  // Faire disparaître et supprimer après 3 secondes
   setTimeout(() => {
     toast.classList.remove('show');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
-// ================= UPLOAD =================
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);
@@ -33,7 +25,6 @@ export async function uploadFile(file) {
   return data.secure_url;
 }
 
-// ================= TEMPS =================
 export function timeAgo(createdAt) {
   if (!createdAt) return "À l'instant";
   const diff = Date.now() - (createdAt.toMillis ? createdAt.toMillis() : createdAt);
@@ -44,12 +35,27 @@ export function timeAgo(createdAt) {
   return "À l'instant";
 }
 
-// ================= TTS & TRADUCTION =================
+// ================= NOUVEAU : FORMATAGE DES @ ET # =================
+export function formatPostText(text) {
+  if (!text) return '';
+  let formatted = text;
+  
+  // Transformer les @mentions en liens cliquables
+  formatted = formatted.replace(/@([a-zA-Z0-9_]+)/g, '<span onclick="window.searchFromPost(\'$1\')" style="color: var(--blue-light); font-weight: bold; cursor: pointer;">@$1</span>');
+  
+  // Transformer les #hashtags en liens cliquables
+  formatted = formatted.replace(/#([a-zA-Z0-9_]+)/g, '<span onclick="window.searchFromPost(\'#$1\')" style="color: var(--blue-light); font-weight: bold; cursor: pointer;">#$1</span>');
+  
+  return formatted;
+}
+
 export function speakText(elementId) {
   const el = $(elementId);
   if(!el) return;
+  // Pour lire le texte sans les balises HTML (@ et #)
+  const cleanText = el.innerText || el.textContent;
   if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(el.textContent);
+    const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'fr-FR'; 
     window.speechSynthesis.speak(utterance);
   } else { alert("Non supporté."); }
@@ -58,15 +64,23 @@ export function speakText(elementId) {
 export async function translateText(elementId) {
   const el = $(elementId);
   if(!el) return;
-  if (el.dataset.translated === 'true') { el.textContent = el.dataset.original; el.dataset.translated = 'false'; return; }
-  const originalText = el.textContent; el.dataset.original = originalText; el.textContent = "Traduction...";
+  if (el.dataset.translated === 'true') { el.innerHTML = el.dataset.original; el.dataset.translated = 'false'; return; }
+  
+  const originalHTML = el.innerHTML;
+  const originalText = el.innerText || el.textContent;
+  el.dataset.original = originalHTML; 
+  el.textContent = "Traduction...";
+  
   try {
     const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(originalText)}&langpair=autodetect|fr`);
-    const data = await res.json(); el.textContent = data.responseData.translatedText; el.dataset.translated = 'true';
-  } catch (e) { el.textContent = originalText; }
+    const data = await res.json(); 
+    el.textContent = data.responseData.translatedText; 
+    el.dataset.translated = 'true';
+  } catch (e) { 
+    el.innerHTML = originalHTML; 
+  }
 }
 
-// ================= MENU & PARTAGE =================
 export function toggleMoreMenu(postId) {
   const menu = $(`more-menu-${postId}`);
   if(!menu) return;
@@ -82,5 +96,5 @@ document.addEventListener('click', (e) => {
 
 export function sharePost(postId) {
   const url = window.location.origin + window.location.pathname + "?post=" + postId;
-  navigator.clipboard.writeText(url).then(() => showToast("Lien copié dans le presse-papiers !"));
+  navigator.clipboard.writeText(url).then(() => showToast("Lien copié !"));
 }

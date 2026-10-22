@@ -59,3 +59,23 @@ export function initNavigation() {
     if(window.loadGlobalFeed) window.loadGlobalFeed(true);
   });
 }
+window.switchToDiscovery = () => {
+  window.currentFeedMode = 'discovery';
+  const tabDisco = document.getElementById('tab-discovery');
+  const tabFollow = document.getElementById('tab-following');
+  if(tabDisco) tabDisco.className = 'btn-primary small';
+  if(tabFollow) tabFollow.className = 'btn-secondary small';
+  if(window.loadGlobalFeed) window.loadGlobalFeed(true);
+};
+
+window.searchFromPost = (term) => {
+  // Redirige vers l'onglet recherche avec le terme pré-rempli
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.value = term;
+    // On simule un événement de saisie pour lancer la recherche
+    searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    // On change de vue
+    if (window.switchView) window.switchView('search');
+  }
+};

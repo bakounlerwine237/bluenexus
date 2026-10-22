@@ -31,7 +31,7 @@ export function initAuth() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       await setDoc(doc(db, 'users', cred.user.uid), {
-        username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: []
+        username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: [] // <-- AJOUT ICI
       });
     } catch (e) { $('auth-error').textContent = e.message; }
   });
@@ -61,21 +61,16 @@ export function initAuth() {
         state.userProfile = snap.data();
         if(!state.userProfile.badges) state.userProfile.badges = [];
         if(!state.userProfile.following) state.userProfile.following = [];
+        if(!state.userProfile.savedPosts) state.userProfile.savedPosts = []; // <-- SÉCURITÉ
       } else {
-        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [] };
+        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [] };
         await setDoc(doc(db, 'users', user.uid), state.userProfile);
       }
       
-      // METTRE À JOUR L'AVATAR DE LA ZONE DE CRÉATION
       const createAvatar = $('create-post-avatar');
       if (createAvatar) {
-        if (state.userProfile.photoURL) { 
-          createAvatar.style.backgroundImage = `url(${state.userProfile.photoURL})`; 
-          createAvatar.textContent = ''; 
-        } else { 
-          createAvatar.style.backgroundImage = 'none'; 
-          createAvatar.textContent = state.userProfile.username[0].toUpperCase(); 
-        }
+        if (state.userProfile.photoURL) { createAvatar.style.backgroundImage = `url(${state.userProfile.photoURL})`; createAvatar.textContent = ''; }
+        else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = state.userProfile.username[0].toUpperCase(); }
       }
 
       await initTencentChat(user.uid);
