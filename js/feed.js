@@ -5,6 +5,22 @@ import { collection, addDoc, query, orderBy, limit, startAfter, getDocs, doc, up
 let isFetchingFeed = false;
 let noMorePosts = false;
 
+// ================= L'ALGORITHME DE PERTINENCE =================
+function calculatePostScore(post) {
+  const now = Date.now();
+  const postTime = post.createdAt ? (post.createdAt.toMillis ? post.createdAt.toMillis() : post.createdAt) : now;
+  
+  // 1. Points d'engagement
+  const likesPoints = (post.likes?.length || 0) * 2;
+  const commentsPoints = (post.commentsCount || 0) * 3;
+  
+  // 2. Points de fraîcheur (Plus c'est vieux, moins on gagne de points)
+  const hoursSincePost = (now - postTime) / (1000 * 60 * 60);
+  const freshnessPoints = Math.max(0, 50 - (hoursSincePost * 2)); 
+
+  return likesPoints + commentsPoints + freshnessPoints;
+}
+
 export async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
   if(!list) return;
@@ -21,9 +37,10 @@ export async function loadGlobalFeed(reset = false) {
   if (noMorePosts || isFetchingFeed) return;
   isFetchingFeed = true;
   
-  let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(20));
+  // On récupère un plus grand nombre de posts pour avoir de la matière à trier
+  let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
   if (state.lastVisiblePost && !reset) {
-    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(20));
+    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(50));
   }
 
   try {
@@ -41,20 +58,29 @@ export async function loadGlobalFeed(reset = false) {
       state.lastVisiblePost = snap.docs[snap.docs.length - 1];
     }
     
-    if (snap.docs.length < 20) {
+    if (snap.docs.length < 50) {
       noMorePosts = true;
     }
     
-    let postsToShow = snap.docs;
-    
+    let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
+
+    // Filtrage si on est dans l'onglet "Abonnements"
     if (state.currentFeedMode === 'following') {
-      postsToShow = snap.docs.filter(d => state.userProfile.following.includes(d.data().authorId));
+      postsToShow = postsToShow.filter(p => state.userProfile.following.includes(p.data.authorId));
       if(postsToShow.length === 0 && reset) {
         list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
       }
     }
 
-    postsToShow.forEach(d => { list.innerHTML += generatePostHTML(d); });
+    // --- TRI ALGORITHMIQUE ---
+    // 1. On calcule le score de chaque post
+    postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
+    // 2. On trie du plus grand score au plus petit
+    postsToShow.sort((a, b) => b.score - a.score);
+
+    // 3. On affiche les 20 meilleurs posts
+    const bestPosts = postsToShow.slice(0, 20);
+    bestPosts.forEach(p => { list.innerHTML += generatePostHTML(p.ref); });
 
   } catch (error) {
     console.error("Erreur de chargement du feed:", error);
@@ -78,8 +104,10 @@ export function generatePostHTML(docSnap) {
 
   const isPinned = state.userProfile.pinned && state.userProfile.pinned.includes(docSnap.id);
   const pinBtn = (p.authorId === state.currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned}); window.toggleMoreMenu('${docSnap.id}')">${isPinned ? '📌 Désépingler' : '📍 Épingler'}</button>` : '';
-  const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner);
-  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer</button>` : '';
+  
+  const isAdmin = state.userProfile.role === 'admin';
+  const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner) || isAdmin;
+  const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer ${isAdmin && p.authorId !== state.currentUser.uid ? '(Admin)' : ''}</button>` : '';
 
   return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})">
     <div class="heart-animation" id="heart-${docSnap.id}">❤️</div>
@@ -127,62 +155,29 @@ export function generatePostHTML(docSnap) {
 }
 
 export function initFeed() {
-  // --- GESTION DES BROUILLONS (DRAFTS) ---
-  const postTextarea = $('global-post-content');
-  if (postTextarea) {
-    // 1. Restaurer le brouillon au chargement
-    const savedDraft = localStorage.getItem('bluenexus_draft');
-    if (savedDraft) {
-      postTextarea.value = savedDraft;
-    }
-
-    // 2. Sauvegarder à chaque frappe
-    postTextarea.addEventListener('input', () => {
-      localStorage.setItem('bluenexus_draft', postTextarea.value);
-    });
-  }
-
   if($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
   
+  const postContent = $('global-post-content');
+  if (postContent) {
+    const savedDraft = localStorage.getItem('bluenexus_draft_global');
+    if (savedDraft) postContent.value = savedDraft;
+    postContent.addEventListener('input', (e) => localStorage.setItem('bluenexus_draft_global', e.target.value));
+  }
+
   if($('global-post-file')) {
     $('global-post-file').addEventListener('change', (e) => {
       const file = e.target.files[0];
       const previewContainer = $('global-file-preview');
-      
-      if (!file) {
-        previewContainer.innerHTML = '';
-        previewContainer.classList.add('hidden');
-        return;
-      }
-
-      previewContainer.innerHTML = '';
-      previewContainer.classList.remove('hidden');
-
+      if (!file) { previewContainer.innerHTML = ''; previewContainer.classList.add('hidden'); return; }
+      previewContainer.innerHTML = ''; previewContainer.classList.remove('hidden');
       if (file.type.startsWith('image')) {
-        const img = document.createElement('img');
-        img.className = 'file-preview-img';
-        img.src = URL.createObjectURL(file);
-        previewContainer.appendChild(img);
+        const img = document.createElement('img'); img.className = 'file-preview-img'; img.src = URL.createObjectURL(file); previewContainer.appendChild(img);
       } else {
-        const icon = document.createElement('span');
-        icon.textContent = file.type.startsWith('video') ? '🎬' : '🎵';
-        icon.style.fontSize = '1.5rem';
-        previewContainer.appendChild(icon);
+        const icon = document.createElement('span'); icon.textContent = file.type.startsWith('video') ? '🎬' : '🎵'; icon.style.fontSize = '1.5rem'; previewContainer.appendChild(icon);
       }
-
-      const fileName = document.createElement('div');
-      fileName.className = 'file-preview-name';
-      fileName.textContent = file.name;
-      previewContainer.appendChild(fileName);
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'file-preview-remove';
-      removeBtn.textContent = '✕';
-      removeBtn.onclick = () => {
-        $('global-post-file').value = ''; 
-        previewContainer.innerHTML = '';
-        previewContainer.classList.add('hidden');
-      };
+      const fileName = document.createElement('div'); fileName.className = 'file-preview-name'; fileName.textContent = file.name; previewContainer.appendChild(fileName);
+      const removeBtn = document.createElement('button'); removeBtn.className = 'file-preview-remove'; removeBtn.textContent = '✕';
+      removeBtn.onclick = () => { $('global-post-file').value = ''; previewContainer.innerHTML = ''; previewContainer.classList.add('hidden'); };
       previewContainer.appendChild(removeBtn);
     });
   }
@@ -207,57 +202,36 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp()
     });
     
-    // --- NETTOYER APRÈS PUBLICATION (TEXTE, FICHIER ET BROUILLON) ---
-    $('global-post-content').value = ''; 
-    $('global-post-file').value = '';
-    $('global-file-preview').innerHTML = '';
-    $('global-file-preview').classList.add('hidden');
-    localStorage.removeItem('bluenexus_draft'); // On efface le brouillon sauvegardé
-    
+    $('global-post-content').value = ''; localStorage.removeItem('bluenexus_draft_global'); $('global-post-file').value = '';
+    $('global-file-preview').innerHTML = ''; $('global-file-preview').classList.add('hidden');
     $('btn-global-publish').textContent = "Publier";
     showToast("✅ Publication réussie !", "success");
     loadGlobalFeed(true);
   });
 
   if($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
-    $('btn-refresh-feed').textContent = "⏳";
-    loadGlobalFeed(true);
+    $('btn-refresh-feed').textContent = "⏳"; loadGlobalFeed(true);
     setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
   });
 
   const sentinel = $('feed-sentinel');
   if (sentinel) {
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && $('view-home').classList.contains('active')) {
-        loadGlobalFeed(false);
-      }
+      if (entries[0].isIntersecting && $('view-home').classList.contains('active')) loadGlobalFeed(false);
     }, { rootMargin: '200px' });
     observer.observe(sentinel);
   }
 
   const btnBackToTop = $('btn-back-to-top');
   if (btnBackToTop) {
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 300) {
-        btnBackToTop.classList.add('show');
-      } else {
-        btnBackToTop.classList.remove('show');
-      }
-    });
-    btnBackToTop.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
+    window.addEventListener('scroll', () => { btnBackToTop.classList.toggle('show', window.scrollY > 300); });
+    btnBackToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
 
   window.doubleTapLike = async (postId, authorId, isLiked) => {
     const heart = $(`heart-${postId}`);
-    if (heart) {
-      heart.classList.add('animate');
-      setTimeout(() => heart.classList.remove('animate'), 600);
-    }
-    if (!isLiked) {
-      window.likePost(postId, authorId, false);
-    }
+    if (heart) { heart.classList.add('animate'); setTimeout(() => heart.classList.remove('animate'), 600); }
+    if (!isLiked) window.likePost(postId, authorId, false);
   };
 
   window.likePost = async (postId, authorId, isLiked) => {
@@ -316,9 +290,7 @@ export function initFeed() {
       await addDoc(collection(db, 'comments'), { postId, content, authorId: state.currentUser.uid, authorName: state.userProfile.username, createdAt: Date.now() });
       const postRef = doc(db, 'posts', postId);
       const postSnap = await getDoc(postRef);
-      if(postSnap.exists()) {
-        await updateDoc(postRef, { commentsCount: (postSnap.data().commentsCount || 0) + 1 });
-      }
+      if(postSnap.exists()) await updateDoc(postRef, { commentsCount: (postSnap.data().commentsCount || 0) + 1 });
       window.loadComments(postId); 
     } catch(e) { alert("Erreur : " + e.message); }
   };
