@@ -1,12 +1,12 @@
-import { $, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
+import { $, speakText, translateText, toggleMoreMenu, sharePost, showToast } from './utils.js';
 import { initNavigation, switchView } from './navigation.js';
 import { initAuth } from './auth.js';
 import { initFeed, loadGlobalFeed } from './feed.js';
 import { initCommunities, renderMyCommunities } from './communities.js';
 import { initMessages, renderUsersList } from './messages.js';
 import { initProfile, renderProfile, openUserProfile } from './profile.js';
+import { initPages } from './pages.js'; // <-- IMPORT DU NOUVEAU MODULE
 
-// Fonctions globales
 window.speakText = speakText;
 window.translateText = translateText;
 window.toggleMoreMenu = toggleMoreMenu;
@@ -15,7 +15,7 @@ window.loadGlobalFeed = loadGlobalFeed;
 window.renderMyCommunities = renderMyCommunities;
 window.renderUsersList = renderUsersList;
 window.renderProfile = renderProfile;
-window.openUserProfile = openUserProfile; // <-- NOUVEAU
+window.openUserProfile = openUserProfile;
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCommunities();
   initMessages();
   initProfile();
+  initPages(); // <-- INITIALISATION
   
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');

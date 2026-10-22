@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  
   <title>BlueNexus - Le réseau social des communautés</title>
-  
-  <!-- NOUVEAU : APERÇU DU LIEN POUR WHATSAPP / FACEBOOK (Open Graph) -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://bakounlerwine237.github.io/bluenexus/">
-  <meta property="og:title" content="BlueNexus - Le réseau social des communautés">
-  <meta property="og:description" content="Rejoignez BlueNexus, la plateforme pour créer des communautés, partager des posts, de la musique et des vidéos.">
-  <meta property="og:image" content="https://res.cloudinary.com/uotg2qg2/image/upload/v1/blue-logo.png">
-  
+  <meta name="description" content="Rejoignez BlueNexus, la plateforme pour créer des communautés, partager des posts, de la musique et des vidéos." />
+  <meta property="og:title" content="BlueNexus - Le réseau social des communautés" />
+  <meta property="og:description" content="Créez vos communautés, discutez, partagez des posts, de la musique et des vidéos." />
+  <meta property="og:image" content="https://res.cloudinary.com/uotg2qg2/image/upload/v1/blue-logo.png" />
+  <meta property="og:url" content="https://bakounlerwine237.github.io/bluenexus/" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -49,9 +47,7 @@
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <div style="display: flex; gap: 12px; align-items: center;">
-      <button data-view="notifications" class="nav-btn top-btn" style="position:relative;" title="Notifications">
-        🔔<span id="notif-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span>
-      </button>
+      <button data-view="notifications" class="nav-btn top-btn" style="position:relative;" title="Notifications">🔔<span id="notif-badge" style="display:none; position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
       <button data-view="messages" class="nav-btn top-btn" title="Messages">✉️</button>
       <button data-view="search" class="nav-btn top-btn" title="Recherche">🔍</button>
       <button data-view="profile" class="nav-btn top-btn" title="Profil">👤</button>
@@ -61,14 +57,12 @@
 
   <main id="main-content">
     
-    <!-- ACCUEIL -->
     <section id="view-home" class="view active">
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;" title="Actualiser">🔄</button>
       </div>
-
       <div class="post-creation-box">
         <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
         <div style="flex: 1;">
@@ -82,18 +76,12 @@
           <div id="global-file-preview" class="file-preview-container hidden"></div>
         </div>
       </div>
-
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
 
-    <!-- NOTIFICATIONS -->
-    <section id="view-notifications" class="view">
-      <h3>Notifications</h3>
-      <div id="notif-list" class="media-list" style="margin-top:1rem;"></div>
-    </section>
+    <section id="view-notifications" class="view"><h3>Notifications</h3><div id="notif-list" class="media-list" style="margin-top:1rem;"></div></section>
 
-    <!-- COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h3>Mes Communautés</h3>
@@ -106,14 +94,10 @@
       </div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ -->
     <section id="view-community" class="view">
       <div class="comm-header-fixed">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px;">←</button>
-        <div style="flex: 1; margin-left: 10px;">
-          <h2 id="comm-title-display" style="font-size: 1rem; margin: 0;">Nom</h2>
-          <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p>
-        </div>
+        <div style="flex: 1; margin-left: 10px;"><h2 id="comm-title-display" style="font-size: 1rem; margin: 0;">Nom</h2><p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p></div>
         <button id="btn-join-community" class="btn-primary small">Rejoindre</button>
       </div>
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
@@ -128,17 +112,9 @@
       </div>
     </section>
 
-    <!-- VIDÉO -->
-    <section id="view-video" class="view">
-      <h3>Découvertes Vidéo</h3>
-      <div id="video-list" class="media-list" style="margin-top:1rem;"></div>
-    </section>
+    <section id="view-video" class="view"><h3>Découvertes Vidéo</h3><div id="video-list" class="media-list" style="margin-top:1rem;"></div></section>
 
-    <!-- MESSAGERIE -->
-    <section id="view-messages" class="view">
-      <h3>Messages Privés</h3>
-      <div id="users-list" class="tg-list" style="margin-top:1rem;"></div>
-    </section>
+    <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
 
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);">
@@ -155,29 +131,30 @@
       </div>
     </section>
 
-    <!-- RECHERCHE -->
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />
       <div id="search-results-users" class="tg-list" style="margin-top:1rem;"></div>
       <div id="search-results-communities" class="tg-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- PROFIL -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
         <div class="fb-avatar-container">
           <div class="fb-avatar" id="profile-avatar"></div>
-          <div>
-            <h2 id="profile-name">—</h2>
-            <p id="profile-bio" class="muted"></p>
-            <div id="profile-badges" style="display:flex; gap:5px; margin-top:5px;"></div>
-          </div>
+          <div><h2 id="profile-name">—</h2><p id="profile-bio" class="muted"></p><div id="profile-badges" style="display:flex; gap:5px; margin-top:5px;"></div></div>
         </div>
         <div style="padding: 0 1rem; margin-bottom: 1rem; display:flex; gap:10px;">
           <button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button>
           <button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button>
         </div>
+        
+        <!-- SECTION PAGES CRÉÉES -->
+        <div style="padding: 1rem; border-top: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1rem;">📄 Mes Pages</h3>
+          <div id="profile-pages" class="tg-list"></div>
+        </div>
+
         <div style="padding: 1rem; border-top: 1px solid var(--border);">
           <h3 style="margin-bottom: 1rem;">📌 Publications épinglées</h3>
           <div id="profile-pinned" class="media-list"></div>
@@ -185,16 +162,19 @@
       </div>
     </section>
     
-    <!-- PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
+      
+      <!-- NOUVEAU : BOUTON CRÉER UNE PAGE -->
+      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
+        <h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4>
+        <p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p>
+        <button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button>
+      </div>
+
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">Apparence</h4>
         <button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button>
-      </div>
-      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
-        <h4 style="margin-bottom: 0.5rem;">Créer un compte</h4>
-        <button id="btn-settings-signup" class="btn-primary" style="width: 100%;">Créer un autre compte</button>
       </div>
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b;">Se déconnecter</button>
     </section>
@@ -219,6 +199,29 @@
   </div>
 </div>
 
+<!-- NOUVELLE MODALE : CRÉATION DE PAGE -->
+<div id="modal-page" class="modal hidden">
+  <div class="modal-content">
+    <h3>Créer une Page</h3>
+    <input id="page-name" placeholder="Nom de la page" />
+    <textarea id="page-desc" placeholder="Description de la page"></textarea>
+    <select id="page-type" style="margin-bottom: 0.5rem;">
+      <option value="creator">🎨 Créateur de contenu</option>
+      <option value="business">💼 Entreprise</option>
+      <option value="community">🏘️ Communauté</option>
+    </select>
+    <select id="page-category" style="margin-bottom: 0.5rem;">
+      <option value="tech">💻 Technologie</option>
+      <option value="music">🎵 Musique</option>
+      <option value="sport">⚽ Sport</option>
+      <option value="entertainment">🎬 Divertissement</option>
+      <option value="education">📚 Éducation</option>
+    </select>
+    <button id="page-save" class="btn-primary">Créer la page</button>
+    <button id="page-cancel" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
 <div id="modal-profile" class="modal hidden">
   <div class="modal-content">
     <h3>Modifier mon profil</h3>
@@ -231,7 +234,6 @@
   </div>
 </div>
 
-<!-- CONTENEURS & BOUTONS FLOTTANTS -->
 <div id="toast-container"></div>
 <button id="btn-back-to-top" title="Retour en haut">↑</button>
 
