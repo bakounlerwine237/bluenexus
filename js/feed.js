@@ -10,11 +10,8 @@ function calculatePostScore(post) {
   const now = Date.now();
   const postTime = post.createdAt ? (post.createdAt.toMillis ? post.createdAt.toMillis() : post.createdAt) : now;
   
-  // 1. Points d'engagement
   const likesPoints = (post.likes?.length || 0) * 2;
   const commentsPoints = (post.commentsCount || 0) * 3;
-  
-  // 2. Points de fraîcheur (Plus c'est vieux, moins on gagne de points)
   const hoursSincePost = (now - postTime) / (1000 * 60 * 60);
   const freshnessPoints = Math.max(0, 50 - (hoursSincePost * 2)); 
 
@@ -37,7 +34,7 @@ export async function loadGlobalFeed(reset = false) {
   if (noMorePosts || isFetchingFeed) return;
   isFetchingFeed = true;
   
-  // On récupère un plus grand nombre de posts pour avoir de la matière à trier
+  // On récupère un large éventail de posts récents pour pouvoir les trier
   let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
   if (state.lastVisiblePost && !reset) {
     q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(50));
@@ -47,7 +44,7 @@ export async function loadGlobalFeed(reset = false) {
     const snap = await getDocs(q);
     
     if (snap.empty && reset) {
-      list.innerHTML = '<p class="muted">Aucun message.</p>';
+      list.innerHTML = '<p class="muted">Aucun message sur le réseau pour le moment.</p>';
       noMorePosts = true;
       return;
     }
@@ -64,21 +61,36 @@ export async function loadGlobalFeed(reset = false) {
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
 
-    // Filtrage si on est dans l'onglet "Abonnements"
+    // Calcul du score pour tous les posts
+    postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
+    postsToShow.sort((a, b) => b.score - a.score); // Tri du plus pertinent au moins pertinent
+
+    // --- FILTRAGE SELON L'ONGLET ACTIF ---
     if (state.currentFeedMode === 'following') {
-      postsToShow = postsToShow.filter(p => state.userProfile.following.includes(p.data.authorId));
+      // MODE ABONNEMENTS : Uniquement les profils et pages suivis
+      postsToShow = postsToShow.filter(p => {
+        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId);
+        const isPageFollowed = p.data.pageId && state.userProfile.following?.includes(p.data.pageId);
+        return isUserFollowed || isPageFollowed;
+      });
+      
       if(postsToShow.length === 0 && reset) {
-        list.innerHTML = '<p class="muted">Abonnez-vous à des personnes pour voir leurs posts ici !</p>';
+        list.innerHTML = '<p class="muted">Vous ne suivez encore personne ou les personnes que vous suivez n\'ont rien publié.</p>';
+      }
+    } else {
+      // MODE DÉCOUVERTES : On EXCLUT ce qu'on suit déjà pour proposer du nouveau
+      postsToShow = postsToShow.filter(p => {
+        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId);
+        const isPageFollowed = p.data.pageId && state.userProfile.following?.includes(p.data.pageId);
+        return !isUserFollowed && !isPageFollowed; // Seulement ce qu'on ne suit pas
+      });
+
+      if(postsToShow.length === 0 && reset) {
+        list.innerHTML = '<p class="muted">Vous suivez déjà tous les créateurs actifs ! Revenez plus tard.</p>';
       }
     }
 
-    // --- TRI ALGORITHMIQUE ---
-    // 1. On calcule le score de chaque post
-    postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
-    // 2. On trie du plus grand score au plus petit
-    postsToShow.sort((a, b) => b.score - a.score);
-
-    // 3. On affiche les 20 meilleurs posts
+    // Affichage des 20 meilleurs posts filtrés
     const bestPosts = postsToShow.slice(0, 20);
     bestPosts.forEach(p => { list.innerHTML += generatePostHTML(p.ref); });
 
@@ -109,12 +121,15 @@ export function generatePostHTML(docSnap) {
   const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner) || isAdmin;
   const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer ${isAdmin && p.authorId !== state.currentUser.uid ? '(Admin)' : ''}</button>` : '';
 
+  // Si le post vient d'une page, on affiche un petit badge
+  const pageBadge = p.pageName ? `<span style="font-size:0.7rem; background:var(--blue); color:white; padding:2px 6px; border-radius:5px; margin-left:5px;">📄 ${p.pageName}</span>` : '';
+
   return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})">
     <div class="heart-animation" id="heart-${docSnap.id}">❤️</div>
     
     <div class="post-header">
       <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">
-        ${avatar} <strong>@${p.authorName}</strong>
+        ${avatar} <strong>@${p.authorName}</strong> ${pageBadge}
       </div>
       <span class="post-time">${timeAgo(p.createdAt)}</span>
     </div>
@@ -196,6 +211,7 @@ export function initFeed() {
       else mediaType = 'audio';
     }
     
+    // Ici on pourrait ajouter pageId si on publie en tant que page
     await addDoc(collection(db, 'posts'), {
       communityId: 'global', communityType: 'global', content, 
       authorId: state.currentUser.uid, authorName: state.userProfile.username, authorPhoto: state.userProfile.photoURL || "",
