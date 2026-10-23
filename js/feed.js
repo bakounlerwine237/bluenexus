@@ -4,6 +4,7 @@ import { collection, addDoc, query, orderBy, limit, startAfter, getDocs, doc, up
 
 let isFetchingFeed = false;
 let noMorePosts = false;
+let editingPostId = null; // Pour stocker l'ID du post en cours de modification
 
 function calculatePostScore(post) {
   const now = Date.now();
@@ -124,6 +125,16 @@ export function generatePostHTML(docSnap) {
   const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner) || isAdmin;
   const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer ${isAdmin && p.authorId !== state.currentUser.uid ? '(Admin)' : ''}</button>` : '';
   
+  // BOUTON MODIFIER (Seulement pour l'auteur ou l'admin)
+  const editBtn = (p.authorId === state.currentUser.uid || isAdmin) 
+    ? `<button onclick="window.openEditPost('${docSnap.id}', \`${p.content.replace(/`/g, "\\`").replace(/\$/g, "\\$")}\`); window.toggleMoreMenu('${docSnap.id}')">✏️ Modifier</button>` 
+    : '';
+
+  // BOUTON SIGNALER (Pour tout le monde sauf l'auteur)
+  const reportBtn = (p.authorId !== state.currentUser.uid) 
+    ? `<button onclick="window.reportPost('${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')" style="color:#f59e0b;">⚠️ Signaler</button>` 
+    : '';
+  
   const isSaved = state.userProfile.savedPosts?.includes(docSnap.id);
   const saveBtn = `<button onclick="window.toggleSavePost('${docSnap.id}', ${isSaved}); window.toggleMoreMenu('${docSnap.id}')">${isSaved ? '🔖 Retirer des favoris' : '🔖 Sauvegarder'}</button>`;
 
@@ -157,7 +168,9 @@ export function generatePostHTML(docSnap) {
           <button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button>
           <button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>
           ${saveBtn}
+          ${editBtn}
           ${pinBtn}
+          ${reportBtn}
           ${deleteBtn}
         </div>
       </div>
@@ -181,10 +194,9 @@ export function initFeed() {
     const savedDraft = localStorage.getItem('bluenexus_draft_global');
     if (savedDraft) postContent.value = savedDraft;
     
-    // --- NOUVEAU : AGRANDISSEMENT AUTOMATIQUE DU TEXTAREA ---
     postContent.addEventListener('input', function() {
-      this.style.height = '40px'; // Réinitialise à la taille de base
-      this.style.height = (this.scrollHeight) + 'px'; // Prend la taille du contenu
+      this.style.height = '40px';
+      this.style.height = (this.scrollHeight) + 'px';
       localStorage.setItem('bluenexus_draft_global', this.value);
     });
   }
@@ -228,7 +240,7 @@ export function initFeed() {
     });
     
     $('global-post-content').value = ''; 
-    $('global-post-content').style.height = '40px'; // Réinitialise la taille
+    $('global-post-content').style.height = '40px';
     localStorage.removeItem('bluenexus_draft_global'); 
     $('global-post-file').value = '';
     $('global-file-preview').innerHTML = ''; $('global-file-preview').classList.add('hidden');
@@ -255,6 +267,60 @@ export function initFeed() {
     window.addEventListener('scroll', () => { btnBackToTop.classList.toggle('show', window.scrollY > 300); });
     btnBackToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
+
+  // --- GESTION DE LA MODIFICATION DE POST ---
+  window.openEditPost = (postId, content) => {
+    editingPostId = postId;
+    $('edit-post-content').value = content;
+    $('modal-edit-post').classList.remove('hidden');
+  };
+
+  if($('btn-cancel-post-edit')) $('btn-cancel-post-edit').addEventListener('click', () => {
+    $('modal-edit-post').classList.add('hidden');
+    editingPostId = null;
+  });
+
+  if($('btn-save-post-edit')) $('btn-save-post-edit').addEventListener('click', async () => {
+    if (!editingPostId) return;
+    const newContent = $('edit-post-content').value.trim();
+    if (!newContent) return showToast("Le texte ne peut pas être vide.", "error");
+
+    $('btn-save-post-edit').textContent = "Enregistrement...";
+    try {
+      await updateDoc(doc(db, 'posts', editingPostId), { content: newContent });
+      showToast("✏️ Post modifié avec succès !", "success");
+      $('modal-edit-post').classList.add('hidden');
+      
+      // Mise à jour visuelle instantanée sans recharger tout le feed
+      const textEl = $(`text-${editingPostId}`);
+      if (textEl) textEl.innerHTML = formatPostText(newContent);
+      
+    } catch (e) {
+      showToast("Erreur : " + e.message, "error");
+    } finally {
+      $('btn-save-post-edit').textContent = "Enregistrer";
+      editingPostId = null;
+    }
+  });
+
+  // --- GESTION DU SIGNALEMENT ---
+  window.reportPost = async (postId) => {
+    const reason = prompt("Pourquoi signalez-vous ce post ? (Spam, Insulte, Harcèlement...)");
+    if (!reason) return;
+
+    try {
+      await addDoc(collection(db, 'reports'), {
+        postId: postId,
+        reporterId: state.currentUser.uid,
+        reporterName: state.userProfile.username,
+        reason: reason,
+        createdAt: serverTimestamp()
+      });
+      showToast("⚠️ Post signalé à la modération. Merci !", "success");
+    } catch(e) {
+      showToast("Erreur lors du signalement.", "error");
+    }
+  };
 
   window.doubleTapLike = async (postId, authorId, isLiked) => {
     const heart = $(`heart-${postId}`);
