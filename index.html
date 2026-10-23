@@ -4,13 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BlueNexus - Le réseau social des communautés</title>
-  <meta name="description" content="Rejoignez BlueNexus, la plateforme pour créer des communautés, partager des posts, de la musique et des vidéos." />
-  <meta property="og:title" content="BlueNexus - Le réseau social des communautés" />
-  <meta property="og:description" content="Créez vos communautés, discutez, partagez des posts, de la musique et des vidéos." />
-  <meta property="og:image" content="https://res.cloudinary.com/uotg2qg2/image/upload/v1/blue-logo.png" />
-  <meta property="og:url" content="https://bakounlerwine237.github.io/bluenexus/" />
-  <meta property="og:type" content="website" />
-  <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -55,7 +48,6 @@
   </header>
 
   <main id="main-content">
-    <!-- ACCUEIL -->
     <section id="view-home" class="view active">
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
@@ -79,7 +71,13 @@
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
 
-    <!-- NOTIFICATIONS (MISE À JOUR) -->
+    <!-- VIDÉO (NOUVEAU DESIGN TIKTOK) -->
+    <section id="view-video" class="view" style="padding: 0 !important;">
+      <div id="video-feed" class="video-feed-container">
+        <!-- Les vidéos seront injectées ici par JS -->
+      </div>
+    </section>
+
     <section id="view-notifications" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
         <h3>Notifications</h3>
@@ -88,7 +86,6 @@
       <div id="notif-list" class="tg-list"></div>
     </section>
 
-    <!-- COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h3>Mes Communautés</h3>
@@ -119,7 +116,6 @@
       </div>
     </section>
 
-    <!-- MESSAGERIE -->
     <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);">
@@ -136,8 +132,6 @@
         <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
     </section>
-
-    <section id="view-video" class="view"><h3>Découvertes Vidéo</h3><div id="video-list" class="media-list" style="margin-top:1rem;"></div></section>
 
     <section id="view-search" class="view">
       <input id="search-input" type="text" placeholder="Rechercher..." />

@@ -6,7 +6,8 @@ import { initCommunities, renderMyCommunities } from './communities.js';
 import { initMessages, renderUsersList } from './messages.js';
 import { initProfile, renderProfile, openUserProfile } from './profile.js';
 import { initPages } from './pages.js';
-import { listenToNotifications, loadNotifications, initNotifications } from './notifications.js'; // <-- NOUVEL IMPORT
+import { listenToNotifications, loadNotifications, initNotifications } from './notifications.js';
+import { initVideo, loadVideoFeed } from './video.js'; // <-- IMPORT DU MODULE VIDÉO
 
 window.speakText = speakText;
 window.translateText = translateText;
@@ -17,7 +18,8 @@ window.renderMyCommunities = renderMyCommunities;
 window.renderUsersList = renderUsersList;
 window.renderProfile = renderProfile;
 window.openUserProfile = openUserProfile;
-window.loadNotifications = loadNotifications; // <-- NOUVEAU
+window.loadNotifications = loadNotifications;
+window.loadVideoFeed = loadVideoFeed; // <-- EXPOSER À L'ÉCRAN
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
@@ -27,8 +29,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initMessages();
   initProfile();
   initPages();
-  initNotifications(); // <-- NOUVELLE INITIALISATION
+  initNotifications();
+  initVideo(); // <-- INITIALISATION
   
+  // ... (le reste du code : thème sombre, micro, etc.)
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
   function updateThemeBtnText() {
@@ -62,5 +66,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('userReady', () => {
   loadGlobalFeed(true);
-  listenToNotifications(); // <-- LANCEMENT DE L'ÉCOUTE
+  listenToNotifications();
 });
