@@ -7,7 +7,8 @@ import { initMessages, renderUsersList } from './messages.js';
 import { initProfile, renderProfile, openUserProfile } from './profile.js';
 import { initPages } from './pages.js';
 import { listenToNotifications, loadNotifications, initNotifications } from './notifications.js';
-import { initVideo, loadVideoFeed } from './video.js'; // <-- IMPORT DU MODULE VIDÉO
+import { initVideo, loadVideoFeed } from './video.js';
+import { initSearch } from './search.js'; // <-- NOUVEL IMPORT
 
 window.speakText = speakText;
 window.translateText = translateText;
@@ -19,7 +20,7 @@ window.renderUsersList = renderUsersList;
 window.renderProfile = renderProfile;
 window.openUserProfile = openUserProfile;
 window.loadNotifications = loadNotifications;
-window.loadVideoFeed = loadVideoFeed; // <-- EXPOSER À L'ÉCRAN
+window.loadVideoFeed = loadVideoFeed;
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
@@ -30,9 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initProfile();
   initPages();
   initNotifications();
-  initVideo(); // <-- INITIALISATION
+  initVideo();
+  initSearch(); // <-- NOUVELLE INITIALISATION
   
-  // ... (le reste du code : thème sombre, micro, etc.)
+  // Mode sombre
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
   function updateThemeBtnText() {
@@ -48,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Micro
   document.querySelectorAll('.btn-mic').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();

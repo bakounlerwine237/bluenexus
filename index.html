@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BlueNexus - Le réseau social des communautés</title>
+  <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -71,11 +72,44 @@
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
 
-    <!-- VIDÉO (NOUVEAU DESIGN TIKTOK) -->
-    <section id="view-video" class="view" style="padding: 0 !important;">
-      <div id="video-feed" class="video-feed-container">
-        <!-- Les vidéos seront injectées ici par JS -->
+    <!-- VUE RECHERCHE (NOUVEAU DESIGN) -->
+    <section id="view-search" class="view">
+      <div class="search-header">
+        <div class="search-bar-container">
+          <span class="search-icon">🔍</span>
+          <input id="search-input" type="text" placeholder="Rechercher sur BlueNexus..." autocomplete="off" />
+          <button id="btn-clear-search" class="btn-clear-search" style="display:none;">✕</button>
+        </div>
+        
+        <!-- Filtres -->
+        <div class="search-filters-row">
+          <button class="filter-btn active" data-filter="all">Tout</button>
+          <button class="filter-btn" data-filter="users">👤 Utilisateurs</button>
+          <button class="filter-btn" data-filter="communities">🌐 Communautés</button>
+          <button class="filter-btn" data-filter="posts">📝 Posts</button>
+        </div>
       </div>
+
+      <!-- Historique (visible au démarrage) -->
+      <div id="search-history-container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+          <h4 style="font-size: 0.9rem; color: var(--muted);">Recherches récentes</h4>
+          <button id="btn-clear-history" style="background:none; border:none; color: var(--blue-light); cursor:pointer; font-size: 0.8rem;">Effacer</button>
+        </div>
+        <div id="search-history-list" class="tg-list"></div>
+      </div>
+
+      <!-- Résultats -->
+      <div id="search-results" style="display:none;">
+        <div id="search-results-users"></div>
+        <div id="search-results-communities"></div>
+        <div id="search-results-posts"></div>
+        <p id="search-no-results" class="muted" style="display:none; text-align:center; padding: 2rem;">Aucun résultat trouvé.</p>
+      </div>
+    </section>
+
+    <section id="view-video" class="view" style="padding: 0 !important;">
+      <div id="video-feed" class="video-feed-container"></div>
     </section>
 
     <section id="view-notifications" class="view">
@@ -131,12 +165,6 @@
         </div>
         <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
-    </section>
-
-    <section id="view-search" class="view">
-      <input id="search-input" type="text" placeholder="Rechercher..." />
-      <div id="search-results-users" class="tg-list" style="margin-top:1rem;"></div>
-      <div id="search-results-communities" class="tg-list" style="margin-top:1rem;"></div>
     </section>
 
     <section id="view-profile" class="view">
@@ -197,7 +225,6 @@
   </nav>
 </div>
 
-<!-- MODALES -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>

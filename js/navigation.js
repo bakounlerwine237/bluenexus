@@ -2,7 +2,7 @@ import { $ } from './utils.js';
 import { state } from './state.js';
 
 export function switchView(viewId) {
-  // 1. Cacher toutes les vues et retirer la classe active des boutons
+  // 1. Cacher toutes les vues et retirer l'état actif des boutons
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
@@ -37,19 +37,51 @@ export function switchView(viewId) {
   }
 
   // 5. Charger les données spécifiques à chaque vue
-  if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true);
-  if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities();
-  if (viewId === 'profile' && window.renderProfile) window.renderProfile();
   
-  // --- NOUVEL APPEL ICI ---
-  if (viewId === 'video' && window.loadVideoFeed) window.loadVideoFeed(); 
+  if (viewId === 'home' && window.loadGlobalFeed) {
+    window.loadGlobalFeed(true);
+  }
   
-  if (viewId === 'messages' && window.renderUsersList) window.renderUsersList();
-  if (viewId === 'notifications' && window.loadNotifications) window.loadNotifications();
+  if (viewId === 'communities' && window.renderMyCommunities) {
+    window.renderMyCommunities();
+  }
+  
+  if (viewId === 'profile' && window.renderProfile) {
+    window.renderProfile();
+  }
+  
+  // --- MISE À JOUR VIDÉO ---
+  if (viewId === 'video' && window.loadVideoFeed) {
+    window.loadVideoFeed(); 
+  }
+  
+  if (viewId === 'messages' && window.renderUsersList) {
+    window.renderUsersList();
+  }
+  
+  if (viewId === 'notifications' && window.loadNotifications) {
+    window.loadNotifications();
+  }
+  
+  // --- MISE À JOUR RECHERCHE ---
+  if (viewId === 'search') {
+    // Placer le curseur dans la barre de recherche automatiquement
+    const searchInput = $('search-input');
+    if (searchInput) {
+      searchInput.focus();
+      // Si le champ est vide, on affiche l'historique
+      if (searchInput.value.trim() === '') {
+        const historyContainer = $('search-history-container');
+        const resultsContainer = $('search-results');
+        if (historyContainer) historyContainer.style.display = 'block';
+        if (resultsContainer) resultsContainer.style.display = 'none';
+      }
+    }
+  }
 }
 
 export function initNavigation() {
-  // Écouteurs sur les boutons du menu du bas
+  // Écouteurs sur les boutons du menu du bas et du haut
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.view));
   });
@@ -112,7 +144,7 @@ window.searchFromPost = (term) => {
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
     searchInput.value = term;
-    // Simule une frappe pour lancer la recherche
+    // Simule une frappe pour lancer la recherche dans le module search.js
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
     if (window.switchView) window.switchView('search');
   }

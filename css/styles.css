@@ -241,3 +241,24 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
   font-size: 0.7rem;
   margin-top: 2px;
 }
+/* ================= NOUVEAU : STYLE RECHERCHE ================= */
+.search-header { position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 10; margin-bottom: 10px; }
+.search-bar-container { display: flex; align-items: center; background: var(--bg-2); border: 1px solid var(--border); border-radius: 25px; padding: 5px 15px; gap: 10px; }
+.search-bar-container:focus-within { border-color: var(--blue-light); }
+.search-icon { font-size: 1rem; color: var(--muted); }
+#search-input { border: none; background: transparent; margin: 0; padding: 8px 0; flex: 1; font-size: 0.95rem; }
+#search-input:focus { outline: none; }
+.btn-clear-search { background: var(--border); color: var(--text); border: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
+
+.search-filters-row { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
+.filter-btn { background: var(--bg-2); border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.filter-btn.active { background: var(--blue); border-color: var(--blue); color: white; font-weight: bold; }
+
+/* Historique */
+#search-history-container { margin-top: 10px; }
+.history-item { display: flex; align-items: center; gap: 10px; padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.history-item:hover { background: rgba(255,255,255,0.05); }
+.history-icon { color: var(--muted); }
+
+/* Résultats */
+.search-section-title { font-size: 0.85rem; color: var(--muted); margin: 15px 0 10px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
