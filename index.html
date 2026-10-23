@@ -63,7 +63,9 @@
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;" title="Actualiser">🔄</button>
       </div>
-      <div class="post-creation-box">
+      
+      <!-- ZONE DE CRÉATION (avec un ID pour pouvoir la cacher) -->
+      <div id="post-creation-container" class="post-creation-box">
         <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
         <div style="flex: 1;">
           <textarea id="global-post-content" placeholder="Quoi de neuf ?"></textarea>
@@ -76,6 +78,7 @@
           <div id="global-file-preview" class="file-preview-container hidden"></div>
         </div>
       </div>
+
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
@@ -137,11 +140,9 @@
       <div id="search-results-communities" class="tg-list" style="margin-top:1rem;"></div>
     </section>
 
-    <!-- ================= NOUVELLE VUE PROFIL (STYLE FACEBOOK) ================= -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
-        
         <div class="fb-avatar-container">
           <div class="fb-avatar" id="profile-avatar"></div>
           <div style="padding-bottom: 10px;">
@@ -149,42 +150,24 @@
             <p id="profile-bio" class="muted" style="margin-top: 5px;"></p>
           </div>
         </div>
-
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
-
-        <!-- STATISTIQUES -->
         <div class="fb-stats">
           <span><strong id="stat-posts">0</strong> Publications</span>
           <span><strong id="stat-followers">0</strong> Abonnés</span>
           <span><strong id="stat-following">0</strong> Abonnements</span>
         </div>
-
-        <!-- BOUTONS D'ACTION -->
         <div class="fb-action-buttons">
           <button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button>
           <button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button>
         </div>
-
-        <!-- ONGLETS -->
         <div class="fb-tabs">
           <button class="fb-tab active" onclick="window.switchProfileTab('posts')">Publications</button>
           <button class="fb-tab" onclick="window.switchProfileTab('pages')">Pages</button>
           <button class="fb-tab" onclick="window.switchProfileTab('about')">À propos</button>
         </div>
-
-        <!-- CONTENU DES ONGLETS -->
         <div class="fb-tab-content">
-          <!-- Onglet Publications -->
-          <div id="profile-tab-posts" style="display: block;">
-            <div id="profile-posts-list" class="media-list"></div>
-          </div>
-          
-          <!-- Onglet Pages -->
-          <div id="profile-tab-pages" style="display: none;">
-            <div id="profile-pages-list" class="tg-list" style="padding: 0 1rem;"></div>
-          </div>
-
-          <!-- Onglet À propos -->
+          <div id="profile-tab-posts" style="display: block;"><div id="profile-posts-list" class="media-list"></div></div>
+          <div id="profile-tab-pages" style="display: none;"><div id="profile-pages-list" class="tg-list" style="padding: 0 1rem;"></div></div>
           <div id="profile-tab-about" style="display: none; padding: 1rem;">
             <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius);">
               <h3 style="margin-bottom: 1rem;">Informations</h3>
@@ -193,7 +176,6 @@
             </div>
           </div>
         </div>
-
       </div>
     </section>
     

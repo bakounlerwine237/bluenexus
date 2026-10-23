@@ -1,8 +1,6 @@
 import { $ } from './utils.js';
 import { state } from './state.js';
 
-// On importe les fonctions de rendu des autres modules
-// (On les appelle dynamiquement via window pour éviter les boucles d'importation)
 export function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const target = $(`view-${viewId}`);
@@ -39,18 +37,22 @@ export function initNavigation() {
   if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
   if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
-  // --- CORRECTION ICI : ON MODIFIE state.currentFeedMode ---
+  // --- GESTION DES ONGLETS ET DE LA ZONE DE CRÉATION ---
   if($('tab-discovery')) $('tab-discovery').addEventListener('click', () => {
-    state.currentFeedMode = 'discovery'; // <-- Modifie la vraie variable
+    state.currentFeedMode = 'discovery';
     $('tab-discovery').className = 'btn-primary small';
     if($('tab-following')) $('tab-following').className = 'btn-secondary small';
+    // ON AFFICHE LA ZONE DE CRÉATION
+    if($('post-creation-container')) $('post-creation-container').style.display = 'flex';
     if(window.loadGlobalFeed) window.loadGlobalFeed(true);
   });
   
   if($('tab-following')) $('tab-following').addEventListener('click', () => {
-    state.currentFeedMode = 'following'; // <-- Modifie la vraie variable
+    state.currentFeedMode = 'following';
     $('tab-following').className = 'btn-primary small';
     if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
+    // ON CACHE LA ZONE DE CRÉATION
+    if($('post-creation-container')) $('post-creation-container').style.display = 'none';
     if(window.loadGlobalFeed) window.loadGlobalFeed(true);
   });
 }
@@ -62,6 +64,8 @@ window.switchToDiscovery = () => {
   const tabFollow = document.getElementById('tab-following');
   if(tabDisco) tabDisco.className = 'btn-primary small';
   if(tabFollow) tabFollow.className = 'btn-secondary small';
+  // ON AFFICHE LA ZONE DE CRÉATION
+  if(document.getElementById('post-creation-container')) document.getElementById('post-creation-container').style.display = 'flex';
   if(window.loadGlobalFeed) window.loadGlobalFeed(true);
 };
 
