@@ -5,7 +5,8 @@ import { initFeed, loadGlobalFeed } from './feed.js';
 import { initCommunities, renderMyCommunities } from './communities.js';
 import { initMessages, renderUsersList } from './messages.js';
 import { initProfile, renderProfile, openUserProfile } from './profile.js';
-import { initPages } from './pages.js'; // <-- IMPORT DU NOUVEAU MODULE
+import { initPages } from './pages.js';
+import { listenToNotifications, loadNotifications, initNotifications } from './notifications.js'; // <-- NOUVEL IMPORT
 
 window.speakText = speakText;
 window.translateText = translateText;
@@ -16,6 +17,7 @@ window.renderMyCommunities = renderMyCommunities;
 window.renderUsersList = renderUsersList;
 window.renderProfile = renderProfile;
 window.openUserProfile = openUserProfile;
+window.loadNotifications = loadNotifications; // <-- NOUVEAU
 
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
@@ -24,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initCommunities();
   initMessages();
   initProfile();
-  initPages(); // <-- INITIALISATION
+  initPages();
+  initNotifications(); // <-- NOUVELLE INITIALISATION
   
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
@@ -59,4 +62,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('userReady', () => {
   loadGlobalFeed(true);
+  listenToNotifications(); // <-- LANCEMENT DE L'ÉCOUTE
 });

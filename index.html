@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BlueNexus - Le réseau social des communautés</title>
+  <meta name="description" content="Rejoignez BlueNexus, la plateforme pour créer des communautés, partager des posts, de la musique et des vidéos." />
+  <meta property="og:title" content="BlueNexus - Le réseau social des communautés" />
+  <meta property="og:description" content="Créez vos communautés, discutez, partagez des posts, de la musique et des vidéos." />
+  <meta property="og:image" content="https://res.cloudinary.com/uotg2qg2/image/upload/v1/blue-logo.png" />
+  <meta property="og:url" content="https://bakounlerwine237.github.io/bluenexus/" />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#2563eb" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -48,7 +55,7 @@
   </header>
 
   <main id="main-content">
-    <!-- ... (Accueil, Notifications, Communautés, etc. inchangés) ... -->
+    <!-- ACCUEIL -->
     <section id="view-home" class="view active">
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
@@ -72,29 +79,16 @@
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
 
-    <!-- MESSAGES & CHAT -->
-    <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
-
-    <section id="view-chat" class="view">
-      <div class="comm-header-fixed" style="background: var(--bg-2);">
-        <button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button>
-        <h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2>
+    <!-- NOTIFICATIONS (MISE À JOUR) -->
+    <section id="view-notifications" class="view">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+        <h3>Notifications</h3>
+        <button id="btn-mark-all-read" class="btn-secondary small">Tout lire</button>
       </div>
-      <div id="chat-messages" class="chat-container"></div>
-      
-      <!-- BARRE DE CHAT AMÉLIORÉE AVEC TROMBONE -->
-      <div class="chat-input-bar">
-        <input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;">
-        <button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button>
-        <div style="flex: 1; position: relative;">
-          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
-        </div>
-        <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
-      </div>
+      <div id="notif-list" class="tg-list"></div>
     </section>
 
-    <section id="view-notifications" class="view"><h3>Notifications</h3><div id="notif-list" class="media-list" style="margin-top:1rem;"></div></section>
-
+    <!-- COMMUNAUTÉS -->
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h3>Mes Communautés</h3>
@@ -122,6 +116,24 @@
           <button class="btn-mic" data-target="post-content" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">🎤</button>
         </div>
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
+      </div>
+    </section>
+
+    <!-- MESSAGERIE -->
+    <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
+    <section id="view-chat" class="view">
+      <div class="comm-header-fixed" style="background: var(--bg-2);">
+        <button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button>
+        <h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2>
+      </div>
+      <div id="chat-messages" class="chat-container"></div>
+      <div class="chat-input-bar">
+        <input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;">
+        <button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button>
+        <div style="flex: 1; position: relative;">
+          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
+        </div>
+        <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
     </section>
 
@@ -191,7 +203,7 @@
   </nav>
 </div>
 
-<!-- MODALES INCHANGÉES -->
+<!-- MODALES -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>

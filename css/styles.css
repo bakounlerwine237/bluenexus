@@ -141,3 +141,20 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .heart-animation { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 5rem; color: #ff2d55; opacity: 0; pointer-events: none; z-index: 100; }
 .heart-animation.animate { animation: heart-burst 0.6s ease-out forwards; }
 @keyframes heart-burst { 0% { transform: translate(-50%, -50%) scale(0); opacity: 1; } 50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; } }
+/* ================= NOUVEAU : STYLE NOTIFICATIONS ================= */
+.notif-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+  gap: 12px;
+}
+.notif-item:hover { background: rgba(255,255,255,0.05); }
+.notif-item.unread { background: rgba(37, 99, 235, 0.1); } /* Fond bleuté si non lu */
+.notif-avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--blue); object-fit: cover; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0; }
+.notif-content { flex: 1; }
+.notif-text { font-size: 0.9rem; margin-bottom: 3px; }
+.notif-text strong { color: var(--blue-light); }
+.notif-time { font-size: 0.75rem; color: var(--muted); }
