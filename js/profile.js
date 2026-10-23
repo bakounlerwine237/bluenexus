@@ -1,6 +1,7 @@
 import { db, state } from './state.js';
 import { $, uploadFile, showToast } from './utils.js';
 import { switchView } from './navigation.js';
+import { generatePostHTML } from './feed.js'; // <-- IMPORTATION CORRIGÉE ICI
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let currentProfileId = null;
@@ -27,7 +28,8 @@ export async function openUserProfile(userId) {
 // GESTION DES ONGLETS
 window.switchProfileTab = (tabName) => {
   document.querySelectorAll('.fb-tab').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.fb-tab[onclick="window.switchProfileTab('${tabName}')"]`).classList.add('active');
+  const targetTab = document.querySelector(`.fb-tab[onclick="window.switchProfileTab('${tabName}')"]`);
+  if(targetTab) targetTab.classList.add('active');
 
   document.getElementById('profile-tab-posts').style.display = 'none';
   document.getElementById('profile-tab-pages').style.display = 'none';
@@ -97,12 +99,10 @@ async function displayProfileData(profile, isMe, targetId) {
   if (postsSnap.empty) {
     postsContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune publication pour le moment.</p>';
   } else {
-    // On utilise generatePostHTML si disponible (importé dynamiquement)
-    const { generatePostHTML } = await import('./feed.js');
     const sortedPosts = postsSnap.docs.sort((a, b) => {
       const timeA = a.data().createdAt?.toMillis() || 0;
       const timeB = b.data().createdAt?.toMillis() || 0;
-      return timeB - timeA; // Du plus récent au plus ancien
+      return timeB - timeA; 
     });
     sortedPosts.forEach(d => {
       postsContainer.innerHTML += generatePostHTML(d);
