@@ -137,41 +137,73 @@
       <div id="search-results-communities" class="tg-list" style="margin-top:1rem;"></div>
     </section>
 
+    <!-- ================= NOUVELLE VUE PROFIL (STYLE FACEBOOK) ================= -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
+        
         <div class="fb-avatar-container">
           <div class="fb-avatar" id="profile-avatar"></div>
-          <div><h2 id="profile-name">—</h2><p id="profile-bio" class="muted"></p><div id="profile-badges" style="display:flex; gap:5px; margin-top:5px;"></div></div>
+          <div style="padding-bottom: 10px;">
+            <h2 id="profile-name">—</h2>
+            <p id="profile-bio" class="muted" style="margin-top: 5px;"></p>
+          </div>
         </div>
-        <div style="padding: 0 1rem; margin-bottom: 1rem; display:flex; gap:10px;">
+
+        <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
+
+        <!-- STATISTIQUES -->
+        <div class="fb-stats">
+          <span><strong id="stat-posts">0</strong> Publications</span>
+          <span><strong id="stat-followers">0</strong> Abonnés</span>
+          <span><strong id="stat-following">0</strong> Abonnements</span>
+        </div>
+
+        <!-- BOUTONS D'ACTION -->
+        <div class="fb-action-buttons">
           <button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button>
           <button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button>
         </div>
-        
-        <!-- SECTION PAGES CRÉÉES -->
-        <div style="padding: 1rem; border-top: 1px solid var(--border);">
-          <h3 style="margin-bottom: 1rem;">📄 Mes Pages</h3>
-          <div id="profile-pages" class="tg-list"></div>
+
+        <!-- ONGLETS -->
+        <div class="fb-tabs">
+          <button class="fb-tab active" onclick="window.switchProfileTab('posts')">Publications</button>
+          <button class="fb-tab" onclick="window.switchProfileTab('pages')">Pages</button>
+          <button class="fb-tab" onclick="window.switchProfileTab('about')">À propos</button>
         </div>
 
-        <div style="padding: 1rem; border-top: 1px solid var(--border);">
-          <h3 style="margin-bottom: 1rem;">📌 Publications épinglées</h3>
-          <div id="profile-pinned" class="media-list"></div>
+        <!-- CONTENU DES ONGLETS -->
+        <div class="fb-tab-content">
+          <!-- Onglet Publications -->
+          <div id="profile-tab-posts" style="display: block;">
+            <div id="profile-posts-list" class="media-list"></div>
+          </div>
+          
+          <!-- Onglet Pages -->
+          <div id="profile-tab-pages" style="display: none;">
+            <div id="profile-pages-list" class="tg-list" style="padding: 0 1rem;"></div>
+          </div>
+
+          <!-- Onglet À propos -->
+          <div id="profile-tab-about" style="display: none; padding: 1rem;">
+            <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius);">
+              <h3 style="margin-bottom: 1rem;">Informations</h3>
+              <p><strong>Nom d'utilisateur :</strong> <span id="about-username">-</span></p>
+              <p style="margin-top: 10px;"><strong>Bio :</strong> <span id="about-bio">-</span></p>
+            </div>
+          </div>
         </div>
+
       </div>
     </section>
     
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
-      
-      <!-- NOUVEAU : BOUTON CRÉER UNE PAGE -->
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4>
         <p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p>
         <button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button>
       </div>
-
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">Apparence</h4>
         <button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button>
@@ -199,7 +231,6 @@
   </div>
 </div>
 
-<!-- NOUVELLE MODALE : CRÉATION DE PAGE -->
 <div id="modal-page" class="modal hidden">
   <div class="modal-content">
     <h3>Créer une Page</h3>

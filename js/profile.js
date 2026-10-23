@@ -1,16 +1,20 @@
 import { db, state } from './state.js';
-import { $, uploadFile } from './utils.js';
+import { $, uploadFile, showToast } from './utils.js';
 import { switchView } from './navigation.js';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+
+let currentProfileId = null;
 
 export function renderProfile() {
   if (!state.userProfile) return;
-  displayProfileData(state.userProfile, true);
+  currentProfileId = state.currentUser.uid;
+  displayProfileData(state.userProfile, true, currentProfileId);
 }
 
 export async function openUserProfile(userId) {
+  currentProfileId = userId;
   if (userId === state.currentUser.uid) {
-    displayProfileData(state.userProfile, true);
+    displayProfileData(state.userProfile, true, userId);
   } else {
     const snap = await getDoc(doc(db, 'users', userId));
     if (snap.exists()) {
@@ -20,25 +24,48 @@ export async function openUserProfile(userId) {
   switchView('profile');
 }
 
-async function displayProfileData(profile, isMe, targetId = null) {
+// GESTION DES ONGLETS
+window.switchProfileTab = (tabName) => {
+  document.querySelectorAll('.fb-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.fb-tab[onclick="window.switchProfileTab('${tabName}')"]`).classList.add('active');
+
+  document.getElementById('profile-tab-posts').style.display = 'none';
+  document.getElementById('profile-tab-pages').style.display = 'none';
+  document.getElementById('profile-tab-about').style.display = 'none';
+
+  document.getElementById(`profile-tab-${tabName}`).style.display = 'block';
+};
+
+async function displayProfileData(profile, isMe, targetId) {
+  // 1. Infos de base
   if($('profile-name')) $('profile-name').textContent = profile.username;
   if($('profile-bio')) $('profile-bio').textContent = profile.bio || 'Aucune bio.';
+  if($('about-username')) $('about-username').textContent = profile.username;
+  if($('about-bio')) $('about-bio').textContent = profile.bio || 'Aucune bio.';
   
   const av = $('profile-avatar');
   if (av) {
     if (profile.photoURL) { av.style.backgroundImage = `url(${profile.photoURL})`; av.textContent = ''; }
     else { av.style.backgroundImage = 'none'; av.textContent = profile.username[0].toUpperCase(); }
   }
-  
+
+  // 2. Badges
   let badgesHtml = (profile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
   if (profile.role === 'admin') {
     badgesHtml = `<span class="badge-item" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 1px solid #fca5a5;">👑 Admin Suprême</span>` + badgesHtml;
   }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml;
 
+  // 3. Statistiques (Posts, Followers, Following)
+  const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId));
+  const postsSnap = await getDocs(postsQuery);
+  if($('stat-posts')) $('stat-posts').textContent = postsSnap.docs.length;
+  if($('stat-followers')) $('stat-followers').textContent = profile.followers?.length || 0;
+  if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0;
+
+  // 4. Boutons (Modifier / Suivre)
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
-
   if (isMe) {
     if(btnEdit) btnEdit.style.display = 'block';
     if(btnFollow) btnFollow.style.display = 'none';
@@ -59,47 +86,49 @@ async function displayProfileData(profile, isMe, targetId = null) {
           if(!state.userProfile.following) state.userProfile.following = [];
           state.userProfile.following.push(targetId);
         }
-        openUserProfile(targetId);
+        openUserProfile(targetId); // Recharge la page
       };
     }
   }
 
-  // --- CHARGEMENT DES PAGES CRÉÉES ---
-  const pagesContainer = $('profile-pages');
-  if (pagesContainer) {
-    pagesContainer.innerHTML = '<p class="muted" style="padding:1rem;">Chargement...</p>';
-    const q = query(collection(db, 'pages'), where('ownerId', '==', targetId || state.currentUser.uid));
-    const snap = await getDocs(q);
-    
-    if (snap.empty) {
-      pagesContainer.innerHTML = '<p class="muted" style="padding:1rem;">Aucune page créée.</p>';
-    } else {
-      pagesContainer.innerHTML = snap.docs.map(d => {
-        const p = d.data();
-        return `<div class="tg-item" onclick="window.openPage('${d.id}')">
-          <div class="tg-avatar">📄</div>
+  // 5. Chargement des Publications
+  const postsContainer = $('profile-posts-list');
+  postsContainer.innerHTML = '';
+  if (postsSnap.empty) {
+    postsContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune publication pour le moment.</p>';
+  } else {
+    // On utilise generatePostHTML si disponible (importé dynamiquement)
+    const { generatePostHTML } = await import('./feed.js');
+    const sortedPosts = postsSnap.docs.sort((a, b) => {
+      const timeA = a.data().createdAt?.toMillis() || 0;
+      const timeB = b.data().createdAt?.toMillis() || 0;
+      return timeB - timeA; // Du plus récent au plus ancien
+    });
+    sortedPosts.forEach(d => {
+      postsContainer.innerHTML += generatePostHTML(d);
+    });
+  }
+
+  // 6. Chargement des Pages
+  const pagesContainer = $('profile-pages-list');
+  pagesContainer.innerHTML = '';
+  const pagesQuery = query(collection(db, 'pages'), where('ownerId', '==', targetId));
+  const pagesSnap = await getDocs(pagesQuery);
+  
+  if (pagesSnap.empty) {
+    pagesContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune page créée.</p>';
+  } else {
+    pagesSnap.forEach(d => {
+      const p = d.data();
+      pagesContainer.innerHTML += `
+        <div class="tg-item" onclick="window.openPage('${d.id}')">
+          <div class="tg-avatar" style="background: var(--blue-light);">📄</div>
           <div class="tg-content">
             <div class="tg-title">${p.name}</div>
             <div class="tg-subtitle">${p.category.toUpperCase()} · ${p.followers.length} abonnés</div>
           </div>
         </div>`;
-      }).join('');
-    }
-  }
-
-  const pinnedContainer = $('profile-pinned');
-  if (!pinnedContainer) return;
-  pinnedContainer.innerHTML = '';
-  
-  if (profile.pinned && profile.pinned.length > 0) {
-    pinnedContainer.innerHTML = '<p class="muted">Chargement...</p>';
-    const docs = await Promise.all(profile.pinned.map(id => getDoc(doc(db, 'posts', id))));
-    pinnedContainer.innerHTML = '';
-    docs.forEach(d => {
-      if (d.exists()) pinnedContainer.innerHTML += `<div class="media-item" style="border-color: var(--blue-light);"><p style="font-size:0.9rem;">${d.data().content}</p></div>`;
     });
-  } else {
-     pinnedContainer.innerHTML = '<p class="muted">Aucune publication épinglée.</p>';
   }
 }
 
@@ -107,9 +136,8 @@ export function initProfile() {
   window.openUserProfile = openUserProfile;
   window.renderProfile = renderProfile;
 
-  // Fonction globale pour ouvrir une page (on fera la vue plus tard)
   window.openPage = (pageId) => {
-    alert("La vue détaillée de la page arrivera à la prochaine mise à jour !");
+    showToast("La vue détaillée de la page arrive très bientôt !", "success");
   };
 
   if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
@@ -134,5 +162,6 @@ export function initProfile() {
     $('modal-profile').classList.add('hidden');
     renderProfile();
     $('btn-save-profile').textContent = "Enregistrer";
+    showToast("✅ Profil mis à jour !");
   });
 }
