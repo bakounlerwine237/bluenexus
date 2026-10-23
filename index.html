@@ -64,11 +64,13 @@
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;" title="Actualiser">🔄</button>
       </div>
       
-      <!-- ZONE DE CRÉATION (avec un ID pour pouvoir la cacher) -->
+      <!-- ZONE DE CRÉATION COMPACTE -->
       <div id="post-creation-container" class="post-creation-box">
         <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
         <div style="flex: 1;">
-          <textarea id="global-post-content" placeholder="Quoi de neuf ?"></textarea>
+          <!-- AJOUT DE rows="1" ICI -->
+          <textarea id="global-post-content" placeholder="Quoi de neuf ?" rows="1"></textarea>
+          
           <div style="display: flex; gap: 10px; align-items: center;">
             <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
             <button id="btn-global-attach" class="btn-secondary small">📎</button>

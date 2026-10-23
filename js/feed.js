@@ -54,7 +54,6 @@ export async function loadGlobalFeed(reset = false) {
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
     postsToShow.sort((a, b) => b.score - a.score);
 
-    // --- FILTRAGE STRICT ---
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
         const isMe = p.data.authorId === state.currentUser.uid;
@@ -79,7 +78,6 @@ export async function loadGlobalFeed(reset = false) {
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile.following?.includes(p.data.pageId)) || false;
-        // On affiche seulement si ce n'est pas moi ET que je ne suis pas déjà abonné
         return !isMe && !isUserFollowed && !isPageFollowed;
       });
 
@@ -104,7 +102,6 @@ export async function loadGlobalFeed(reset = false) {
   }
 }
 
-// ... (Le reste du fichier generatePostHTML et initFeed reste EXACTEMENT identique à la dernière version que je t'ai donnée) ...
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -183,7 +180,13 @@ export function initFeed() {
   if (postContent) {
     const savedDraft = localStorage.getItem('bluenexus_draft_global');
     if (savedDraft) postContent.value = savedDraft;
-    postContent.addEventListener('input', (e) => localStorage.setItem('bluenexus_draft_global', e.target.value));
+    
+    // --- NOUVEAU : AGRANDISSEMENT AUTOMATIQUE DU TEXTAREA ---
+    postContent.addEventListener('input', function() {
+      this.style.height = '40px'; // Réinitialise à la taille de base
+      this.style.height = (this.scrollHeight) + 'px'; // Prend la taille du contenu
+      localStorage.setItem('bluenexus_draft_global', this.value);
+    });
   }
 
   if($('global-post-file')) {
@@ -224,7 +227,10 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp()
     });
     
-    $('global-post-content').value = ''; localStorage.removeItem('bluenexus_draft_global'); $('global-post-file').value = '';
+    $('global-post-content').value = ''; 
+    $('global-post-content').style.height = '40px'; // Réinitialise la taille
+    localStorage.removeItem('bluenexus_draft_global'); 
+    $('global-post-file').value = '';
     $('global-file-preview').innerHTML = ''; $('global-file-preview').classList.add('hidden');
     $('btn-global-publish').textContent = "Publier";
     showToast("✅ Publication réussie !", "success");
