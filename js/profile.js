@@ -1,19 +1,19 @@
 import { db, state } from './state.js';
 import { $, uploadFile, showToast } from './utils.js';
 import { switchView } from './navigation.js';
-import { generatePostHTML } from './feed.js'; // <-- IMPORTATION CORRIGÉE ICI
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { generatePostHTML } from './feed.js';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
-let currentProfileId = null;
+let viewingUserId = null; // Variable pour mémoriser le profil qu'on regarde
 
 export function renderProfile() {
   if (!state.userProfile) return;
-  currentProfileId = state.currentUser.uid;
-  displayProfileData(state.userProfile, true, currentProfileId);
+  viewingUserId = state.currentUser.uid;
+  displayProfileData(state.userProfile, true, viewingUserId);
 }
 
 export async function openUserProfile(userId) {
-  currentProfileId = userId;
+  viewingUserId = userId; 
   if (userId === state.currentUser.uid) {
     displayProfileData(state.userProfile, true, userId);
   } else {
@@ -25,7 +25,6 @@ export async function openUserProfile(userId) {
   switchView('profile');
 }
 
-// GESTION DES ONGLETS
 window.switchProfileTab = (tabName) => {
   document.querySelectorAll('.fb-tab').forEach(t => t.classList.remove('active'));
   const targetTab = document.querySelector(`.fb-tab[onclick="window.switchProfileTab('${tabName}')"]`);
@@ -39,6 +38,9 @@ window.switchProfileTab = (tabName) => {
 };
 
 async function displayProfileData(profile, isMe, targetId) {
+  // Vérification de sécurité : si un autre script tente d'afficher un autre profil entre temps
+  if(viewingUserId !== targetId) return;
+
   // 1. Infos de base
   if($('profile-name')) $('profile-name').textContent = profile.username;
   if($('profile-bio')) $('profile-bio').textContent = profile.bio || 'Aucune bio.';
@@ -58,14 +60,14 @@ async function displayProfileData(profile, isMe, targetId) {
   }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml;
 
-  // 3. Statistiques (Posts, Followers, Following)
+  // 3. Statistiques
   const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId));
   const postsSnap = await getDocs(postsQuery);
   if($('stat-posts')) $('stat-posts').textContent = postsSnap.docs.length;
   if($('stat-followers')) $('stat-followers').textContent = profile.followers?.length || 0;
   if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0;
 
-  // 4. Boutons (Modifier / Suivre)
+  // 4. Boutons (Suivre / Modifier)
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
   if (isMe) {
@@ -88,12 +90,12 @@ async function displayProfileData(profile, isMe, targetId) {
           if(!state.userProfile.following) state.userProfile.following = [];
           state.userProfile.following.push(targetId);
         }
-        openUserProfile(targetId); // Recharge la page
+        openUserProfile(targetId);
       };
     }
   }
 
-  // 5. Chargement des Publications
+  // 5. Publications
   const postsContainer = $('profile-posts-list');
   postsContainer.innerHTML = '';
   if (postsSnap.empty) {
@@ -109,7 +111,7 @@ async function displayProfileData(profile, isMe, targetId) {
     });
   }
 
-  // 6. Chargement des Pages
+  // 6. Pages
   const pagesContainer = $('profile-pages-list');
   pagesContainer.innerHTML = '';
   const pagesQuery = query(collection(db, 'pages'), where('ownerId', '==', targetId));
@@ -136,9 +138,7 @@ export function initProfile() {
   window.openUserProfile = openUserProfile;
   window.renderProfile = renderProfile;
 
-  window.openPage = (pageId) => {
-    showToast("La vue détaillée de la page arrive très bientôt !", "success");
-  };
+  window.openPage = (pageId) => showToast("La vue détaillée de la page arrive très bientôt !", "success");
 
   if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
   if($('btn-cancel-profile')) $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
@@ -146,22 +146,35 @@ export function initProfile() {
   if($('btn-save-profile')) $('btn-save-profile').addEventListener('click', async () => {
     const file = $('edit-avatar').files[0];
     let photoURL = state.userProfile.photoURL;
-    $('btn-save-profile').textContent = "Patientez...";
-    if (file) photoURL = await uploadFile(file);
     
-    await updateDoc(doc(db, 'users', state.currentUser.uid), { bio: $('edit-bio').value.trim(), photoURL });
-    state.userProfile.bio = $('edit-bio').value.trim();
-    state.userProfile.photoURL = photoURL;
-    
-    const createAvatar = $('create-post-avatar');
-    if (createAvatar) {
-      if (photoURL) { createAvatar.style.backgroundImage = `url(${photoURL})`; createAvatar.textContent = ''; }
-      else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = state.userProfile.username[0].toUpperCase(); }
-    }
+    // On change le texte du bouton pour indiquer que ça charge
+    $('btn-save-profile').textContent = "Chargement...";
+    $('btn-save-profile').disabled = true;
 
-    $('modal-profile').classList.add('hidden');
-    renderProfile();
-    $('btn-save-profile').textContent = "Enregistrer";
-    showToast("✅ Profil mis à jour !");
+    try {
+      if (file) {
+        // On upload l'image sur Cloudinary (ça peut prendre quelques secondes sur mobile)
+        photoURL = await uploadFile(file);
+      }
+      
+      await updateDoc(doc(db, 'users', state.currentUser.uid), { bio: $('edit-bio').value.trim(), photoURL });
+      state.userProfile.bio = $('edit-bio').value.trim();
+      state.userProfile.photoURL = photoURL;
+      
+      const createAvatar = $('create-post-avatar');
+      if (createAvatar) {
+        if (photoURL) { createAvatar.style.backgroundImage = `url(${photoURL})`; createAvatar.textContent = ''; }
+        else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = state.userProfile.username[0].toUpperCase(); }
+      }
+
+      $('modal-profile').classList.add('hidden');
+      renderProfile();
+      showToast("✅ Profil mis à jour !");
+    } catch (e) {
+      showToast("Erreur d'envoi de l'image", "error");
+    } finally {
+      $('btn-save-profile').textContent = "Enregistrer";
+      $('btn-save-profile').disabled = false;
+    }
   });
 }
