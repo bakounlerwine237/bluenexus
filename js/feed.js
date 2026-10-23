@@ -54,15 +54,15 @@ export async function loadGlobalFeed(reset = false) {
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
     postsToShow.sort((a, b) => b.score - a.score);
 
-    // --- FILTRAGE ET EMPTY STATE ---
+    // --- FILTRAGE STRICT ---
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
-        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId);
-        const isPageFollowed = p.data.pageId && state.userProfile.following?.includes(p.data.pageId);
-        return isUserFollowed || isPageFollowed;
+        const isMe = p.data.authorId === state.currentUser.uid;
+        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId) || false;
+        const isPageFollowed = (p.data.pageId && state.userProfile.following?.includes(p.data.pageId)) || false;
+        return isMe || isUserFollowed || isPageFollowed;
       });
       
-      // BEAU MESSAGE SI VIDE
       if(postsToShow.length === 0 && reset) {
         list.innerHTML = `
           <div style="text-align: center; padding: 3rem 1rem; color: var(--muted);">
@@ -76,12 +76,21 @@ export async function loadGlobalFeed(reset = false) {
       }
     } else {
       postsToShow = postsToShow.filter(p => {
-        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId);
-        const isPageFollowed = p.data.pageId && state.userProfile.following?.includes(p.data.pageId);
-        return !isUserFollowed && !isPageFollowed;
+        const isMe = p.data.authorId === state.currentUser.uid;
+        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId) || false;
+        const isPageFollowed = (p.data.pageId && state.userProfile.following?.includes(p.data.pageId)) || false;
+        // On affiche seulement si ce n'est pas moi ET que je ne suis pas déjà abonné
+        return !isMe && !isUserFollowed && !isPageFollowed;
       });
+
       if(postsToShow.length === 0 && reset) {
-        list.innerHTML = '<p class="muted" style="text-align:center; padding:2rem;">Vous suivez déjà tous les créateurs actifs !</p>';
+        list.innerHTML = `
+          <div style="text-align: center; padding: 3rem 1rem; color: var(--muted);">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🌟</div>
+            <h3 style="color: var(--text); margin-bottom: 10px;">Vous êtes à jour !</h3>
+            <p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Vous suivez déjà tous les créateurs actifs.</p>
+          </div>
+        `;
       }
     }
 
@@ -95,13 +104,13 @@ export async function loadGlobalFeed(reset = false) {
   }
 }
 
+// ... (Le reste du fichier generatePostHTML et initFeed reste EXACTEMENT identique à la dernière version que je t'ai donnée) ...
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
   
-  // APPLICATION DE LA FONCTION POUR LES @ ET #
   const formattedContent = formatPostText(p.content);
   
   let mediaHtml = '';
@@ -118,7 +127,6 @@ export function generatePostHTML(docSnap) {
   const canDelete = (p.authorId === state.currentUser.uid) || (state.currentCommunityId && state.userProfile.username === state.currentCommunityOwner) || isAdmin;
   const deleteBtn = canDelete ? `<button onclick="window.deletePost('${docSnap.id}')" style="color:#ff6b6b;">🗑️ Supprimer ${isAdmin && p.authorId !== state.currentUser.uid ? '(Admin)' : ''}</button>` : '';
   
-  // NOUVEAU : BOUTON SAUVEGARDER
   const isSaved = state.userProfile.savedPosts?.includes(docSnap.id);
   const saveBtn = `<button onclick="window.toggleSavePost('${docSnap.id}', ${isSaved}); window.toggleMoreMenu('${docSnap.id}')">${isSaved ? '🔖 Retirer des favoris' : '🔖 Sauvegarder'}</button>`;
 
@@ -131,7 +139,6 @@ export function generatePostHTML(docSnap) {
       </div>
       <span class="post-time">${timeAgo(p.createdAt)}</span>
     </div>
-    <!-- UTILISATION DU TEXTE FORMATÉ ICI -->
     <p id="text-${docSnap.id}">${formattedContent}</p>
     ${mediaHtml}
     
@@ -249,7 +256,6 @@ export function initFeed() {
     if (!isLiked) window.likePost(postId, authorId, false);
   };
 
-  // NOUVELLE FONCTION : SAUVEGARDER
   window.toggleSavePost = async (postId, isSaved) => {
     const ref = doc(db, 'users', state.currentUser.uid);
     if (isSaved) {
@@ -262,7 +268,6 @@ export function initFeed() {
       state.userProfile.savedPosts.push(postId);
       showToast("🔖 Post sauvegardé !", "success");
     }
-    // Rafraichir le bouton dans le menu
     const btn = document.querySelector(`#more-menu-${postId} button:nth-child(3)`);
     if (btn) btn.textContent = isSaved ? '🔖 Sauvegarder' : '🔖 Retirer des favoris';
   };

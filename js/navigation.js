@@ -1,9 +1,8 @@
 import { $ } from './utils.js';
+import { state } from './state.js';
 
-// On importe les fonctions de rendu des autres modules (on les ajoutera au fur et à mesure)
-// import { loadGlobalFeed } from './feed.js';
-// import { renderMyCommunities } from './communities.js';
-
+// On importe les fonctions de rendu des autres modules
+// (On les appelle dynamiquement via window pour éviter les boucles d'importation)
 export function switchView(viewId) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const target = $(`view-${viewId}`);
@@ -13,7 +12,6 @@ export function switchView(viewId) {
   const navBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`);
   if(navBtn) navBtn.classList.add('active');
 
-  // Gestion de l'en-tête (cacher la barre du haut pour le chat)
   if (viewId === 'community' || viewId === 'chat') {
     if($('main-nav')) $('main-nav').style.display = 'none'; 
     if($('main-header')) $('main-header').style.display = 'none';
@@ -24,18 +22,14 @@ export function switchView(viewId) {
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
-  // Appel des fonctions de chargement (à décommenter au fur et à mesure)
-  /*
-  if (viewId === 'home') loadGlobalFeed(true);
-  if (viewId === 'communities') renderMyCommunities();
-  if (viewId === 'profile') renderProfile();
-  if (viewId === 'video') loadMedia('video');
-  if (viewId === 'messages') renderUsersList();
-  if (viewId === 'notifications') loadNotifications();
-  */
+  if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true);
+  if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities();
+  if (viewId === 'profile' && window.renderProfile) window.renderProfile();
+  if (viewId === 'video' && window.loadMedia) window.loadMedia('video');
+  if (viewId === 'messages' && window.renderUsersList) window.renderUsersList();
+  if (viewId === 'notifications' && window.loadNotifications) window.loadNotifications();
 }
 
-// Écouteurs de clics sur les boutons de navigation
 export function initNavigation() {
   document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.dataset.view)));
   
@@ -45,22 +39,25 @@ export function initNavigation() {
   if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
   if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
-  // Onglets Accueil
+  // --- CORRECTION ICI : ON MODIFIE state.currentFeedMode ---
   if($('tab-discovery')) $('tab-discovery').addEventListener('click', () => {
-    window.currentFeedMode = 'discovery';
+    state.currentFeedMode = 'discovery'; // <-- Modifie la vraie variable
     $('tab-discovery').className = 'btn-primary small';
     if($('tab-following')) $('tab-following').className = 'btn-secondary small';
     if(window.loadGlobalFeed) window.loadGlobalFeed(true);
   });
+  
   if($('tab-following')) $('tab-following').addEventListener('click', () => {
-    window.currentFeedMode = 'following';
+    state.currentFeedMode = 'following'; // <-- Modifie la vraie variable
     $('tab-following').className = 'btn-primary small';
     if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
     if(window.loadGlobalFeed) window.loadGlobalFeed(true);
   });
 }
+
+// Fonction pour l'Empty State (bouton "Découvrir")
 window.switchToDiscovery = () => {
-  window.currentFeedMode = 'discovery';
+  state.currentFeedMode = 'discovery';
   const tabDisco = document.getElementById('tab-discovery');
   const tabFollow = document.getElementById('tab-following');
   if(tabDisco) tabDisco.className = 'btn-primary small';
@@ -69,13 +66,10 @@ window.switchToDiscovery = () => {
 };
 
 window.searchFromPost = (term) => {
-  // Redirige vers l'onglet recherche avec le terme pré-rempli
   const searchInput = document.getElementById('search-input');
   if (searchInput) {
     searchInput.value = term;
-    // On simule un événement de saisie pour lancer la recherche
     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-    // On change de vue
     if (window.switchView) window.switchView('search');
   }
 };
