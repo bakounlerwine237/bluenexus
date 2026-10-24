@@ -37,15 +37,14 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initSearch(); } catch(e) { console.error(e); }
   try { initAdmin(); } catch(e) { console.error(e); }
 
+  // Mode sombre
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
-  
   function updateThemeBtnText() {
     if(!themeToggleBtn) return;
     themeToggleBtn.textContent = document.body.classList.contains('light-mode') ? 'Passer en mode sombre 🌙' : 'Passer en mode clair ☀️';
   }
   updateThemeBtnText();
-  
   if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
       document.body.classList.toggle('light-mode');
@@ -54,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Micro
   document.querySelectorAll('.btn-mic').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -74,8 +74,4 @@ document.addEventListener('userReady', () => {
   try { loadGlobalFeed(true); } catch(e) { console.error(e); }
   try { listenToNotifications(); } catch(e) { console.error(e); }
   try { populatePageSelector(); } catch(e) { console.error(e); }
-  
-  if(document.getElementById('view-profile').classList.contains('active')) {
-    try { renderProfile(); } catch(e) { console.error(e); }
-  }
 });

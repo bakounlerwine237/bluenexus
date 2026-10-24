@@ -22,7 +22,7 @@ export function listenToNotifications() {
   });
 }
 
-// C'EST CETTE FONCTION QUI MANQUAIT
+// LA FAMEUSE FONCTION MANQUANTE
 export async function sendNotification(toUser, text, fromUserId, fromUsername) {
   if(!state.currentUser || toUser === state.currentUser.uid) return; 
   await addDoc(collection(db, 'notifications'), {

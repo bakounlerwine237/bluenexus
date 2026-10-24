@@ -2,7 +2,7 @@ import { db, state } from './state.js';
 import { $, uploadFile, showToast } from './utils.js';
 import { switchView } from './navigation.js';
 import { generatePostHTML } from './feed.js';
-import { sendNotification } from './notifications.js'; // <-- L'IMPORT EST ICI
+import { sendNotification } from './notifications.js'; 
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let viewingUserId = null; 
