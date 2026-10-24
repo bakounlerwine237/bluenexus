@@ -2,22 +2,19 @@ import { db, state } from './state.js';
 import { $, uploadFile, showToast } from './utils.js';
 import { switchView } from './navigation.js';
 import { generatePostHTML } from './feed.js';
-import { sendNotification } from './notifications.js';
+import { sendNotification } from './notifications.js'; // <-- L'IMPORT EST ICI
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let viewingUserId = null; 
 
 export function renderProfile() {
-  // PROTECTION : on ne fait rien si l'utilisateur ou le profil n'est pas prêt
   if (!state.userProfile || !state.currentUser) return;
-  
   viewingUserId = state.currentUser.uid;
   displayProfileData(state.userProfile, true, viewingUserId);
 }
 
 export async function openUserProfile(userId) {
-  if (!state.currentUser) return; // PROTECTION
-  
+  if (!state.currentUser) return;
   viewingUserId = userId;
   if (userId === state.currentUser.uid) {
     displayProfileData(state.userProfile, true, userId);
@@ -63,14 +60,12 @@ async function displayProfileData(profile, isMe, targetId) {
   }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml;
 
-  // Statistiques
   const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId));
   const postsSnap = await getDocs(postsQuery);
   if($('stat-posts')) $('stat-posts').textContent = postsSnap.docs.length;
   if($('stat-followers')) $('stat-followers').textContent = profile.followers?.length || 0;
   if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0;
 
-  // Boutons
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
   const favTab = $('tab-favorites-btn');
@@ -103,7 +98,6 @@ async function displayProfileData(profile, isMe, targetId) {
     }
   }
 
-  // Publications
   const postsContainer = $('profile-posts-list');
   postsContainer.innerHTML = '';
   if (postsSnap.empty) {
@@ -117,7 +111,6 @@ async function displayProfileData(profile, isMe, targetId) {
     sortedPosts.forEach(d => { postsContainer.innerHTML += generatePostHTML(d); });
   }
 
-  // Pages
   const pagesContainer = $('profile-pages-list');
   pagesContainer.innerHTML = '';
   const pagesQuery = query(collection(db, 'pages'), where('ownerId', '==', targetId));
@@ -139,7 +132,6 @@ async function displayProfileData(profile, isMe, targetId) {
     });
   }
 
-  // Favoris
   if (isMe) {
     const favContainer = $('profile-favorites-list');
     favContainer.innerHTML = '';
