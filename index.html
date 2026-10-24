@@ -166,6 +166,7 @@
       </div>
     </section>
 
+    <!-- PROFIL -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner"></div>
@@ -183,14 +184,19 @@
           <button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button>
           <button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button>
         </div>
+        
+        <!-- ONGLETS (SANS ONCLICK INLINE) -->
         <div class="fb-tabs">
-          <button class="fb-tab active" onclick="window.switchProfileTab('posts')">Publications</button>
-          <button class="fb-tab" onclick="window.switchProfileTab('pages')">Pages</button>
-          <button class="fb-tab" onclick="window.switchProfileTab('about')">À propos</button>
+          <button class="fb-tab active" id="btn-tab-posts">Publications</button>
+          <button class="fb-tab" id="btn-tab-pages">Pages</button>
+          <button class="fb-tab" id="tab-favorites-btn" style="display:none;">Favoris 🔖</button>
+          <button class="fb-tab" id="btn-tab-about">À propos</button>
         </div>
+        
         <div class="fb-tab-content">
           <div id="profile-tab-posts" style="display: block;"><div id="profile-posts-list" class="media-list"></div></div>
           <div id="profile-tab-pages" style="display: none;"><div id="profile-pages-list" class="tg-list" style="padding: 0 1rem;"></div></div>
+          <div id="profile-tab-favorites" style="display: none;"><div id="profile-favorites-list" class="media-list"></div></div>
           <div id="profile-tab-about" style="display: none; padding: 1rem;">
             <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius);">
               <h3 style="margin-bottom: 1rem;">Informations</h3>
@@ -202,42 +208,33 @@
       </div>
     </section>
 
-    <!-- VUE PAGE (Mise à jour) -->
     <section id="view-page" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);">
         <button id="btn-back-from-page" class="btn-secondary small" style="padding: 4px 8px;">←</button>
         <h2 id="page-view-name" style="font-size: 1rem; margin-left: 10px;">Nom de la Page</h2>
       </div>
       <div class="fb-profile">
-        <!-- BANNIÈRE DYNAMIQUE -->
         <div class="fb-banner" id="page-banner" style="background: linear-gradient(135deg, #10b981, #064e3b); background-size: cover; background-position: center;"></div>
-        
         <div class="fb-avatar-container">
-          <!-- AVATAR DYNAMIQUE -->
-          <div class="fb-avatar" id="page-avatar" style="background: #10b981; font-size: 2.5rem;">📄</div>
+          <div class="fb-avatar" id="page-avatar" style="background: #10b981; font-size: 2.5rem; background-size: cover; background-position: center;">📄</div>
           <div style="padding-bottom: 10px;">
             <h2 id="page-view-title">—</h2>
             <p id="page-view-category" class="muted" style="margin-top: 5px;">—</p>
           </div>
         </div>
-        
         <div class="fb-stats">
           <span><strong id="page-view-followers">0</strong> Abonnés</span>
           <span id="page-view-owner" style="font-size: 0.8rem; align-self: center;">Créé par @—</span>
         </div>
-        
         <div class="fb-action-buttons">
           <button id="btn-follow-page" class="btn-primary small" style="width: 100%;">Suivre cette page</button>
         </div>
-
-        <!-- NOUVEAU : BOUTONS DE MODIFICATION POUR LE PROPRIÉTAIRE -->
         <div id="page-owner-controls" style="display:none; padding: 0 1rem 1rem 1rem; gap: 10px; flex-direction: column;">
           <input type="file" id="page-avatar-upload" accept="image/*" style="display: none;">
           <input type="file" id="page-banner-upload" accept="image/*" style="display: none;">
           <button id="btn-change-page-avatar" class="btn-secondary small">Changer la photo de profil</button>
           <button id="btn-change-page-banner" class="btn-secondary small">Changer la bannière</button>
         </div>
-
         <div class="fb-tab-content" style="padding-top: 1rem; border-top: 1px solid var(--border);">
           <h3 style="margin-bottom: 1rem; font-size: 1rem;">Publications de la page</h3>
           <div id="page-view-posts" class="media-list"></div>

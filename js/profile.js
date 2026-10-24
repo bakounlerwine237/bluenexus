@@ -10,7 +10,6 @@ let viewingUserId = null;
 export function renderProfile() {
   if (!state.userProfile || !state.currentUser) return;
   viewingUserId = state.currentUser.uid;
-  // On rend la fonction "async" pour attendre la fin du chargement
   displayProfileData(state.userProfile, true, viewingUserId);
 }
 
@@ -28,26 +27,9 @@ export async function openUserProfile(userId) {
   switchView('profile');
 }
 
-window.switchProfileTab = (tabName) => {
-  document.querySelectorAll('.fb-tab').forEach(t => t.classList.remove('active'));
-  const targetTab = document.querySelector(`.fb-tab[onclick="window.switchProfileTab('${tabName}')"]`);
-  if(targetTab) targetTab.classList.add('active');
-
-  // On cache toutes les zones
-  document.getElementById('profile-tab-posts').style.display = 'none';
-  document.getElementById('profile-tab-pages').style.display = 'none';
-  document.getElementById('profile-tab-favorites').style.display = 'none';
-  document.getElementById('profile-tab-about').style.display = 'none';
-
-  // On affiche uniquement celle demandée
-  const targetContent = document.getElementById(`profile-tab-${tabName}`);
-  if(targetContent) targetContent.style.display = 'block';
-};
-
 async function displayProfileData(profile, isMe, targetId) {
   if(viewingUserId !== targetId) return;
 
-  // 1. Infos de base
   if($('profile-name')) $('profile-name').textContent = profile.username;
   if($('profile-bio')) $('profile-bio').textContent = profile.bio || 'Aucune bio.';
   if($('about-username')) $('about-username').textContent = profile.username;
@@ -59,14 +41,12 @@ async function displayProfileData(profile, isMe, targetId) {
     else { av.style.backgroundImage = 'none'; av.textContent = profile.username[0].toUpperCase(); }
   }
 
-  // 2. Badges
   let badgesHtml = (profile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
   if (profile.role === 'admin') {
     badgesHtml = `<span class="badge-item" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 1px solid #fca5a5;">👑 Admin Suprême</span>` + badgesHtml;
   }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml;
 
-  // 3. Requête STRICTE pour les posts de CE profil uniquement
   const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId));
   const postsSnap = await getDocs(postsQuery);
   
@@ -74,7 +54,6 @@ async function displayProfileData(profile, isMe, targetId) {
   if($('stat-followers')) $('stat-followers').textContent = profile.followers?.length || 0;
   if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0;
 
-  // 4. Gestion des boutons
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
   const favTab = $('tab-favorites-btn');
@@ -107,7 +86,7 @@ async function displayProfileData(profile, isMe, targetId) {
     }
   }
 
-  // 5. Chargement des Publications
+  // Publications
   const postsContainer = $('profile-posts-list');
   postsContainer.innerHTML = '';
   if (postsSnap.empty) {
@@ -121,16 +100,15 @@ async function displayProfileData(profile, isMe, targetId) {
     sortedPosts.forEach(d => { postsContainer.innerHTML += generatePostHTML(d); });
   }
 
-  // 6. Chargement des Pages
+  // Pages
   const pagesContainer = $('profile-pages-list');
-  pagesContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
+  pagesContainer.innerHTML = '';
   const pagesQuery = query(collection(db, 'pages'), where('ownerId', '==', targetId));
   const pagesSnap = await getDocs(pagesQuery);
   
   if (pagesSnap.empty) {
     pagesContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune page créée.</p>';
   } else {
-    pagesContainer.innerHTML = '';
     pagesSnap.forEach(d => {
       const p = d.data();
       pagesContainer.innerHTML += `
@@ -144,14 +122,15 @@ async function displayProfileData(profile, isMe, targetId) {
     });
   }
 
-  // 7. Chargement des Favoris
+  // Favoris
   if (isMe) {
     const favContainer = $('profile-favorites-list');
-    favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
+    favContainer.innerHTML = '';
     
     if (!profile.savedPosts || profile.savedPosts.length === 0) {
       favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Vous n\'avez aucun favori pour l\'instant.</p>';
     } else {
+      favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
       try {
         const postsPromises = profile.savedPosts.map(id => getDoc(doc(db, 'posts', id)));
         const postsDocs = await Promise.all(postsPromises);
@@ -163,7 +142,7 @@ async function displayProfileData(profile, isMe, targetId) {
           }
         });
       } catch(e) {
-        favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Erreur de chargement des favoris.</p>';
+        favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Erreur de chargement.</p>';
       }
     }
   }
@@ -172,6 +151,33 @@ async function displayProfileData(profile, isMe, targetId) {
 export function initProfile() {
   window.openUserProfile = openUserProfile;
   window.renderProfile = renderProfile;
+
+  // GESTION DES ONGLETS (avec des écouteurs d'événements)
+  const tabPosts = $('btn-tab-posts');
+  const tabPages = $('btn-tab-pages');
+  const tabFav = $('tab-favorites-btn');
+  const tabAbout = $('btn-tab-about');
+
+  function setActiveTab(tabId, contentId) {
+    // Désactiver tous les boutons
+    [tabPosts, tabPages, tabFav, tabAbout].forEach(btn => { if(btn) btn.classList.remove('active'); });
+    // Activer le bon bouton
+    if($(tabId)) $(tabId).classList.add('active');
+    
+    // Cacher tous les contenus
+    ['posts', 'pages', 'favorites', 'about'].forEach(sec => {
+      const el = $(`profile-tab-${sec}`);
+      if(el) el.style.display = 'none';
+    });
+    
+    // Afficher le bon contenu
+    if($(contentId)) $(contentId).style.display = 'block';
+  }
+
+  if(tabPosts) tabPosts.addEventListener('click', () => setActiveTab('btn-tab-posts', 'profile-tab-posts'));
+  if(tabPages) tabPages.addEventListener('click', () => setActiveTab('btn-tab-pages', 'profile-tab-pages'));
+  if(tabFav) tabFav.addEventListener('click', () => setActiveTab('tab-favorites-btn', 'profile-tab-favorites'));
+  if(tabAbout) tabAbout.addEventListener('click', () => setActiveTab('btn-tab-about', 'profile-tab-about'));
 
   if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
   if($('btn-cancel-profile')) $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));

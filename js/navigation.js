@@ -26,25 +26,23 @@ export function switchView(viewId) {
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
+  // CHARGEMENT DES DONNÉES
   if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true);
   if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities();
-  if (viewId === 'profile' && window.renderProfile) window.renderProfile();
+  
+  // On recharge le profil SEULEMENT si on vient d'une autre page
+  if (viewId === 'profile' && window.renderProfile) {
+    // Si on change de page pour aller sur le profil, on charge.
+    // Mais si on est déjà sur le profil, on ne fait rien (pour ne pas effacer les onglets).
+    const currentView = document.querySelector('.view.active');
+    if(!currentView || currentView.id !== 'view-profile') {
+      window.renderProfile();
+    }
+  }
+
   if (viewId === 'video' && window.loadVideoFeed) window.loadVideoFeed(); 
   if (viewId === 'messages' && window.renderUsersList) window.renderUsersList();
   if (viewId === 'notifications' && window.loadNotifications) window.loadNotifications();
-  
-  if (viewId === 'search') {
-    const searchInput = $('search-input');
-    if (searchInput) {
-      searchInput.focus();
-      if (searchInput.value.trim() === '') {
-        const historyContainer = $('search-history-container');
-        const resultsContainer = $('search-results');
-        if (historyContainer) historyContainer.style.display = 'block';
-        if (resultsContainer) resultsContainer.style.display = 'none';
-      }
-    }
-  }
 }
 
 export function initNavigation() {
