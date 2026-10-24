@@ -57,8 +57,10 @@ export function initAuth() {
     if (user) {
       state.currentUser = user;
       const snap = await getDoc(doc(db, 'users', user.uid));
+      
       if (snap.exists()) {
         state.userProfile = snap.data();
+        // On sécurise les tableaux au cas où ils seraient vides dans la base
         if(!state.userProfile.badges) state.userProfile.badges = [];
         if(!state.userProfile.following) state.userProfile.following = [];
         if(!state.userProfile.savedPosts) state.userProfile.savedPosts = [];
@@ -69,6 +71,7 @@ export function initAuth() {
           if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'none';
         }
       } else {
+        // Création d'un profil par défaut si introuvable
         state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [] };
         await setDoc(doc(db, 'users', user.uid), state.userProfile);
       }
@@ -86,6 +89,7 @@ export function initAuth() {
       $('auth-error').textContent = "";
       switchView('home');
       
+      // On prévient le site que tout est prêt
       document.dispatchEvent(new Event('userReady'));
     } else {
       state.currentUser = null; state.userProfile = null;
