@@ -277,3 +277,20 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 #page-owner-controls button {
   width: 100%;
 }
+/* ================= AMÉLIORATION COMMUNAUTÉS ================= */
+#comm-banner-header {
+  border-bottom: 1px solid var(--border);
+}
+#comm-avatar-display {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+#comm-admin-controls {
+  display: flex;
+  gap: 10px;
+  padding: 0 1rem 10px 1rem;
+}
+#comm-admin-controls button {
+  flex: 1;
+  font-size: 0.75rem;
+  padding: 8px;
+}
