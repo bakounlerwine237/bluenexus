@@ -1,5 +1,5 @@
 import { auth, db, state, TENCENT_SDK_APP_ID } from './state.js';
-import { $ } from './utils.js';
+import { $, showToast } from './utils.js';
 import { switchView } from './navigation.js';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
@@ -31,7 +31,7 @@ export function initAuth() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, pass);
       await setDoc(doc(db, 'users', cred.user.uid), {
-        username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: [] // <-- AJOUT ICI
+        username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: []
       });
     } catch (e) { $('auth-error').textContent = e.message; }
   });
@@ -61,7 +61,13 @@ export function initAuth() {
         state.userProfile = snap.data();
         if(!state.userProfile.badges) state.userProfile.badges = [];
         if(!state.userProfile.following) state.userProfile.following = [];
-        if(!state.userProfile.savedPosts) state.userProfile.savedPosts = []; // <-- SÉCURITÉ
+        if(!state.userProfile.savedPosts) state.userProfile.savedPosts = [];
+        
+        if (state.userProfile.role === 'admin') {
+          if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'block';
+        } else {
+          if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'none';
+        }
       } else {
         state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [] };
         await setDoc(doc(db, 'users', user.uid), state.userProfile);
