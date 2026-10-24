@@ -262,3 +262,10 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 
 /* Résultats */
 .search-section-title { font-size: 0.85rem; color: var(--muted); margin: 15px 0 10px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+/* ================= STYLE PAGE VITRINE ================= */
+#view-page .fb-banner {
+  background: linear-gradient(135deg, #10b981, #064e3b); /* Vert Émeraude pour les Pages */
+}
+#view-page .fb-avatar {
+  background: #10b981;
+}
