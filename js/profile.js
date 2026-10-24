@@ -5,19 +5,28 @@ import { generatePostHTML } from './feed.js';
 import { sendNotification } from './notifications.js'; 
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
+// On garde l'ID du profil qu'on est en train de regarder
 let viewingUserId = null; 
 
 export function renderProfile() {
-  if (!state.userProfile || !state.currentUser) return;
+  if (!state.userProfile || !state.currentUser) {
+    console.warn("Profil non chargé");
+    return;
+  }
+  
+  // Quand on clique sur notre propre profil, on réinitialise l'ID
   viewingUserId = state.currentUser.uid;
   displayProfileData(state.userProfile, true, viewingUserId);
 }
 
 export async function openUserProfile(userId) {
   if (!state.currentUser) return;
+  
+  // On change l'ID AVANT de charger pour éviter les mélanges
   viewingUserId = userId;
+  
   if (userId === state.currentUser.uid) {
-    displayProfileData(state.userProfile, true, userId);
+    renderProfile();
   } else {
     const snap = await getDoc(doc(db, 'users', userId));
     if (snap.exists()) {
@@ -28,8 +37,11 @@ export async function openUserProfile(userId) {
 }
 
 async function displayProfileData(profile, isMe, targetId) {
-  if(viewingUserId !== targetId) return;
+  // SÉCURITÉ : Si l'ID du profil regardé ne correspond pas, on arrête tout.
+  if (viewingUserId !== targetId) return;
+  if (!profile || !profile.username) return;
 
+  // 1. Infos de base
   if($('profile-name')) $('profile-name').textContent = profile.username;
   if($('profile-bio')) $('profile-bio').textContent = profile.bio || 'Aucune bio.';
   if($('about-username')) $('about-username').textContent = profile.username;
@@ -37,16 +49,23 @@ async function displayProfileData(profile, isMe, targetId) {
   
   const av = $('profile-avatar');
   if (av) {
-    if (profile.photoURL) { av.style.backgroundImage = `url(${profile.photoURL})`; av.textContent = ''; }
-    else { av.style.backgroundImage = 'none'; av.textContent = profile.username[0].toUpperCase(); }
+    if (profile.photoURL) { 
+      av.style.backgroundImage = `url(${profile.photoURL})`; 
+      av.textContent = ''; 
+    } else { 
+      av.style.backgroundImage = 'none'; 
+      av.textContent = profile.username[0].toUpperCase(); 
+    }
   }
 
+  // 2. Badges
   let badgesHtml = (profile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
   if (profile.role === 'admin') {
     badgesHtml = `<span class="badge-item" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 1px solid #fca5a5;">👑 Admin Suprême</span>` + badgesHtml;
   }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml;
 
+  // 3. Statistiques (avec vérification de sécurité)
   const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId));
   const postsSnap = await getDocs(postsQuery);
   
@@ -54,6 +73,7 @@ async function displayProfileData(profile, isMe, targetId) {
   if($('stat-followers')) $('stat-followers').textContent = profile.followers?.length || 0;
   if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0;
 
+  // 4. Boutons (Suivre / Modifier)
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
   const favTab = $('tab-favorites-btn');
@@ -86,7 +106,7 @@ async function displayProfileData(profile, isMe, targetId) {
     }
   }
 
-  // Publications
+  // 5. Publications
   const postsContainer = $('profile-posts-list');
   postsContainer.innerHTML = '';
   if (postsSnap.empty) {
@@ -100,7 +120,7 @@ async function displayProfileData(profile, isMe, targetId) {
     sortedPosts.forEach(d => { postsContainer.innerHTML += generatePostHTML(d); });
   }
 
-  // Pages
+  // 6. Pages
   const pagesContainer = $('profile-pages-list');
   pagesContainer.innerHTML = '';
   const pagesQuery = query(collection(db, 'pages'), where('ownerId', '==', targetId));
@@ -122,7 +142,7 @@ async function displayProfileData(profile, isMe, targetId) {
     });
   }
 
-  // Favoris
+  // 7. Favoris (uniquement sur son propre profil)
   if (isMe) {
     const favContainer = $('profile-favorites-list');
     favContainer.innerHTML = '';
@@ -152,25 +172,21 @@ export function initProfile() {
   window.openUserProfile = openUserProfile;
   window.renderProfile = renderProfile;
 
-  // GESTION DES ONGLETS (avec des écouteurs d'événements)
+  // GESTION DES ONGLETS
   const tabPosts = $('btn-tab-posts');
   const tabPages = $('btn-tab-pages');
   const tabFav = $('tab-favorites-btn');
   const tabAbout = $('btn-tab-about');
 
   function setActiveTab(tabId, contentId) {
-    // Désactiver tous les boutons
     [tabPosts, tabPages, tabFav, tabAbout].forEach(btn => { if(btn) btn.classList.remove('active'); });
-    // Activer le bon bouton
     if($(tabId)) $(tabId).classList.add('active');
     
-    // Cacher tous les contenus
     ['posts', 'pages', 'favorites', 'about'].forEach(sec => {
       const el = $(`profile-tab-${sec}`);
       if(el) el.style.display = 'none';
     });
     
-    // Afficher le bon contenu
     if($(contentId)) $(contentId).style.display = 'block';
   }
 
@@ -179,6 +195,7 @@ export function initProfile() {
   if(tabFav) tabFav.addEventListener('click', () => setActiveTab('tab-favorites-btn', 'profile-tab-favorites'));
   if(tabAbout) tabAbout.addEventListener('click', () => setActiveTab('btn-tab-about', 'profile-tab-about'));
 
+  // MODIFICATION DU PROFIL
   if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
   if($('btn-cancel-profile')) $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));
   

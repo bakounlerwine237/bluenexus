@@ -30,14 +30,9 @@ export function switchView(viewId) {
   if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true);
   if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities();
   
-  // On recharge le profil SEULEMENT si on vient d'une autre page
+  // Si on clique sur le bouton "Profil", on recharge TOUJOURS notre profil
   if (viewId === 'profile' && window.renderProfile) {
-    // Si on change de page pour aller sur le profil, on charge.
-    // Mais si on est déjà sur le profil, on ne fait rien (pour ne pas effacer les onglets).
-    const currentView = document.querySelector('.view.active');
-    if(!currentView || currentView.id !== 'view-profile') {
-      window.renderProfile();
-    }
+    window.renderProfile();
   }
 
   if (viewId === 'video' && window.loadVideoFeed) window.loadVideoFeed(); 
