@@ -1,7 +1,7 @@
 import { $, speakText, translateText, toggleMoreMenu, sharePost, showToast } from './utils.js';
 import { initNavigation, switchView } from './navigation.js';
 import { initAuth } from './auth.js';
-import { initFeed, loadGlobalFeed, populatePageSelector } from './feed.js'; // <-- IMPORT AJOUTÉ
+import { initFeed, loadGlobalFeed, populatePageSelector } from './feed.js'; 
 import { initCommunities, renderMyCommunities } from './communities.js';
 import { initMessages, renderUsersList } from './messages.js';
 import { initProfile, renderProfile, openUserProfile } from './profile.js';
@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
   initAdmin();
   
-  // ... (mode sombre et micro inchangés)
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
   function updateThemeBtnText() {
@@ -71,5 +70,5 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('userReady', () => {
   loadGlobalFeed(true);
   listenToNotifications();
-  populatePageSelector(); // <-- NOUVEL APPEL ICI
+  populatePageSelector();
 });
