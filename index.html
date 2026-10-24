@@ -48,32 +48,41 @@
   </header>
 
   <main id="main-content">
-    <!-- ACCUEIL, RECHERCHE, VIDEO, NOTIFS, COMMUNAUTÉS, MESSAGES, PROFIL (inchangés) -->
     <section id="view-home" class="view active">
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
-      <div id="post-creation-container" class="post-creation-box">
-        <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
-        <div style="flex: 1;">
-          <textarea id="global-post-content" placeholder="Quoi de neuf ?" rows="1"></textarea>
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
-            <button id="btn-global-attach" class="btn-secondary small">📎</button>
-            <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
-            <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
+      
+      <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
+        <!-- NOUVEAU : SÉLECTEUR DE PAGE -->
+        <div style="width: 100%;">
+          <select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+            <option value="user">👤 Publier en tant que moi</option>
+            <!-- Les options des pages seront injectées ici par JS -->
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+          <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
+          <div style="flex: 1;">
+            <textarea id="global-post-content" placeholder="Quoi de neuf ?" rows="1"></textarea>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
+              <button id="btn-global-attach" class="btn-secondary small">📎</button>
+              <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
+              <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
+            </div>
+            <div id="global-file-preview" class="file-preview-container hidden"></div>
           </div>
-          <div id="global-file-preview" class="file-preview-container hidden"></div>
         </div>
       </div>
+      
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
 
-    <!-- ... (RECHERCHE, VIDEO, NOTIFS, COMMUNAUTÉS, MESSAGES inchangés) ... -->
-    
     <section id="view-search" class="view">
       <div class="search-header">
         <div class="search-bar-container">
@@ -198,13 +207,11 @@
       </div>
     </section>
 
-    <!-- NOUVELLE VUE : PAGE VITRINE -->
     <section id="view-page" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);">
         <button id="btn-back-from-page" class="btn-secondary small" style="padding: 4px 8px;">←</button>
         <h2 id="page-view-name" style="font-size: 1rem; margin-left: 10px;">Nom de la Page</h2>
       </div>
-
       <div class="fb-profile">
         <div class="fb-banner" style="background: linear-gradient(135deg, #10b981, #064e3b);"></div>
         <div class="fb-avatar-container">
@@ -214,16 +221,13 @@
             <p id="page-view-category" class="muted" style="margin-top: 5px;">—</p>
           </div>
         </div>
-        
         <div class="fb-stats">
           <span><strong id="page-view-followers">0</strong> Abonnés</span>
           <span id="page-view-owner" style="font-size: 0.8rem; align-self: center;">Créé par @—</span>
         </div>
-        
         <div class="fb-action-buttons">
           <button id="btn-follow-page" class="btn-primary small" style="width: 100%;">Suivre cette page</button>
         </div>
-
         <div class="fb-tab-content" style="padding-top: 1rem; border-top: 1px solid var(--border);">
           <h3 style="margin-bottom: 1rem; font-size: 1rem;">Publications de la page</h3>
           <div id="page-view-posts" class="media-list"></div>

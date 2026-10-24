@@ -1,14 +1,15 @@
 import { $, speakText, translateText, toggleMoreMenu, sharePost, showToast } from './utils.js';
 import { initNavigation, switchView } from './navigation.js';
 import { initAuth } from './auth.js';
-import { initFeed, loadGlobalFeed } from './feed.js';
+import { initFeed, loadGlobalFeed, populatePageSelector } from './feed.js'; // <-- IMPORT AJOUTÉ
 import { initCommunities, renderMyCommunities } from './communities.js';
 import { initMessages, renderUsersList } from './messages.js';
 import { initProfile, renderProfile, openUserProfile } from './profile.js';
 import { initPages } from './pages.js';
 import { listenToNotifications, loadNotifications, initNotifications } from './notifications.js';
 import { initVideo, loadVideoFeed } from './video.js';
-import { initSearch } from './search.js'; // <-- NOUVEL IMPORT
+import { initSearch } from './search.js';
+import { initAdmin } from './admin.js';
 
 window.speakText = speakText;
 window.translateText = translateText;
@@ -32,9 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initPages();
   initNotifications();
   initVideo();
-  initSearch(); // <-- NOUVELLE INITIALISATION
+  initSearch();
+  initAdmin();
   
-  // Mode sombre
+  // ... (mode sombre et micro inchangés)
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
   function updateThemeBtnText() {
@@ -50,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Micro
   document.querySelectorAll('.btn-mic').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -70,4 +71,5 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('userReady', () => {
   loadGlobalFeed(true);
   listenToNotifications();
+  populatePageSelector(); // <-- NOUVEL APPEL ICI
 });
