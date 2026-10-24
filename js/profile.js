@@ -2,6 +2,7 @@ import { db, state } from './state.js';
 import { $, uploadFile, showToast } from './utils.js';
 import { switchView } from './navigation.js';
 import { generatePostHTML } from './feed.js';
+import { sendNotification } from './notifications.js'; // <-- IMPORT AJOUTÉ POUR LES NOTIFS
 import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let viewingUserId = null; // Variable pour mémoriser le profil qu'on regarde
@@ -13,7 +14,7 @@ export function renderProfile() {
 }
 
 export async function openUserProfile(userId) {
-  viewingUserId = userId; 
+  viewingUserId = userId;
   if (userId === state.currentUser.uid) {
     displayProfileData(state.userProfile, true, userId);
   } else {
@@ -70,6 +71,7 @@ async function displayProfileData(profile, isMe, targetId) {
   // 4. Boutons (Suivre / Modifier)
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
+  
   if (isMe) {
     if(btnEdit) btnEdit.style.display = 'block';
     if(btnFollow) btnFollow.style.display = 'none';
@@ -89,8 +91,10 @@ async function displayProfileData(profile, isMe, targetId) {
           await updateDoc(doc(db, 'users', state.currentUser.uid), { following: arrayUnion(targetId) });
           if(!state.userProfile.following) state.userProfile.following = [];
           state.userProfile.following.push(targetId);
+          // ENVOI DE LA NOTIFICATION ICI
+          sendNotification(targetId, "s'est abonné à votre profil.");
         }
-        openUserProfile(targetId);
+        openUserProfile(targetId); // Recharge la page pour actualiser le bouton
       };
     }
   }
@@ -138,7 +142,10 @@ export function initProfile() {
   window.openUserProfile = openUserProfile;
   window.renderProfile = renderProfile;
 
-  window.openPage = (pageId) => showToast("La vue détaillée de la page arrive très bientôt !", "success");
+  // La fonction openPage est maintenant gérée par pages.js, mais on garde une sécurité
+  if(!window.openPage) {
+    window.openPage = (pageId) => showToast("Chargement de la page...", "success");
+  }
 
   if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden'));
   if($('btn-cancel-profile')) $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden'));

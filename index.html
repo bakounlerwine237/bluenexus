@@ -54,16 +54,12 @@
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
-      
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
-        <!-- NOUVEAU : SÉLECTEUR DE PAGE -->
         <div style="width: 100%;">
           <select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
             <option value="user">👤 Publier en tant que moi</option>
-            <!-- Les options des pages seront injectées ici par JS -->
           </select>
         </div>
-
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
           <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
           <div style="flex: 1;">
@@ -78,7 +74,6 @@
           </div>
         </div>
       </div>
-      
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
@@ -207,27 +202,42 @@
       </div>
     </section>
 
+    <!-- VUE PAGE (Mise à jour) -->
     <section id="view-page" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);">
         <button id="btn-back-from-page" class="btn-secondary small" style="padding: 4px 8px;">←</button>
         <h2 id="page-view-name" style="font-size: 1rem; margin-left: 10px;">Nom de la Page</h2>
       </div>
       <div class="fb-profile">
-        <div class="fb-banner" style="background: linear-gradient(135deg, #10b981, #064e3b);"></div>
+        <!-- BANNIÈRE DYNAMIQUE -->
+        <div class="fb-banner" id="page-banner" style="background: linear-gradient(135deg, #10b981, #064e3b); background-size: cover; background-position: center;"></div>
+        
         <div class="fb-avatar-container">
-          <div class="fb-avatar" style="background: #10b981; font-size: 2.5rem;">📄</div>
+          <!-- AVATAR DYNAMIQUE -->
+          <div class="fb-avatar" id="page-avatar" style="background: #10b981; font-size: 2.5rem;">📄</div>
           <div style="padding-bottom: 10px;">
             <h2 id="page-view-title">—</h2>
             <p id="page-view-category" class="muted" style="margin-top: 5px;">—</p>
           </div>
         </div>
+        
         <div class="fb-stats">
           <span><strong id="page-view-followers">0</strong> Abonnés</span>
           <span id="page-view-owner" style="font-size: 0.8rem; align-self: center;">Créé par @—</span>
         </div>
+        
         <div class="fb-action-buttons">
           <button id="btn-follow-page" class="btn-primary small" style="width: 100%;">Suivre cette page</button>
         </div>
+
+        <!-- NOUVEAU : BOUTONS DE MODIFICATION POUR LE PROPRIÉTAIRE -->
+        <div id="page-owner-controls" style="display:none; padding: 0 1rem 1rem 1rem; gap: 10px; flex-direction: column;">
+          <input type="file" id="page-avatar-upload" accept="image/*" style="display: none;">
+          <input type="file" id="page-banner-upload" accept="image/*" style="display: none;">
+          <button id="btn-change-page-avatar" class="btn-secondary small">Changer la photo de profil</button>
+          <button id="btn-change-page-banner" class="btn-secondary small">Changer la bannière</button>
+        </div>
+
         <div class="fb-tab-content" style="padding-top: 1rem; border-top: 1px solid var(--border);">
           <h3 style="margin-bottom: 1rem; font-size: 1rem;">Publications de la page</h3>
           <div id="page-view-posts" class="media-list"></div>

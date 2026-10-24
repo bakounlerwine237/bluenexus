@@ -269,3 +269,11 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 #view-page .fb-avatar {
   background: #10b981;
 }
+#page-owner-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#page-owner-controls button {
+  width: 100%;
+}
