@@ -1,46 +1,81 @@
 import { $, speakText, translateText, toggleMoreMenu, sharePost, showToast } from './utils.js';
-import { initNavigation, switchView } from './navigation.js';
-import { initAuth } from './auth.js';
-import { initFeed, loadGlobalFeed, populatePageSelector } from './feed.js'; 
-import { initCommunities, renderMyCommunities } from './communities.js';
-import { initMessages, renderUsersList } from './messages.js';
-import { initProfile, renderProfile, openUserProfile } from './profile.js';
-import { initPages } from './pages.js';
-import { listenToNotifications, loadNotifications, initNotifications } from './notifications.js';
-import { initVideo, loadVideoFeed } from './video.js';
-import { initSearch } from './search.js';
-import { initAdmin } from './admin.js';
 
-// On expose les fonctions globales pour les boutons HTML
+// On expose les fonctions de base immédiatement
 window.speakText = speakText;
 window.translateText = translateText;
 window.toggleMoreMenu = toggleMoreMenu;
 window.sharePost = sharePost;
-window.loadGlobalFeed = loadGlobalFeed;
-window.renderMyCommunities = renderMyCommunities;
-window.renderUsersList = renderUsersList;
-window.renderProfile = renderProfile;
-window.openUserProfile = openUserProfile;
-window.loadNotifications = loadNotifications;
-window.loadVideoFeed = loadVideoFeed;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   console.log("Démarrage de BlueNexus...");
   
-  // On initialise chaque module avec un try/catch. 
-  // Si l'un plante, les autres continuent de fonctionner.
-  try { initNavigation(); } catch(e) { console.error("Erreur Navigation:", e); }
-  try { initAuth(); } catch(e) { console.error("Erreur Auth:", e); }
-  try { initFeed(); } catch(e) { console.error("Erreur Feed:", e); }
-  try { initCommunities(); } catch(e) { console.error("Erreur Communautés:", e); }
-  try { initMessages(); } catch(e) { console.error("Erreur Messages:", e); }
-  try { initProfile(); } catch(e) { console.error("Erreur Profil:", e); }
-  try { initPages(); } catch(e) { console.error("Erreur Pages:", e); }
-  try { initNotifications(); } catch(e) { console.error("Erreur Notifs:", e); }
-  try { initVideo(); } catch(e) { console.error("Erreur Vidéo:", e); }
-  try { initSearch(); } catch(e) { console.error("Erreur Recherche:", e); }
-  try { initAdmin(); } catch(e) { console.error("Erreur Admin:", e); }
+  // On charge chaque module un par un avec une sécurité
+  // Si un module plante, le site continue de tourner
   
+  try { 
+    const nav = await import('./navigation.js'); 
+    nav.initNavigation(); 
+  } catch(e) { console.error("Erreur Navigation:", e); }
+
+  try { 
+    const auth = await import('./auth.js'); 
+    auth.initAuth(); 
+  } catch(e) { console.error("Erreur Auth:", e); }
+
+  try { 
+    const feed = await import('./feed.js'); 
+    feed.initFeed(); 
+    window.loadGlobalFeed = feed.loadGlobalFeed;
+    window.populatePageSelector = feed.populatePageSelector;
+  } catch(e) { console.error("Erreur Feed:", e); }
+
+  try { 
+    const comms = await import('./communities.js'); 
+    comms.initCommunities(); 
+    window.renderMyCommunities = comms.renderMyCommunities;
+  } catch(e) { console.error("Erreur Communautés:", e); }
+
+  try { 
+    const msgs = await import('./messages.js'); 
+    msgs.initMessages(); 
+    window.renderUsersList = msgs.renderUsersList;
+  } catch(e) { console.error("Erreur Messages:", e); }
+
+  try { 
+    const prof = await import('./profile.js'); 
+    prof.initProfile(); 
+    window.renderProfile = prof.renderProfile;
+    window.openUserProfile = prof.openUserProfile;
+  } catch(e) { console.error("Erreur Profil:", e); }
+
+  try { 
+    const pages = await import('./pages.js'); 
+    pages.initPages(); 
+  } catch(e) { console.error("Erreur Pages:", e); }
+
+  try { 
+    const notifs = await import('./notifications.js'); 
+    notifs.initNotifications(); 
+    window.listenToNotifications = notifs.listenToNotifications;
+    window.loadNotifications = notifs.loadNotifications;
+  } catch(e) { console.error("Erreur Notifications:", e); }
+
+  try { 
+    const vid = await import('./video.js'); 
+    vid.initVideo(); 
+    window.loadVideoFeed = vid.loadVideoFeed;
+  } catch(e) { console.error("Erreur Vidéo:", e); }
+
+  try { 
+    const search = await import('./search.js'); 
+    search.initSearch(); 
+  } catch(e) { console.error("Erreur Recherche:", e); }
+
+  try { 
+    const admin = await import('./admin.js'); 
+    admin.initAdmin(); 
+  } catch(e) { console.error("Erreur Admin:", e); }
+
   // Gestion du mode sombre
   const themeToggleBtn = $('btn-theme-toggle-settings');
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
@@ -77,8 +112,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // On lance le chargement des données une fois connecté
-document.addEventListener('userReady', () => {
-  try { loadGlobalFeed(true); } catch(e) { console.error(e); }
-  try { listenToNotifications(); } catch(e) { console.error(e); }
-  try { populatePageSelector(); } catch(e) { console.error(e); }
+document.addEventListener('userReady', async () => {
+  try { 
+    const feed = await import('./feed.js'); 
+    feed.loadGlobalFeed(true); 
+  } catch(e) { console.error(e); }
+  
+  try { 
+    const notifs = await import('./notifications.js'); 
+    notifs.listenToNotifications(); 
+  } catch(e) { console.error(e); }
+  
+  try { 
+    const feed = await import('./feed.js'); 
+    feed.populatePageSelector(); 
+  } catch(e) { console.error(e); }
 });
