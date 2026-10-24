@@ -1,55 +1,81 @@
 import { $, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
+import { initNavigation } from './navigation.js';
+import { initAuth } from './auth.js';
+import { initFeed, loadGlobalFeed, populatePageSelector } from './feed.js';
+import { initCommunities, renderMyCommunities } from './communities.js';
+import { initMessages, renderUsersList } from './messages.js';
+import { initProfile, renderProfile, openUserProfile } from './profile.js';
+import { initPages } from './pages.js';
+import { initNotifications, listenToNotifications, loadNotifications } from './notifications.js';
+import { initVideo, loadVideoFeed } from './video.js';
+import { initSearch } from './search.js';
+import { initAdmin } from './admin.js';
 
 window.speakText = speakText;
 window.translateText = translateText;
 window.toggleMoreMenu = toggleMoreMenu;
 window.sharePost = sharePost;
+window.loadGlobalFeed = loadGlobalFeed;
+window.renderMyCommunities = renderMyCommunities;
+window.renderUsersList = renderUsersList;
+window.renderProfile = renderProfile;
+window.openUserProfile = openUserProfile;
+window.loadNotifications = loadNotifications;
+window.loadVideoFeed = loadVideoFeed;
+window.populatePageSelector = populatePageSelector;
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
+  try { initNavigation(); } catch(e) { console.error(e); }
+  try { initAuth(); } catch(e) { console.error(e); }
+  try { initFeed(); } catch(e) { console.error(e); }
+  try { initCommunities(); } catch(e) { console.error(e); }
+  try { initMessages(); } catch(e) { console.error(e); }
+  try { initProfile(); } catch(e) { console.error(e); }
+  try { initPages(); } catch(e) { console.error(e); }
+  try { initNotifications(); } catch(e) { console.error(e); }
+  try { initVideo(); } catch(e) { console.error(e); }
+  try { initSearch(); } catch(e) { console.error(e); }
+  try { initAdmin(); } catch(e) { console.error(e); }
+
+  const themeToggleBtn = $('btn-theme-toggle-settings');
+  if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
   
-  function logSuccess(moduleName) {
-    const div = document.createElement('div');
-    div.style.cssText = "position:fixed;top:10px;left:10px;background:green;color:white;padding:5px;z-index:9999;border-radius:5px;font-size:12px;";
-    div.textContent = `✅ ${moduleName} OK`;
-    document.body.appendChild(div);
+  function updateThemeBtnText() {
+    if(!themeToggleBtn) return;
+    themeToggleBtn.textContent = document.body.classList.contains('light-mode') ? 'Passer en mode sombre 🌙' : 'Passer en mode clair ☀️';
+  }
+  updateThemeBtnText();
+  
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+      updateThemeBtnText();
+    });
   }
 
-  function logError(moduleName, error) {
-    const div = document.createElement('div');
-    div.style.cssText = "position:fixed;top:10px;left:10px;background:red;color:white;padding:5px;z-index:9999;border-radius:5px;font-size:12px;";
-    div.textContent = `❌ Erreur dans ${moduleName} : ${error.message}`;
-    document.body.appendChild(div);
-    console.error(`Erreur dans ${moduleName}:`, error);
-  }
+  document.querySelectorAll('.btn-mic').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const targetInput = $(btn.getAttribute('data-target'));
+      if (!targetInput) return;
+      if (!('webkitSpeechRecognition' in window)) return alert("Non supporté.");
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'fr-FR';
+      btn.textContent = "🔴"; recognition.start();
+      recognition.onresult = (event) => { targetInput.value += " " + event.results[0][0].transcript; btn.textContent = "🎤"; };
+      recognition.onerror = () => btn.textContent = "🎤";
+      recognition.onend = () => btn.textContent = "🎤";
+    });
+  });
+});
 
-  // On teste chaque fichier UN PAR UN
-  try { await import('./navigation.js'); logSuccess('Navigation'); } catch(e) { logError('navigation.js', e); }
-  try { await import('./auth.js'); logSuccess('Auth'); } catch(e) { logError('auth.js', e); }
-  try { await import('./feed.js'); logSuccess('Feed'); } catch(e) { logError('feed.js', e); }
-  try { await import('./communities.js'); logSuccess('Communautés'); } catch(e) { logError('communities.js', e); }
-  try { await import('./messages.js'); logSuccess('Messages'); } catch(e) { logError('messages.js', e); }
-  try { await import('./profile.js'); logSuccess('Profil'); } catch(e) { logError('profile.js', e); }
-  try { await import('./pages.js'); logSuccess('Pages'); } catch(e) { logError('pages.js', e); }
-  try { await import('./notifications.js'); logSuccess('Notifications'); } catch(e) { logError('notifications.js', e); }
-  try { await import('./video.js'); logSuccess('Vidéo'); } catch(e) { logError('video.js', e); }
-  try { await import('./search.js'); logSuccess('Recherche'); } catch(e) { logError('search.js', e); }
-  try { await import('./admin.js'); logSuccess('Admin'); } catch(e) { logError('admin.js', e); }
-
-  // Ensuite on lance le site normalement
-  try {
-    const nav = await import('./navigation.js'); nav.initNavigation();
-    const auth = await import('./auth.js'); auth.initAuth();
-    
-    const feed = await import('./feed.js'); feed.initFeed(); window.loadGlobalFeed = feed.loadGlobalFeed;
-    const comms = await import('./communities.js'); comms.initCommunities(); window.renderMyCommunities = comms.renderMyCommunities;
-    const msgs = await import('./messages.js'); msgs.initMessages(); window.renderUsersList = msgs.renderUsersList;
-    const prof = await import('./profile.js'); prof.initProfile(); window.renderProfile = prof.renderProfile; window.openUserProfile = prof.openUserProfile;
-    const pages = await import('./pages.js'); pages.initPages();
-    const notifs = await import('./notifications.js'); notifs.initNotifications(); window.listenToNotifications = notifs.listenToNotifications; window.loadNotifications = notifs.loadNotifications;
-    const vid = await import('./video.js'); vid.initVideo(); window.loadVideoFeed = vid.loadVideoFeed;
-    const search = await import('./search.js'); search.initSearch();
-    const admin = await import('./admin.js'); admin.initAdmin();
-  } catch(e) {
-    console.error("Erreur d'initialisation:", e);
+document.addEventListener('userReady', () => {
+  try { loadGlobalFeed(true); } catch(e) { console.error(e); }
+  try { listenToNotifications(); } catch(e) { console.error(e); }
+  try { populatePageSelector(); } catch(e) { console.error(e); }
+  
+  if(document.getElementById('view-profile').classList.contains('active')) {
+    try { renderProfile(); } catch(e) { console.error(e); }
   }
 });
