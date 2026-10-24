@@ -10,6 +10,7 @@ let viewingUserId = null;
 export function renderProfile() {
   if (!state.userProfile || !state.currentUser) return;
   viewingUserId = state.currentUser.uid;
+  // On rend la fonction "async" pour attendre la fin du chargement
   displayProfileData(state.userProfile, true, viewingUserId);
 }
 
@@ -32,17 +33,21 @@ window.switchProfileTab = (tabName) => {
   const targetTab = document.querySelector(`.fb-tab[onclick="window.switchProfileTab('${tabName}')"]`);
   if(targetTab) targetTab.classList.add('active');
 
+  // On cache toutes les zones
   document.getElementById('profile-tab-posts').style.display = 'none';
   document.getElementById('profile-tab-pages').style.display = 'none';
   document.getElementById('profile-tab-favorites').style.display = 'none';
   document.getElementById('profile-tab-about').style.display = 'none';
 
-  document.getElementById(`profile-tab-${tabName}`).style.display = 'block';
+  // On affiche uniquement celle demandée
+  const targetContent = document.getElementById(`profile-tab-${tabName}`);
+  if(targetContent) targetContent.style.display = 'block';
 };
 
 async function displayProfileData(profile, isMe, targetId) {
   if(viewingUserId !== targetId) return;
 
+  // 1. Infos de base
   if($('profile-name')) $('profile-name').textContent = profile.username;
   if($('profile-bio')) $('profile-bio').textContent = profile.bio || 'Aucune bio.';
   if($('about-username')) $('about-username').textContent = profile.username;
@@ -54,18 +59,22 @@ async function displayProfileData(profile, isMe, targetId) {
     else { av.style.backgroundImage = 'none'; av.textContent = profile.username[0].toUpperCase(); }
   }
 
+  // 2. Badges
   let badgesHtml = (profile.badges || []).map(b => `<span class="badge-item">${b}</span>`).join('');
   if (profile.role === 'admin') {
     badgesHtml = `<span class="badge-item" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 1px solid #fca5a5;">👑 Admin Suprême</span>` + badgesHtml;
   }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml;
 
+  // 3. Requête STRICTE pour les posts de CE profil uniquement
   const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId));
   const postsSnap = await getDocs(postsQuery);
+  
   if($('stat-posts')) $('stat-posts').textContent = postsSnap.docs.length;
   if($('stat-followers')) $('stat-followers').textContent = profile.followers?.length || 0;
   if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0;
 
+  // 4. Gestion des boutons
   const btnEdit = $('btn-edit-profile-trigger');
   const btnFollow = $('btn-follow-user');
   const favTab = $('tab-favorites-btn');
@@ -98,6 +107,7 @@ async function displayProfileData(profile, isMe, targetId) {
     }
   }
 
+  // 5. Chargement des Publications
   const postsContainer = $('profile-posts-list');
   postsContainer.innerHTML = '';
   if (postsSnap.empty) {
@@ -111,14 +121,16 @@ async function displayProfileData(profile, isMe, targetId) {
     sortedPosts.forEach(d => { postsContainer.innerHTML += generatePostHTML(d); });
   }
 
+  // 6. Chargement des Pages
   const pagesContainer = $('profile-pages-list');
-  pagesContainer.innerHTML = '';
+  pagesContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
   const pagesQuery = query(collection(db, 'pages'), where('ownerId', '==', targetId));
   const pagesSnap = await getDocs(pagesQuery);
   
   if (pagesSnap.empty) {
     pagesContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune page créée.</p>';
   } else {
+    pagesContainer.innerHTML = '';
     pagesSnap.forEach(d => {
       const p = d.data();
       pagesContainer.innerHTML += `
@@ -132,14 +144,14 @@ async function displayProfileData(profile, isMe, targetId) {
     });
   }
 
+  // 7. Chargement des Favoris
   if (isMe) {
     const favContainer = $('profile-favorites-list');
-    favContainer.innerHTML = '';
+    favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>';
     
     if (!profile.savedPosts || profile.savedPosts.length === 0) {
       favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Vous n\'avez aucun favori pour l\'instant.</p>';
     } else {
-      favContainer.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement des favoris...</p>';
       try {
         const postsPromises = profile.savedPosts.map(id => getDoc(doc(db, 'posts', id)));
         const postsDocs = await Promise.all(postsPromises);
