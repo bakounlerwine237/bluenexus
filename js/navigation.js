@@ -26,23 +26,29 @@ export function switchView(viewId) {
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus";
   }
 
-  // CHARGEMENT DES DONNÉES
+  // CHARGEMENT DES DONNÉES SPÉCIFIQUES À CHAQUE PAGE
   if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true);
   if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities();
-  
-  // Si on clique sur le bouton "Profil", on recharge TOUJOURS notre profil
-  if (viewId === 'profile' && window.renderProfile) {
-    window.renderProfile();
-  }
-
   if (viewId === 'video' && window.loadVideoFeed) window.loadVideoFeed(); 
   if (viewId === 'messages' && window.renderUsersList) window.renderUsersList();
   if (viewId === 'notifications' && window.loadNotifications) window.loadNotifications();
+  
+  // ⚠️ ON A RETIRÉ L'APPEL À renderProfile() ICI
+  // Sinon, il écrase le profil d'un autre utilisateur quand on clique dessus !
 }
 
 export function initNavigation() {
+  // Gestion spécifique des boutons du menu en bas
   document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchView(btn.dataset.view));
+    btn.addEventListener('click', () => {
+      const viewId = btn.dataset.view;
+      switchView(viewId);
+      
+      // ⚠️ SI ON CLIQUE SUR LE BOUTON "PROFIL" DU MENU, ON CHARGE NOTRE PROFIL
+      if (viewId === 'profile' && window.renderProfile) {
+        window.renderProfile();
+      }
+    });
   });
   
   if($('btn-settings-top')) $('btn-settings-top').addEventListener('click', () => switchView('settings'));
@@ -51,6 +57,7 @@ export function initNavigation() {
   if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities'));
   if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages'));
 
+  // Gestion des onglets Accueil (Découvertes / Abonnements)
   if($('tab-discovery')) {
     $('tab-discovery').addEventListener('click', () => {
       state.currentFeedMode = 'discovery';
