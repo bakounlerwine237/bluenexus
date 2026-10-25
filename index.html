@@ -4,8 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
-  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
+  
+  <!-- SEO & Réseaux Sociaux -->
+  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération qui allie la puissance des communautés et la liberté d'expression." />
   <meta name="theme-color" content="#0a0e1a" />
+  
+  <!-- DÉTECTEUR D'ERREUR JS -->
+  <script>
+    window.addEventListener('error', function(e) {
+      var showError = function() {
+        var errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#ef4444; color:white; padding:15px; font-size:14px; z-index:999999; font-family:monospace; word-wrap:break-word; border-bottom: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);';
+        var fileName = e.filename ? e.filename.split('/').pop() : 'Inconnu';
+        errorDiv.innerHTML = '<b>⚠️ ERREUR JS DÉTECTÉE :</b><br>' + e.message + '<br><br><b>Fichier :</b> ' + fileName + '<br><b>Ligne :</b> ' + e.lineno;
+        if (document.body) {
+          document.body.appendChild(errorDiv);
+        } else {
+          document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(errorDiv); });
+        }
+      };
+      showError();
+    });
+  </script>
+
+  <!-- PWA & CSS -->
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
@@ -190,7 +212,53 @@
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b; margin-bottom: 80px;">Se déconnecter</button>
     </section>
     
-    <section id="view-admin" class="view"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;"><h3>Signalements</h3><button id="btn-back-to-settings" class="btn-secondary small">← Retour</button></div><div id="admin-reports-list" class="tg-list"></div></section>
+    <!-- ADMINISTRATION (CENTRE DE COMMANDEMENT) -->
+    <section id="view-admin" class="view">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
+        <h3>👑 Centre de Commandement</h3>
+        <button id="btn-back-to-settings" class="btn-secondary small">← Retour</button>
+      </div>
+
+      <!-- Onglets Admin -->
+      <div style="display:flex; gap:10px; margin-bottom: 1rem;">
+        <button id="admin-tab-dashboard" class="btn-primary small" style="flex:1;">📊 Tableau de bord</button>
+        <button id="admin-tab-users" class="btn-secondary small" style="flex:1;">👥 Utilisateurs</button>
+        <button id="admin-tab-reports" class="btn-secondary small" style="flex:1;">🚨 Signalements</button>
+      </div>
+
+      <!-- Contenu : Tableau de bord -->
+      <div id="admin-content-dashboard" style="display: block;">
+        <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
+          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);">
+            <h2 id="admin-stat-users" style="font-size: 2rem; color: var(--blue-light);">0</h2>
+            <p class="muted" style="font-size: 0.8rem;">Utilisateurs</p>
+          </div>
+          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);">
+            <h2 id="admin-stat-posts" style="font-size: 2rem; color: #10b981;">0</h2>
+            <p class="muted" style="font-size: 0.8rem;">Publications</p>
+          </div>
+          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);">
+            <h2 id="admin-stat-comms" style="font-size: 2rem; color: #f59e0b;">0</h2>
+            <p class="muted" style="font-size: 0.8rem;">Communautés</p>
+          </div>
+        </div>
+        <p class="muted" style="text-align: center; font-size: 0.8rem;">Bienvenue dans ton centre de contrôle, Lerwine.</p>
+      </div>
+
+      <!-- Contenu : Gestion des Utilisateurs -->
+      <div id="admin-content-users" style="display: none;">
+        <div class="search-bar-container" style="margin-bottom: 1rem; background: var(--bg-2);">
+          <span class="search-icon">🔍</span>
+          <input id="admin-search-user" type="text" placeholder="Chercher un utilisateur par pseudo..." style="border:none; background:transparent;" />
+        </div>
+        <div id="admin-users-list" class="tg-list"></div>
+      </div>
+
+      <!-- Contenu : Signalements -->
+      <div id="admin-content-reports" style="display: none;">
+        <div id="admin-reports-list" class="tg-list"></div>
+      </div>
+    </section>
   </main>
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
