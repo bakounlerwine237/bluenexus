@@ -89,13 +89,34 @@
           <div id="comm-avatar-display" style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--bg); font-size: 1.2rem;">C</div>
           <div style="overflow: hidden;"><h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2><p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p></div>
         </div>
-        <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0;">Rejoindre</button>
+        
+        <!-- BOUTON REJOINDRE / ANNULER -->
+        <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0; display:none;">Rejoindre</button>
+        
+        <!-- MENU 3 POINTS (ADMIN & QUITTER) -->
+        <div class="more-menu-container" style="margin-left: 10px;">
+          <button onclick="window.toggleCommMenu()" class="action-btn" style="background:var(--bg-2); border-radius:50%; width:35px; height:35px; display:flex; justify-content:center; align-items:center;">⋮</button>
+          <div id="comm-menu" class="more-menu" style="right: 0; bottom: -100px;">
+            <button id="btn-leave-community" style="color: #ef4444;">🚪 Quitter la communauté</button>
+            <div id="comm-admin-controls" style="display:none; flex-direction: column; border-top: 1px solid var(--border); padding-top: 5px; margin-top: 5px;">
+              <button id="btn-manage-requests" style="color: #f59e0b; display:none;">👥 Demandes (0)</button>
+              <button id="btn-change-comm-avatar">🖼️ Changer l'avatar</button>
+              <button id="btn-change-comm-banner">🏞️ Changer la bannière</button>
+              <button id="btn-delete-community" style="color: #ef4444;">🗑️ Supprimer la communauté</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px; flex-wrap: wrap;">
-        <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;"><input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
-        <button id="btn-change-comm-avatar" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer l'avatar</button>
-        <button id="btn-change-comm-banner" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer la bannière</button>
-        <button id="btn-delete-community" class="btn-secondary small" style="font-size: 0.75rem; width: 100%; color: #ef4444; border-color: #ef4444; margin-top: 5px;">🗑️ Supprimer la communauté</button></div>
+      
+      <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;">
+      <input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
+      
+      <div id="private-lock-screen" style="display:none; text-align:center; padding: 3rem 1rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
+        <h3 style="margin-bottom: 10px;">Ce groupe est privé</h3>
+        <p class="muted" style="margin-bottom: 1.5rem;">Vous devez être accepté par l'administrateur pour voir le contenu.</p>
+      </div>
+
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;"><textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 60px; border-radius: 20px;"></textarea><input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-attach-file" style="position: absolute; right: 35px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button><button class="btn-mic" data-target="post-content" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">🎤</button></div>
@@ -138,6 +159,9 @@
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);"><h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4><p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p><button id="btn-open-admin-panel" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button></div>
+      
+      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Communauté</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Créez un groupe public, privé ou une chaîne de publication.</p><button id="btn-new-community-settings" class="btn-primary" style="width: 100%;">Créer une communauté</button></div>
+      
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p><button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>      <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b;">Se déconnecter</button>
     </section>
@@ -149,7 +173,19 @@
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
   </nav>
 </div>
-<div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="chat">💬 Groupe de discussion</option><option value="announcement">📢 Chaîne (Admin seul)</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
+
+<!-- MODALS -->
+<div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);">
+  <label class="muted" style="font-size: 0.8rem;">Type de communauté</label>
+  <select id="comm-type" style="margin-bottom: 0.5rem;">
+    <option value="public">🌐 Publique (Tout le monde peut rejoindre et écrire)</option>
+    <option value="private">🔒 Privée (Sur demande, validation par l'admin)</option>
+    <option value="announcement">📢 Publication (Seul l'admin écrit, les autres interagissent)</option>
+  </select>
+<button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
+
+<div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
+
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
