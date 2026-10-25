@@ -35,7 +35,7 @@ export async function loadGlobalFeed(reset = false) {
   try {
     const snap = await getDocs(q);
     if (snap.empty && reset) {
-      list.innerHTML = '<p class="muted">Aucun message sur le réseau.</p>';
+      list.innerHTML = '<p class="muted" style="padding: 1rem; text-align: center;">Aucune publication pour le moment.</p>';
       noMorePosts = true;
       return;
     }
@@ -50,8 +50,9 @@ export async function loadGlobalFeed(reset = false) {
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
         const isMe = p.data.authorId === state.currentUser.uid;
-        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId) || false;
-        const isPageFollowed = (p.data.pageId && state.userProfile.following?.includes(p.data.pageId)) || false;
+        // Ajout de "?." pour éviter les erreurs si "following" est indéfini
+        const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
+        const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
         return isMe || isUserFollowed || isPageFollowed;
       });
       if (postsToShow.length === 0 && reset) {
@@ -61,8 +62,8 @@ export async function loadGlobalFeed(reset = false) {
     } else if (state.currentFeedMode === 'discovery') {
       postsToShow = postsToShow.filter(p => {
         const isMe = p.data.authorId === state.currentUser.uid;
-        const isUserFollowed = state.userProfile.following?.includes(p.data.authorId) || false;
-        const isPageFollowed = (p.data.pageId && state.userProfile.following?.includes(p.data.pageId)) || false;
+        const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
+        const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
         return !isMe && !isUserFollowed && !isPageFollowed;
       });
       if (postsToShow.length === 0 && reset) {
@@ -85,7 +86,8 @@ export async function loadGlobalFeed(reset = false) {
     bestPosts.forEach(p => { list.innerHTML += generatePostHTML(p.ref); });
   } catch (error) {
     console.error("Erreur de chargement:", error);
-    list.innerHTML = '<p class="muted" style="color:#ef4444;">Erreur de chargement du fil.</p>';
+    // AFFICHAGE DE L'ERREUR EXACTE POUR COMPRENDRE LE PROBLÈME
+    list.innerHTML = `<p class="muted" style="color:#ef4444; padding: 1rem;">Erreur : ${error.message}</p>`;
   } finally {
     isFetchingFeed = false;
   }
@@ -201,7 +203,6 @@ export function initFeed() {
     $('btn-global-publish').textContent = "Publier";
     showToast("✅ Publication réussie !", "success");
     
-    // CORRECTION IMAGE 5 : Bascule automatique sur "Abonnements" pour voir son propre post
     if (state.currentFeedMode === 'discovery') {
       if($('tab-following')) $('tab-following').click();
     } else {
