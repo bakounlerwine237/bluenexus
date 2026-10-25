@@ -2,11 +2,10 @@ import { db, state } from './state.js';
 import { $, showToast, uploadFile } from './utils.js';
 import { switchView } from './navigation.js';
 import { generatePostHTML } from './feed.js';
-import { collection, addDoc, query, where, orderBy, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { collection, addDoc, query, where, orderBy, getDocs, doc, getDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let unsubscribeComm = null;
 let currentCommId = null;
-let currentCommOwnerId = null;
 
 export async function renderMyCommunities() {
   const list = $('my-communities-list');
@@ -58,7 +57,6 @@ export async function renderAllCommunities() {
   }).join('');
 }
 
-// OUVRIR UNE COMMUNAUTÉ
 window.openCommunity = async (id) => {
   currentCommId = id;
   switchView('community');
@@ -82,12 +80,10 @@ window.openCommunity = async (id) => {
     if (!snap.exists()) return;
     
     const data = snap.data();
-    currentCommOwnerId = data.ownerId;
     
     titleEl.textContent = data.name;
     membersEl.textContent = `${data.members.length} membres`;
     
-    // AFFICHAGE DE LA BANNIÈRE ET DE L'AVATAR
     if (data.bannerURL) {
       bannerEl.style.backgroundImage = `url(${data.bannerURL})`;
     } else {
@@ -101,14 +97,13 @@ window.openCommunity = async (id) => {
       avatarEl.textContent = data.name[0].toUpperCase();
     }
 
-    // AFFICHAGE DES BOUTONS ADMIN
+    // AFFICHAGE DES BOUTONS ADMIN (Créateur ou Admin du site)
     if (data.ownerId === state.currentUser.uid || state.userProfile.role === 'admin') {
       adminControls.style.display = 'flex';
     } else {
       adminControls.style.display = 'none';
     }
 
-    // BOUTON REJOINDRE
     if (data.members.includes(state.currentUser.uid)) {
       joinBtn.style.display = 'none';
       $('post-form-container').style.display = 'flex';
@@ -117,7 +112,6 @@ window.openCommunity = async (id) => {
       $('post-form-container').style.display = 'none';
     }
 
-    // CHARGER LES POSTS
     if(unsubscribeComm) unsubscribeComm();
     unsubscribeComm = onSnapshot(query(collection(db, 'posts'), where('communityId', '==', id), orderBy('createdAt', 'desc')), snap => {
       postsContainer.innerHTML = snap.empty ? '<p class="muted" style="padding: 1rem;">Aucun message.</p>' : '';
@@ -132,6 +126,7 @@ window.openCommunity = async (id) => {
 };
 
 export function initCommunities() {
+  // ... (le début est inchangé, bouton découvrir etc.)
   if($('btn-discover-communities')) $('btn-discover-communities').addEventListener('click', () => {
     $('my-communities-list').style.display = 'none';
     $('btn-discover-communities').style.display = 'none';
@@ -147,7 +142,6 @@ export function initCommunities() {
   if($('btn-new-community')) $('btn-new-community').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
   if($('comm-cancel')) $('comm-cancel').addEventListener('click', () => $('modal-community').classList.add('hidden'));
 
-  // CRÉATION DE LA COMMUNAUTÉ AVEC UPLOAD D'IMAGES
   if($('comm-save')) $('comm-save').addEventListener('click', async () => {
     const name = $('comm-name').value.trim();
     const type = $('comm-type').value;
@@ -163,7 +157,6 @@ export function initCommunities() {
       let avatarURL = "";
       let bannerURL = "";
 
-      // On upload les images si elles existent
       if(avatarFile) avatarURL = await uploadFile(avatarFile);
       if(bannerFile) bannerURL = await uploadFile(bannerFile);
 
@@ -171,14 +164,13 @@ export function initCommunities() {
         name, 
         description: $('comm-desc').value.trim(), 
         type, 
-        avatarURL, // <-- NOUVEAU
-        bannerURL, // <-- NOUVEAU
+        avatarURL,
+        bannerURL,
         ownerId: state.currentUser.uid, 
         members: [state.currentUser.uid], 
         createdAt: serverTimestamp()
       });
 
-      // Ajouter le badge Fondateur
       if(!state.userProfile.badges.includes("Fondateur")) {
         state.userProfile.badges.push("Fondateur");
         await updateDoc(doc(db, 'users', state.currentUser.uid), { badges: arrayUnion("Fondateur") });
@@ -187,7 +179,6 @@ export function initCommunities() {
       showToast("✅ Communauté créée !");
       $('modal-community').classList.add('hidden');
       
-      // Reset des champs
       $('comm-name').value = ''; $('comm-desc').value = '';
       $('comm-new-avatar').value = ''; $('comm-new-banner').value = '';
       
@@ -201,35 +192,71 @@ export function initCommunities() {
     }
   });
 
-  // CHANGEMENT DE L'AVATAR DE LA COMMUNAUTÉ
+  // CHANGEMENT AVATAR
   if($('btn-change-comm-avatar')) {
     $('btn-change-comm-avatar').addEventListener('click', () => $('comm-avatar-upload').click());
     $('comm-avatar-upload').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if(!file || !currentCommId) return;
-      showToast("Chargement de l'image...", "success");
+      showToast("Chargement...", "success");
       try {
         const url = await uploadFile(file);
         await updateDoc(doc(db, 'communities', currentCommId), { avatarURL: url });
         showToast("✅ Avatar mis à jour !");
         window.openCommunity(currentCommId);
-      } catch(err) { showToast("Erreur d'upload", "error"); }
+      } catch(err) { showToast("Erreur.", "error"); }
     });
   }
 
-  // CHANGEMENT DE LA BANNIÈRE DE LA COMMUNAUTÉ
+  // CHANGEMENT BANNIÈRE
   if($('btn-change-comm-banner')) {
     $('btn-change-comm-banner').addEventListener('click', () => $('comm-banner-upload').click());
     $('comm-banner-upload').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if(!file || !currentCommId) return;
-      showToast("Chargement de la bannière...", "success");
+      showToast("Chargement...", "success");
       try {
         const url = await uploadFile(file);
         await updateDoc(doc(db, 'communities', currentCommId), { bannerURL: url });
         showToast("✅ Bannière mise à jour !");
         window.openCommunity(currentCommId);
-      } catch(err) { showToast("Erreur d'upload", "error"); }
+      } catch(err) { showToast("Erreur.", "error"); }
+    });
+  }
+
+  // --- NOUVELLE FONCTIONNALITÉ : SUPPRIMER LA COMMUNAUTÉ ---
+  if($('btn-delete-community')) {
+    $('btn-delete-community').addEventListener('click', async () => {
+      if(!confirm("⚠️ Êtes-vous sûr de vouloir supprimer cette communauté ET TOUS ses messages ? Cette action est irréversible.")) return;
+      
+      showToast("Suppression en cours...", "success");
+      $('btn-delete-community').textContent = "Suppression...";
+      $('btn-delete-community').disabled = true;
+
+      try {
+        // 1. Supprimer tous les posts de la communauté
+        const postsQ = query(collection(db, 'posts'), where('communityId', '==', currentCommId));
+        const postsSnap = await getDocs(postsQ);
+        
+        // On crée un tableau de promesses pour supprimer tous les posts en même temps
+        const deletePromises = postsSnap.docs.map(d => deleteDoc(doc(db, 'posts', d.id)));
+        await Promise.all(deletePromises);
+
+        // 2. Supprimer le document de la communauté elle-même
+        await deleteDoc(doc(db, 'communities', currentCommId));
+
+        showToast("🗑️ Communauté et messages supprimés.", "error");
+        
+        // 3. Rediriger vers la liste des communautés
+        switchView('communities');
+        renderMyCommunities();
+
+      } catch(e) {
+        console.error(e);
+        showToast("Erreur lors de la suppression : " + e.message, "error");
+        $('btn-delete-community').textContent = "🗑️ Supprimer la communauté";
+        $('btn-delete-community').disabled = false;
+      }
     });
   }
 

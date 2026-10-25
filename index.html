@@ -153,7 +153,16 @@
       </div>
 
       <!-- BOUTONS ADMIN (Cachés par défaut) -->
-      <div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px;">
+<div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px; flex-wrap: wrap;">
+  <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;">
+  <input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
+  <button id="btn-change-comm-avatar" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer l'avatar</button>
+  <button id="btn-change-comm-banner" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer la bannière</button>
+  
+  <!-- NOUVEAU BOUTON DE SUPPRESSION -->
+  <button id="btn-delete-community" class="btn-secondary small" style="font-size: 0.75rem; width: 100%; color: #ef4444; border-color: #ef4444; margin-top: 5px;">🗑️ Supprimer la communauté</button>
+</div>      
+<div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px;">
         <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;">
         <input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
         <button id="btn-change-comm-avatar" class="btn-secondary small" style="font-size: 0.75rem;">Changer l'avatar</button>
