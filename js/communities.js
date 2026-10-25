@@ -16,7 +16,6 @@ export async function renderMyCommunities() {
   if($('btn-discover-communities')) $('btn-discover-communities').style.display = 'block'; 
   $('discover-communities-section').style.display = 'none'; 
   
-  // Uniquement les communautés où on est membre
   const q = query(collection(db, 'communities'), where('members', 'array-contains', state.currentUser.uid)); 
   const snap = await getDocs(q); 
   if (snap.empty) return list.innerHTML = '<p class="muted" style="padding: 1rem;">Vous n\'avez rejoint aucune communauté.</p>'; 
@@ -73,6 +72,16 @@ window.openCommunity = async (id) => {
   adminControls.style.display = 'none';
   postForm.style.display = 'none';
 
+  // Bandeau d'information pour les chaînes de publication
+  let infoBanner = $('comm-info-banner');
+  if (!infoBanner) {
+    infoBanner = document.createElement('div');
+    infoBanner.id = 'comm-info-banner';
+    infoBanner.style.cssText = 'padding: 10px; text-align: center; font-size: 0.85rem; color: var(--muted); background: var(--bg-2); margin: 0 1rem 10px 1rem; border-radius: 8px; display: none; border: 1px dashed var(--border);';
+    postsContainer.parentNode.insertBefore(infoBanner, postsContainer);
+  }
+  infoBanner.style.display = 'none';
+
   try { 
     const snap = await getDoc(doc(db, 'communities', id)); 
     if (!snap.exists()) return; 
@@ -96,7 +105,7 @@ window.openCommunity = async (id) => {
     if (isAdmin) { 
       adminControls.style.display = 'flex'; 
       leaveBtn.style.display = 'none';
-      // Vérifier s'il y a des demandes
+      // Vérifier s'il y a des demandes en attente
       if (data.type === 'private' && data.joinRequests?.length > 0) {
         $('btn-manage-requests').style.display = 'block';
         $('btn-manage-requests').textContent = `👥 Demandes (${data.joinRequests.length})`;
@@ -110,7 +119,7 @@ window.openCommunity = async (id) => {
 
     // Logique d'affichage selon le type et le statut
     if (data.type === 'private' && !isMember && !isAdmin) {
-      // Groupe privé et on est pas membre
+      // Groupe privé, on n'est ni admin ni membre
       lockScreen.style.display = 'block';
       postsContainer.style.display = 'none';
       if (isPending) {
@@ -126,14 +135,29 @@ window.openCommunity = async (id) => {
       postsContainer.style.display = 'flex';
       lockScreen.style.display = 'none';
       
-      if (isMember) {
+      if (isMember || isAdmin) {
         joinBtn.style.display = 'none';
-        // Formulaire de post (sauf si annonce et pas admin)
-        if (data.type === 'announcement' && !isAdmin) {
-          postForm.style.display = 'none';
-        } else {
+        
+        // LOGIQUE D'ÉCRITURE : L'admin peut toujours écrire. Les membres peuvent écrire si ce n'est pas une annonce.
+        const canWrite = isAdmin || (isMember && data.type !== 'announcement');
+        
+        if (canWrite) {
           postForm.style.display = 'flex';
+          // Personnalisation du texte de la barre de saisie
+          if (data.type === 'announcement') {
+            $('post-content').placeholder = "Écrire une annonce officielle...";
+          } else if (data.type === 'private') {
+            $('post-content').placeholder = "Message privé au groupe...";
+          } else {
+            $('post-content').placeholder = "Écrire un message...";
+          }
+        } else {
+          postForm.style.display = 'none';
+          // Afficher le bandeau informatif pour les non-admins sur une chaîne de publication
+          infoBanner.textContent = "🔒 Seul l'administrateur peut publier dans cette chaîne. Vous pouvez interagir avec les publications ci-dessous.";
+          infoBanner.style.display = 'block';
         }
+        
       } else {
         // Pas membre mais groupe public ou annonce
         joinBtn.style.display = 'block';
@@ -159,7 +183,6 @@ window.openCommunity = async (id) => {
 };
 
 export function initCommunities() { 
-  // Bouton paramètres
   if($('btn-new-community-settings')) $('btn-new-community-settings').addEventListener('click', () => $('modal-community').classList.remove('hidden'));
   
   if($('btn-discover-communities')) $('btn-discover-communities').addEventListener('click', () => { 
@@ -221,7 +244,6 @@ export function initCommunities() {
     } 
   }); 
 
-  // Rejoindre
   if($('btn-join-community')) $('btn-join-community').addEventListener('click', async () => { 
     if (!currentCommData) return;
     if (currentCommData.type === 'private') {
@@ -234,7 +256,6 @@ export function initCommunities() {
     window.openCommunity(currentCommId); 
   }); 
 
-  // Quitter
   if($('btn-leave-community')) $('btn-leave-community').addEventListener('click', async () => {
     if(!confirm("Voulez-vous vraiment quitter cette communauté ?")) return;
     try {
@@ -245,7 +266,6 @@ export function initCommunities() {
     } catch(e) { showToast("Erreur", "error"); }
   });
 
-  // Gestion des demandes (Admin)
   if($('btn-manage-requests')) $('btn-manage-requests').addEventListener('click', async () => {
     $('modal-manage-requests').classList.remove('hidden');
     const list = $('requests-list');
@@ -288,7 +308,6 @@ export function initCommunities() {
 
   if($('btn-close-requests')) $('btn-close-requests').addEventListener('click', () => $('modal-manage-requests').classList.add('hidden'));
 
-  // Changement avatar/bannière
   if($('btn-change-comm-avatar')) { 
     $('btn-change-comm-avatar').addEventListener('click', () => $('comm-avatar-upload').click()); 
     $('comm-avatar-upload').addEventListener('change', async (e) => { 
@@ -318,7 +337,6 @@ export function initCommunities() {
     }); 
   } 
   
-  // Supprimer
   if($('btn-delete-community')) { 
     $('btn-delete-community').addEventListener('click', async () => { 
       if(!confirm("⚠️ Êtes-vous sûr de vouloir supprimer cette communauté ET TOUS ses messages ? Cette action est irréversible.")) return; 
@@ -343,7 +361,6 @@ export function initCommunities() {
     }); 
   } 
   
-  // Publier
   if($('btn-publish-post')) $('btn-publish-post').addEventListener('click', async () => { 
     const content = $('post-content').value.trim(); 
     if (!content) return; 
