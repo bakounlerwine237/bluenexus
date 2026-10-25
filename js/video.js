@@ -104,3 +104,8 @@ window.sendVideoComment = async (postId) => {
     showToast("✅ Commentaire ajouté !", "success");
   } catch (e) { showToast("Erreur : " + e.message, "error"); }
 };
+
+// LA FONCTION MANQUANTE QUI BLOQUAIT TOUT LE SITE
+export function initVideo() {
+  console.log("Module Vidéo initialisé.");
+}
