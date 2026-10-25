@@ -1,30 +1,28 @@
 // --- js/admin.js ---
 import { db, state } from './state.js'; 
 import { $, showToast, timeAgo } from './utils.js'; 
+import { switchView } from './navigation.js'; // <-- L'IMPORT MANQUANT EST ICI
 import { collection, getDocs, doc, getDoc, deleteDoc, updateDoc, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 export function initAdmin() { 
   if($('btn-open-admin-panel')) { 
     $('btn-open-admin-panel').addEventListener('click', () => { 
-      if(window.switchView) window.switchView('admin'); 
+      switchView('admin'); // <-- CORRECTION ICI
       loadDashboardStats();
       loadReports();
-      // Réinitialiser les onglets
       switchAdminTab('dashboard');
     }); 
   } 
   if($('btn-back-to-settings')) { 
     $('btn-back-to-settings').addEventListener('click', () => { 
-      if(window.switchView) window.switchView('settings'); 
+      switchView('settings'); // <-- CORRECTION ICI
     }); 
   } 
 
-  // Gestion des onglets Admin
   if($('admin-tab-dashboard')) $('admin-tab-dashboard').addEventListener('click', () => switchAdminTab('dashboard'));
   if($('admin-tab-users')) $('admin-tab-users').addEventListener('click', () => { switchAdminTab('users'); loadUsersList(); });
   if($('admin-tab-reports')) $('admin-tab-reports').addEventListener('click', () => { switchAdminTab('reports'); loadReports(); });
 
-  // Recherche utilisateur
   if($('admin-search-user')) {
     $('admin-search-user').addEventListener('input', (e) => {
       const term = e.target.value.toLowerCase();
@@ -38,17 +36,14 @@ export function initAdmin() {
 }
 
 function switchAdminTab(tab) {
-  // Cacher tous les contenus
   if($('admin-content-dashboard')) $('admin-content-dashboard').style.display = 'none';
   if($('admin-content-users')) $('admin-content-users').style.display = 'none';
   if($('admin-content-reports')) $('admin-content-reports').style.display = 'none';
 
-  // Réinitialiser les boutons
   if($('admin-tab-dashboard')) $('admin-tab-dashboard').className = 'btn-secondary small';
   if($('admin-tab-users')) $('admin-tab-users').className = 'btn-secondary small';
   if($('admin-tab-reports')) $('admin-tab-reports').className = 'btn-secondary small';
 
-  // Afficher le bon onglet
   if (tab === 'dashboard') {
     $('admin-content-dashboard').style.display = 'block';
     $('admin-tab-dashboard').className = 'btn-primary small';
@@ -61,7 +56,6 @@ function switchAdminTab(tab) {
   }
 }
 
-// --- STATISTIQUES ---
 async function loadDashboardStats() {
   try {
     const usersSnap = await getDocs(collection(db, 'users'));
@@ -76,7 +70,6 @@ async function loadDashboardStats() {
   }
 }
 
-// --- GESTION DES UTILISATEURS (Attribution de badges) ---
 async function loadUsersList() {
   const list = $('admin-users-list');
   if(!list) return;
@@ -118,13 +111,12 @@ window.addBadgeToUser = async (userId, badgeName) => {
       badges: arrayUnion(badgeName)
     });
     showToast(`✅ Badge "${badgeName}" ajouté !`, "success");
-    loadUsersList(); // Recharger la liste
+    loadUsersList();
   } catch(e) {
     showToast("Erreur : " + e.message, "error");
   }
 };
 
-// --- SIGNALEMENTS ---
 async function loadReports() { 
   const list = $('admin-reports-list'); 
   if(!list) return; 

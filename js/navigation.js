@@ -5,10 +5,13 @@ import { state } from './state.js';
 export function switchView(viewId) { 
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); 
+  
   const target = $(`view-${viewId}`); 
   if(target) target.classList.add('active'); 
+  
   const navBtn = document.querySelector(`.nav-btn[data-view="${viewId}"]`); 
   if(navBtn) navBtn.classList.add('active'); 
+  
   if (viewId === 'community' || viewId === 'chat' || viewId === 'page') { 
     if($('main-nav')) $('main-nav').style.display = 'none'; 
     if($('main-header')) $('main-header').style.display = 'none'; 
@@ -18,6 +21,8 @@ export function switchView(viewId) {
     const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", video: "Vidéo", messages: "Messages", notifications: "Notifications", admin: "Panneau Admin" }; 
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus"; 
   } 
+  
+  // Chargement dynamique des données selon la vue
   if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true); 
   if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities(); 
   if (viewId === 'video' && window.loadVideoFeed) window.loadVideoFeed(); 
@@ -33,12 +38,14 @@ export function initNavigation() {
       if (viewId === 'profile' && window.renderProfile) window.renderProfile(); 
     }); 
   }); 
+  
   if($('btn-settings-top')) $('btn-settings-top').addEventListener('click', () => switchView('settings')); 
   if($('btn-go-communities')) $('btn-go-communities').addEventListener('click', () => switchView('communities')); 
   if($('btn-back-home-comm')) $('btn-back-home-comm').addEventListener('click', () => switchView('home')); 
   if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities')); 
   if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages')); 
   
+  // Gestion des onglets du fil d'actualité
   if($('tab-discovery')) { 
     $('tab-discovery').addEventListener('click', () => { 
       state.currentFeedMode = 'discovery'; 
@@ -71,6 +78,8 @@ export function initNavigation() {
   } 
 }
 
+// --- FONCTIONS GLOBALES (accessibles depuis n'importe quel autre fichier) ---
+
 window.switchToDiscovery = () => { 
   state.currentFeedMode = 'discovery'; 
   const tabDisco = document.getElementById('tab-discovery'); 
@@ -90,4 +99,7 @@ window.searchFromPost = (term) => {
     searchInput.dispatchEvent(new Event('input', { bubbles: true })); 
     if (window.switchView) window.switchView('search'); 
   } 
-}
+};
+
+// ✅ LA LIGNE CRUCIALE POUR QUE LE PANNEAU ADMIN FONCTIONNE :
+window.switchView = switchView;
