@@ -27,7 +27,7 @@ export async function loadVideoFeed() {
     feed.innerHTML = '<div style="color:white; text-align:center; padding:3rem 1rem;"><div style="font-size:4rem; margin-bottom:1rem;">🎬</div><h3 style="margin-bottom:10px;">Aucune vidéo disponible</h3><p style="color:#7a86a8;">Le flux vidéo est vide pour le moment.</p></div>';
   }
 }
-// Le reste du fichier (setupVideoObserver, toggleVideoLike, openCommentsFromVideo, etc.) reste identique
+
 function setupVideoObserver() {
   const videos = document.querySelectorAll('.video-slide video');
   if (!videos.length) return;

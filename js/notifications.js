@@ -45,7 +45,7 @@ export async function loadNotifications() {
     }); 
   } catch (error) {
     console.error(error);
-    list.innerHTML = '<p class="muted" style="padding:1rem; color:#ef4444;">Erreur de chargement. (Index Firebase peut-être manquant)</p>';
+    list.innerHTML = '<p class="muted" style="padding:1rem; color:#ef4444;">Erreur de chargement.</p>';
   }
 }
 

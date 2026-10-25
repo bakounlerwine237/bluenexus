@@ -15,7 +15,7 @@ export function switchView(viewId) {
   } else { 
     if($('main-nav')) $('main-nav').style.display = 'flex'; 
     if($('main-header')) $('main-header').style.display = 'flex'; 
-    const titles = { home: "Accueil", communities: "Mes Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", video: "Vidéo", messages: "Messages", notifications: "Notifications", admin: "Panneau Admin" }; 
+    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", video: "Vidéo", messages: "Messages", notifications: "Notifications", admin: "Panneau Admin" }; 
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus"; 
   } 
   if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true); 
