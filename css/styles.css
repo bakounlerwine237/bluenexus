@@ -294,3 +294,24 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
   font-size: 0.75rem;
   padding: 8px;
 }
+/* Corrections UI */
+#page-title {
+  font-size: 1.2rem !important; /* Réduit la taille du titre */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px; /* Empêche "Mes Communautés" de passer sur 2 lignes */
+}
+
+#view-settings {
+  padding-bottom: 80px !important; /* Ajoute de l'espace en bas des paramètres */
+}
+
+/* Amélioration du défilement des filtres de recherche */
+.search-filters-row {
+  padding-right: 15px;
+  -webkit-overflow-scrolling: touch;
+}
+.search-filters-row::-webkit-scrollbar {
+  display: none;
+}

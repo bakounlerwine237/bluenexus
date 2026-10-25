@@ -1,82 +1,67 @@
-import { db, state } from './state.js';
-import { $, timeAgo, showToast } from './utils.js';
+// --- js/notifications.js ---
+import { db, state } from './state.js'; 
+import { $, timeAgo, showToast } from './utils.js'; 
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, writeBatch, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let unsubscribeNotifs = null;
 
-export function listenToNotifications() {
-  if(unsubscribeNotifs) unsubscribeNotifs();
-  if(!state.currentUser) return;
-  
-  const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), where('read', '==', false));
-  
-  unsubscribeNotifs = onSnapshot(q, snap => {
-    const badge = $('notif-badge');
-    if(!badge) return;
+export function listenToNotifications() { 
+  if(unsubscribeNotifs) unsubscribeNotifs(); 
+  if(!state.currentUser) return; 
+  const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), where('read', '==', false)); 
+  unsubscribeNotifs = onSnapshot(q, snap => { 
+    const badge = $('notif-badge'); 
+    if(!badge) return; 
     if(snap.docs.length > 0) { 
       badge.style.display = 'block'; 
       badge.textContent = snap.docs.length; 
     } else { 
       badge.style.display = 'none'; 
-    }
-  });
+    } 
+  }, error => {
+    console.error("Erreur listener notifications:", error);
+  }); 
 }
 
-// LA FAMEUSE FONCTION MANQUANTE
-export async function sendNotification(toUser, text, fromUserId, fromUsername) {
+export async function sendNotification(toUser, text, fromUserId, fromUsername) { 
   if(!state.currentUser || toUser === state.currentUser.uid) return; 
-  await addDoc(collection(db, 'notifications'), {
-    toUser: toUser, 
-    fromUser: fromUserId || state.currentUser.uid, 
-    fromUsername: fromUsername || state.userProfile.username, 
-    text: text, 
-    read: false, 
-    createdAt: serverTimestamp()
-  });
+  await addDoc(collection(db, 'notifications'), { toUser: toUser, fromUser: fromUserId || state.currentUser.uid, fromUsername: fromUsername || state.userProfile.username, text: text, read: false, createdAt: serverTimestamp() }); 
 }
 
-export async function loadNotifications() {
-  const list = $('notif-list');
-  if(!list) return;
-  list.innerHTML = '<p class="muted" style="padding:1rem;">Chargement...</p>';
-  
-  const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), orderBy('createdAt', 'desc'), limit(30));
-  const snap = await getDocs(q);
-  
-  if(snap.empty) return list.innerHTML = '<p class="muted" style="padding:1rem;">Aucune notification pour le moment.</p>';
-  
-  list.innerHTML = '';
-  snap.docs.forEach(d => {
-    const n = d.data();
-    const isUnread = !n.read;
+export async function loadNotifications() { 
+  const list = $('notif-list'); 
+  if(!list) return; 
+  list.innerHTML = '<p class="muted" style="padding:1rem;">Chargement...</p>'; 
+  try {
+    const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), orderBy('createdAt', 'desc'), limit(30)); 
+    const snap = await getDocs(q); 
+    if(snap.empty) return list.innerHTML = '<div style="text-align:center; padding:3rem 1rem; color:var(--muted);"><div style="font-size:3rem; margin-bottom:1rem;">🔕</div><p>Aucune notification pour le moment.</p></div>'; 
     
-    list.innerHTML += `
-      <div class="notif-item ${isUnread ? 'unread' : ''}" onclick="window.openUserProfile('${n.fromUser}')">
-        <div class="notif-avatar">${n.fromUsername[0].toUpperCase()}</div>
-        <div class="notif-content">
-          <div class="notif-text"><strong>@${n.fromUsername}</strong> ${n.text}</div>
-          <div class="notif-time">${timeAgo(n.createdAt)}</div>
-        </div>
-      </div>`;
-  });
+    list.innerHTML = ''; 
+    snap.docs.forEach(d => { 
+      const n = d.data(); 
+      const isUnread = !n.read; 
+      list.innerHTML += `<div class="notif-item ${isUnread ? 'unread' : ''}" onclick="window.openUserProfile('${n.fromUser}')"><div class="notif-avatar">${n.fromUsername[0].toUpperCase()}</div><div class="notif-content"><div class="notif-text"><strong>@${n.fromUsername}</strong> ${n.text}</div><div class="notif-time">${timeAgo(n.createdAt)}</div></div></div>`; 
+    }); 
+  } catch (error) {
+    console.error(error);
+    list.innerHTML = '<p class="muted" style="padding:1rem; color:#ef4444;">Erreur de chargement. (Index Firebase peut-être manquant)</p>';
+  }
 }
 
-export function initNotifications() {
-  if($('btn-mark-all-read')) {
-    $('btn-mark-all-read').addEventListener('click', async () => {
-      const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), where('read', '==', false));
-      const snap = await getDocs(q);
-      
-      if (snap.empty) return showToast("Aucune notification non lue.", "error");
-
-      const batch = writeBatch(db);
-      snap.docs.forEach(d => {
-        batch.update(doc(db, 'notifications', d.id), { read: true });
-      });
-      await batch.commit();
-      
-      showToast("✅ Toutes les notifications sont lues.");
+export function initNotifications() { 
+  if($('btn-mark-all-read')) { 
+    $('btn-mark-all-read').addEventListener('click', async () => { 
+      const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), where('read', '==', false)); 
+      const snap = await getDocs(q); 
+      if (snap.empty) return showToast("Aucune notification non lue.", "error"); 
+      const batch = writeBatch(db); 
+      snap.docs.forEach(d => { 
+        batch.update(doc(db, 'notifications', d.id), { read: true }); 
+      }); 
+      await batch.commit(); 
+      showToast("✅ Toutes les notifications sont lues."); 
       loadNotifications(); 
-    });
-  }
+    }); 
+  } 
 }
