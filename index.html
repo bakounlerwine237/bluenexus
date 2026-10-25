@@ -48,6 +48,7 @@
   </header>
 
   <main id="main-content">
+    <!-- ACCUEIL, RECHERCHE, VIDEO, NOTIFS, MESSAGES (inchangés) -->
     <section id="view-home" class="view active">
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
@@ -119,6 +120,7 @@
       <div id="notif-list" class="tg-list"></div>
     </section>
 
+    <!-- COMMUNAUTÉS (Bouton Créer supprimé de l'interface principale) -->
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h3>Mes Communautés</h3>
@@ -131,16 +133,14 @@
       </div>
     </section>
 
-    <!-- VUE COMMUNAUTÉ (MISE À JOUR AVEC BANNIÈRE) -->
+    <!-- VUE COMMUNAUTÉ (Ajout du menu 3 points) -->
     <section id="view-community" class="view">
-      <!-- BANNIÈRE DU GROUPE -->
       <div id="comm-banner-header" style="height: 120px; background: var(--bg-2); background-size: cover; background-position: center; width: 100%;"></div>
       
       <div class="comm-header-fixed" style="margin-top: -30px; border-radius: 15px 15px 0 0; background: var(--bg); z-index: 10; position: relative; padding-top: 10px;">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px; align-self: flex-start;">←</button>
         
         <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-          <!-- AVATAR DU GROUPE -->
           <div id="comm-avatar-display" style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--bg); font-size: 1.2rem;">C</div>
           
           <div style="overflow: hidden;">
@@ -149,27 +149,32 @@
           </div>
         </div>
         
-        <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0;">Rejoindre</button>
+        <!-- Nouveau Menu 3 points pour quitter ou supprimer -->
+        <div class="more-menu-container" style="flex: 0; position: relative;">
+          <button id="btn-comm-options" class="action-btn" style="padding: 8px;">⋮</button>
+          <div id="comm-options-menu" class="more-menu" style="right: 0;">
+            <button id="btn-leave-community" style="color: #ef4444;">🚪 Quitter la communauté</button>
+            <button id="btn-delete-community" style="color: #ef4444; display: none;">🗑️ Supprimer la communauté</button>
+            <button id="btn-manage-requests" style="color: var(--blue-light); display: none;">👥 Demandes d'adhésion</button>
+          </div>
+        </div>
       </div>
 
-      <!-- BOUTONS ADMIN (Cachés par défaut) -->
-<div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px; flex-wrap: wrap;">
-  <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;">
-  <input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
-  <button id="btn-change-comm-avatar" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer l'avatar</button>
-  <button id="btn-change-comm-banner" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer la bannière</button>
-  
-  <!-- NOUVEAU BOUTON DE SUPPRESSION -->
-  <button id="btn-delete-community" class="btn-secondary small" style="font-size: 0.75rem; width: 100%; color: #ef4444; border-color: #ef4444; margin-top: 5px;">🗑️ Supprimer la communauté</button>
-</div>      
-<div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px;">
+      <div id="comm-admin-controls" style="display:none; padding: 0 1rem 10px 1rem; gap: 10px;">
         <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;">
         <input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
-        <button id="btn-change-comm-avatar" class="btn-secondary small" style="font-size: 0.75rem;">Changer l'avatar</button>
-        <button id="btn-change-comm-banner" class="btn-secondary small" style="font-size: 0.75rem;">Changer la bannière</button>
+        <button id="btn-change-comm-avatar" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer l'avatar</button>
+        <button id="btn-change-comm-banner" class="btn-secondary small" style="font-size: 0.75rem; flex: 1;">Changer la bannière</button>
+      </div>
+
+      <!-- Zone des demandes d'adhésion (cachée) -->
+      <div id="admin-requests-panel" style="display:none; padding: 1rem; background: var(--bg-2); margin: 1rem; border-radius: var(--radius); border: 1px solid var(--blue-light);">
+        <h4 style="margin-bottom: 10px;">Demandes en attente</h4>
+        <div id="admin-requests-list"></div>
       </div>
 
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
+      
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;">
           <textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 60px; border-radius: 20px;"></textarea>
@@ -178,6 +183,11 @@
           <button class="btn-mic" data-target="post-content" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">🎤</button>
         </div>
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
+      </div>
+
+      <!-- Bouton Rejoindre (pour ceux qui ne sont pas membres) -->
+      <div id="join-action-container" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 100;">
+        <button id="btn-join-community-action" class="btn-primary" style="width: 100%; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">Rejoindre la communauté</button>
       </div>
     </section>
 
@@ -272,8 +282,15 @@
       </div>
     </section>
     
+    <!-- PARAMÈTRES (Ajout du bouton de création de communauté) -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
+      
+      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
+        <h4 style="margin-bottom: 0.5rem;">Communautés</h4>
+        <button id="btn-new-community-settings" class="btn-primary" style="width: 100%;">+ Créer une communauté</button>
+      </div>
+
       <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
         <h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4>
         <p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p>
@@ -314,16 +331,18 @@
     <input id="comm-name" placeholder="Nom" />
     <textarea id="comm-desc" placeholder="Description"></textarea>
     
-    <!-- NOUVEAU : UPLOAD D'IMAGES -->
     <label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label>
     <input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);">
     
     <label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label>
     <input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);">
     
+    <!-- NOUVEAU : LES 3 TYPES DE COMMUNAUTÉS -->
+    <label class="muted" style="font-size: 0.8rem; margin-top: 10px;">Type de communauté</label>
     <select id="comm-type" style="margin-bottom: 0.5rem;">
-      <option value="chat">💬 Groupe de discussion</option>
-      <option value="announcement">📢 Chaîne (Admin seul)</option>
+      <option value="public">🌍 Publique (Tout le monde peut rejoindre et écrire)</option>
+      <option value="private">🔒 Privée (Demande d'adhésion requise)</option>
+      <option value="announcement">📢 Publication (Seul l'admin écrit)</option>
     </select>
     
     <button id="comm-save" class="btn-primary">Créer</button>
