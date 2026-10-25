@@ -33,13 +33,21 @@ export async function loadNotifications() {
   if(!list) return; 
   list.innerHTML = '<p class="muted" style="padding:1rem;">Chargement...</p>'; 
   try {
-    const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), orderBy('createdAt', 'desc'), limit(30)); 
+    // On retire orderBy pour éviter l'erreur d'index Firebase
+    const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), limit(50)); 
     const snap = await getDocs(q); 
     if(snap.empty) return list.innerHTML = '<div style="text-align:center; padding:3rem 1rem; color:var(--muted);"><div style="font-size:3rem; margin-bottom:1rem;">🔕</div><p>Aucune notification pour le moment.</p></div>'; 
     
+    // On trie nous-mêmes par date
+    const notifs = snap.docs.map(d => d.data());
+    notifs.sort((a, b) => {
+      const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+      const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+      return timeB - timeA;
+    });
+
     list.innerHTML = ''; 
-    snap.docs.forEach(d => { 
-      const n = d.data(); 
+    notifs.forEach(n => { 
       const isUnread = !n.read; 
       list.innerHTML += `<div class="notif-item ${isUnread ? 'unread' : ''}" onclick="window.openUserProfile('${n.fromUser}')"><div class="notif-avatar">${n.fromUsername[0].toUpperCase()}</div><div class="notif-content"><div class="notif-text"><strong>@${n.fromUsername}</strong> ${n.text}</div><div class="notif-time">${timeAgo(n.createdAt)}</div></div></div>`; 
     }); 

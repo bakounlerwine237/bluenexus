@@ -85,6 +85,7 @@ export async function loadGlobalFeed(reset = false) {
     bestPosts.forEach(p => { list.innerHTML += generatePostHTML(p.ref); });
   } catch (error) {
     console.error("Erreur de chargement:", error);
+    list.innerHTML = '<p class="muted" style="color:#ef4444;">Erreur de chargement du fil.</p>';
   } finally {
     isFetchingFeed = false;
   }
@@ -199,7 +200,13 @@ export function initFeed() {
     if (select) select.value = 'user';
     $('btn-global-publish').textContent = "Publier";
     showToast("✅ Publication réussie !", "success");
-    loadGlobalFeed(true);
+    
+    // CORRECTION IMAGE 5 : Bascule automatique sur "Abonnements" pour voir son propre post
+    if (state.currentFeedMode === 'discovery') {
+      if($('tab-following')) $('tab-following').click();
+    } else {
+      loadGlobalFeed(true);
+    }
   });
   if ($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
     $('btn-refresh-feed').textContent = "⏳";

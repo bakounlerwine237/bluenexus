@@ -315,3 +315,18 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
 .search-filters-row::-webkit-scrollbar {
   display: none;
 }
+/* --- CORRECTIONS UI --- */
+body {
+  overflow-x: hidden; /* Empêche le décalage horizontal (Image 2) */
+}
+
+.more-menu {
+  z-index: 9999 !important; /* Force le menu à passer au-dessus de tout (Image 1) */
+}
+
+.search-filters-row {
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
