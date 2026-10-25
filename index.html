@@ -2,8 +2,34 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
+  
+  <!-- SEO & Réseaux Sociaux -->
+  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération qui allie la puissance des communautés et la liberté d'expression." />
+  <meta name="theme-color" content="#0a0e1a" />
+  
+  <!-- DÉTECTEUR D'ERREUR JS -->
+  <script>
+    window.addEventListener('error', function(e) {
+      var showError = function() {
+        var errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#ef4444; color:white; padding:15px; font-size:14px; z-index:999999; font-family:monospace; word-wrap:break-word; border-bottom: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);';
+        var fileName = e.filename ? e.filename.split('/').pop() : 'Inconnu';
+        errorDiv.innerHTML = '<b>⚠️ ERREUR JS DÉTECTÉE :</b><br>' + e.message + '<br><br><b>Fichier :</b> ' + fileName + '<br><b>Ligne :</b> ' + e.lineno;
+        if (document.body) {
+          document.body.appendChild(errorDiv);
+        } else {
+          document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(errorDiv); });
+        }
+      };
+      showError();
+    });
+  </script>
+
+  <!-- PWA & CSS -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
@@ -90,10 +116,8 @@
           <div style="overflow: hidden;"><h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2><p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p></div>
         </div>
         
-        <!-- BOUTON REJOINDRE / ANNULER -->
         <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0; display:none; margin-left: 10px;">Rejoindre</button>
         
-        <!-- BOUTON 3 POINTS CORRIGÉ -->
         <div class="more-menu-container" style="flex: 0 0 auto; margin-left: 10px;">
           <button onclick="window.toggleCommMenu()" class="action-btn" style="background:var(--bg-2); border-radius:50%; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border: 1px solid var(--border);">⋮</button>
           <div id="comm-menu" class="more-menu" style="right: 0; top: 40px; bottom: auto; min-width: 200px;">
