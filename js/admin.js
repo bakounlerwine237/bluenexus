@@ -1,37 +1,63 @@
 // --- js/admin.js ---
 import { db, state } from './state.js'; 
 import { $, showToast, timeAgo } from './utils.js'; 
-import { switchView } from './navigation.js'; // <-- L'IMPORT MANQUANT EST ICI
-import { collection, getDocs, doc, getDoc, deleteDoc, updateDoc, arrayUnion, arrayRemove, query, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { switchView } from './navigation.js'; 
+import { collection, getDocs, doc, getDoc, deleteDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+
+// ✅ FONCTION GLOBALE INFAILLIBLE
+window.openAdminPanel = () => {
+  try {
+    // On tente d'utiliser la fonction de navigation normale
+    switchView('admin');
+  } catch (e) {
+    // Si ça plante (cache, etc.), on force l'affichage manuellement
+    console.warn("Fallback manuel activé :", e);
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById('view-admin');
+    if(target) target.classList.add('active');
+    
+    const mainNav = document.getElementById('main-nav');
+    const mainHeader = document.getElementById('main-header');
+    if(mainNav) mainNav.style.display = 'flex';
+    if(mainHeader) mainHeader.style.display = 'flex';
+    
+    const pageTitle = document.getElementById('page-title');
+    if(pageTitle) pageTitle.textContent = "Panneau Admin";
+  }
+  
+  // On charge les données du panneau
+  loadDashboardStats();
+  loadReports();
+  switchAdminTab('dashboard');
+};
 
 export function initAdmin() { 
-  if($('btn-open-admin-panel')) { 
-    $('btn-open-admin-panel').addEventListener('click', () => { 
-      switchView('admin'); // <-- CORRECTION ICI
-      loadDashboardStats();
-      loadReports();
-      switchAdminTab('dashboard');
-    }); 
-  } 
-  if($('btn-back-to-settings')) { 
-    $('btn-back-to-settings').addEventListener('click', () => { 
-      switchView('settings'); // <-- CORRECTION ICI
-    }); 
+  // On garde aussi l'écouteur au cas où, mais le HTML s'en occupe déjà
+  const adminBtn = $('btn-open-admin-panel');
+  if(adminBtn) { 
+    adminBtn.onclick = window.openAdminPanel; 
   } 
 
-  if($('admin-tab-dashboard')) $('admin-tab-dashboard').addEventListener('click', () => switchAdminTab('dashboard'));
-  if($('admin-tab-users')) $('admin-tab-users').addEventListener('click', () => { switchAdminTab('users'); loadUsersList(); });
-  if($('admin-tab-reports')) $('admin-tab-reports').addEventListener('click', () => { switchAdminTab('reports'); loadReports(); });
+  const backBtn = $('btn-back-to-settings');
+  if(backBtn) { 
+    backBtn.onclick = () => { 
+      if (window.switchView) window.switchView('settings'); 
+    }; 
+  } 
+
+  if($('admin-tab-dashboard')) $('admin-tab-dashboard').onclick = () => switchAdminTab('dashboard');
+  if($('admin-tab-users')) $('admin-tab-users').onclick = () => { switchAdminTab('users'); loadUsersList(); };
+  if($('admin-tab-reports')) $('admin-tab-reports').onclick = () => { switchAdminTab('reports'); loadReports(); };
 
   if($('admin-search-user')) {
-    $('admin-search-user').addEventListener('input', (e) => {
+    $('admin-search-user').oninput = (e) => {
       const term = e.target.value.toLowerCase();
       const items = document.querySelectorAll('#admin-users-list .tg-item');
       items.forEach(item => {
         const name = item.querySelector('.tg-title').textContent.toLowerCase();
         item.style.display = name.includes(term) ? 'flex' : 'none';
       });
-    });
+    };
   }
 }
 
@@ -45,14 +71,14 @@ function switchAdminTab(tab) {
   if($('admin-tab-reports')) $('admin-tab-reports').className = 'btn-secondary small';
 
   if (tab === 'dashboard') {
-    $('admin-content-dashboard').style.display = 'block';
-    $('admin-tab-dashboard').className = 'btn-primary small';
+    if($('admin-content-dashboard')) $('admin-content-dashboard').style.display = 'block';
+    if($('admin-tab-dashboard')) $('admin-tab-dashboard').className = 'btn-primary small';
   } else if (tab === 'users') {
-    $('admin-content-users').style.display = 'block';
-    $('admin-tab-users').className = 'btn-primary small';
+    if($('admin-content-users')) $('admin-content-users').style.display = 'block';
+    if($('admin-tab-users')) $('admin-tab-users').className = 'btn-primary small';
   } else if (tab === 'reports') {
-    $('admin-content-reports').style.display = 'block';
-    $('admin-tab-reports').className = 'btn-primary small';
+    if($('admin-content-reports')) $('admin-content-reports').style.display = 'block';
+    if($('admin-tab-reports')) $('admin-tab-reports').className = 'btn-primary small';
   }
 }
 

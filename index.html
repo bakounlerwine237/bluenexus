@@ -180,7 +180,12 @@
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       
-      <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);"><h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4><p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p><button id="btn-open-admin-panel" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button></div>
+      <!-- MODIFICATION ICI : Ajout de onclick="window.openAdminPanel()" -->
+      <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+        <h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4>
+        <p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p>
+        <button id="btn-open-admin-panel" onclick="window.openAdminPanel()" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button>
+      </div>
       
       <!-- NOUVEAU : MON COMPTE -->
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
