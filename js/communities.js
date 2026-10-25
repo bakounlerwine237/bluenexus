@@ -70,9 +70,8 @@ window.openCommunity = async (id) => {
   joinBtn.style.display = 'none';
   leaveBtn.style.display = 'none';
   adminControls.style.display = 'none';
-  postForm.style.display = 'none';
+  postForm.classList.add('hidden'); // CORRECTION ICI
 
-  // Bandeau d'information pour les chaînes de publication
   let infoBanner = $('comm-info-banner');
   if (!infoBanner) {
     infoBanner = document.createElement('div');
@@ -101,11 +100,9 @@ window.openCommunity = async (id) => {
     const isMember = data.members.includes(state.currentUser.uid);
     const isPending = data.joinRequests?.includes(state.currentUser.uid);
     
-    // Menu Admin
     if (isAdmin) { 
       adminControls.style.display = 'flex'; 
       leaveBtn.style.display = 'none';
-      // Vérifier s'il y a des demandes en attente
       if (data.type === 'private' && data.joinRequests?.length > 0) {
         $('btn-manage-requests').style.display = 'block';
         $('btn-manage-requests').textContent = `👥 Demandes (${data.joinRequests.length})`;
@@ -117,9 +114,7 @@ window.openCommunity = async (id) => {
       if (isMember) leaveBtn.style.display = 'block';
     } 
 
-    // Logique d'affichage selon le type et le statut
     if (data.type === 'private' && !isMember && !isAdmin) {
-      // Groupe privé, on n'est ni admin ni membre
       lockScreen.style.display = 'block';
       postsContainer.style.display = 'none';
       if (isPending) {
@@ -131,19 +126,16 @@ window.openCommunity = async (id) => {
         lockScreen.innerHTML = `<div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div><h3 style="margin-bottom: 10px;">Ce groupe est privé</h3><p class="muted">Envoyez une demande pour y accéder.</p>`;
       }
     } else {
-      // On est membre, admin, ou groupe public/annonce
       postsContainer.style.display = 'flex';
       lockScreen.style.display = 'none';
       
       if (isMember || isAdmin) {
         joinBtn.style.display = 'none';
         
-        // LOGIQUE D'ÉCRITURE : L'admin peut toujours écrire. Les membres peuvent écrire si ce n'est pas une annonce.
         const canWrite = isAdmin || (isMember && data.type !== 'announcement');
         
         if (canWrite) {
-          postForm.style.display = 'flex';
-          // Personnalisation du texte de la barre de saisie
+          postForm.classList.remove('hidden'); // CORRECTION ICI
           if (data.type === 'announcement') {
             $('post-content').placeholder = "Écrire une annonce officielle...";
           } else if (data.type === 'private') {
@@ -152,21 +144,18 @@ window.openCommunity = async (id) => {
             $('post-content').placeholder = "Écrire un message...";
           }
         } else {
-          postForm.style.display = 'none';
-          // Afficher le bandeau informatif pour les non-admins sur une chaîne de publication
+          postForm.classList.add('hidden'); // CORRECTION ICI
           infoBanner.textContent = "🔒 Seul l'administrateur peut publier dans cette chaîne. Vous pouvez interagir avec les publications ci-dessous.";
           infoBanner.style.display = 'block';
         }
         
       } else {
-        // Pas membre mais groupe public ou annonce
         joinBtn.style.display = 'block';
         joinBtn.textContent = 'Rejoindre';
-        postForm.style.display = 'none';
+        postForm.classList.add('hidden'); // CORRECTION ICI
       }
     }
 
-    // Écoute des posts
     if (unsubscribeComm) unsubscribeComm(); 
     if (data.type !== 'private' || isMember || isAdmin) {
       unsubscribeComm = onSnapshot(query(collection(db, 'posts'), where('communityId', '==', id), orderBy('createdAt', 'desc')), snap => { 
