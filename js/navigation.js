@@ -22,7 +22,6 @@ export function switchView(viewId) {
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus"; 
   } 
   
-  // Chargement dynamique des données selon la vue
   if (viewId === 'home' && window.loadGlobalFeed) window.loadGlobalFeed(true); 
   if (viewId === 'communities' && window.renderMyCommunities) window.renderMyCommunities(); 
   if (viewId === 'video' && window.loadVideoFeed) window.loadVideoFeed(); 
@@ -45,7 +44,6 @@ export function initNavigation() {
   if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities')); 
   if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages')); 
   
-  // Gestion des onglets du fil d'actualité
   if($('tab-discovery')) { 
     $('tab-discovery').addEventListener('click', () => { 
       state.currentFeedMode = 'discovery'; 
@@ -53,6 +51,7 @@ export function initNavigation() {
       if($('tab-following')) $('tab-following').className = 'btn-secondary small'; 
       if($('tab-trending')) $('tab-trending').className = 'btn-secondary small'; 
       if($('post-creation-container')) $('post-creation-container').style.display = 'flex'; 
+      // On affiche les suggestions
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
   } 
@@ -63,6 +62,8 @@ export function initNavigation() {
       if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small'; 
       if($('tab-trending')) $('tab-trending').className = 'btn-secondary small'; 
       if($('post-creation-container')) $('post-creation-container').style.display = 'none'; 
+      // On cache les suggestions
+      if($('suggested-users-container')) $('suggested-users-container').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
   } 
@@ -73,12 +74,12 @@ export function initNavigation() {
       if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small'; 
       if($('tab-following')) $('tab-following').className = 'btn-secondary small'; 
       if($('post-creation-container')) $('post-creation-container').style.display = 'none'; 
+      // On cache les suggestions
+      if($('suggested-users-container')) $('suggested-users-container').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
   } 
 }
-
-// --- FONCTIONS GLOBALES (accessibles depuis n'importe quel autre fichier) ---
 
 window.switchToDiscovery = () => { 
   state.currentFeedMode = 'discovery'; 
@@ -101,5 +102,4 @@ window.searchFromPost = (term) => {
   } 
 };
 
-// ✅ LA LIGNE CRUCIALE POUR QUE LE PANNEAU ADMIN FONCTIONNE :
 window.switchView = switchView;

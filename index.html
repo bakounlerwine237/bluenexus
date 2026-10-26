@@ -4,8 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
-  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
+  
+  <!-- SEO & Réseaux Sociaux -->
+  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération qui allie la puissance des communautés et la liberté d'expression." />
   <meta name="theme-color" content="#0a0e1a" />
+  
+  <!-- DÉTECTEUR D'ERREUR JS -->
+  <script>
+    window.addEventListener('error', function(e) {
+      var showError = function() {
+        var errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#ef4444; color:white; padding:15px; font-size:14px; z-index:999999; font-family:monospace; word-wrap:break-word; border-bottom: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);';
+        var fileName = e.filename ? e.filename.split('/').pop() : 'Inconnu';
+        errorDiv.innerHTML = '<b>⚠️ ERREUR JS DÉTECTÉE :</b><br>' + e.message + '<br><br><b>Fichier :</b> ' + fileName + '<br><b>Ligne :</b> ' + e.lineno;
+        if (document.body) {
+          document.body.appendChild(errorDiv);
+        } else {
+          document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(errorDiv); });
+        }
+      };
+      showError();
+    });
+  </script>
+
+  <!-- PWA & CSS -->
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
@@ -38,7 +60,6 @@
     <h2 id="page-title">Accueil</h2>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;">🔔<span id="notif-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
-      <!-- MODIFICATION : AJOUT DU BADGE MESSAGE -->
       <button data-view="messages" class="nav-btn top-btn" style="position:relative;">✉️<span id="msg-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
       <button data-view="search" class="nav-btn top-btn">🔍</button>
       <button data-view="profile" class="nav-btn top-btn">👤</button>
@@ -54,12 +75,7 @@
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
       
-      <!-- MODIFICATION : SUGGESTIONS D'UTILISATEURS -->
-      <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
-        <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
-        <div id="suggested-users-list" class="tg-list"></div>
-      </div>
-
+      <!-- 1. ZONE DE CRÉATION (TOUJOURS EN HAUT) -->
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -75,9 +91,18 @@
           </div>
         </div>
       </div>
+
+      <!-- 2. SUGGESTIONS (S'AFFICHENT UNIQUEMENT SUR DÉCOUVERTES) -->
+      <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
+        <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
+        <div id="suggested-users-list" class="tg-list"></div>
+      </div>
+
+      <!-- 3. FIL D'ACTUALITÉ -->
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
+    
     <section id="view-search" class="view">
       <div class="search-header">
         <div class="search-bar-container"><span class="search-icon">🔍</span><input id="search-input" type="text" placeholder="Rechercher sur BlueNexus..." autocomplete="off" /><button id="btn-clear-search" class="btn-clear-search" style="display:none;">✕</button></div>
@@ -86,13 +111,17 @@
       <div id="search-history-container"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;"><h4 style="font-size: 0.9rem; color: var(--muted);">Recherches récentes</h4><button id="btn-clear-history" style="background:none; border:none; color: var(--blue-light); cursor:pointer; font-size: 0.8rem;">Effacer</button></div><div id="search-history-list" class="tg-list"></div></div>
       <div id="search-results" style="display:none;"><div id="search-results-users"></div><div id="search-results-communities"></div><div id="search-results-posts"></div><p id="search-no-results" class="muted" style="display:none; text-align:center; padding: 2rem;">Aucun résultat trouvé.</p></div>
     </section>
+    
     <section id="view-video" class="view" style="padding: 0 !important;"><div id="video-feed" class="video-feed-container"></div></section>
+    
     <section id="view-notifications" class="view"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;"><h3>Notifications</h3><button id="btn-mark-all-read" class="btn-secondary small">Tout lire</button></div><div id="notif-list" class="tg-list"></div></section>
+    
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><h3>Mes Communautés</h3><button id="btn-discover-communities" class="btn-primary small">Découvrir</button></div>
       <div id="my-communities-list" class="tg-list"></div>
       <div id="discover-communities-section" style="display:none;"><button id="btn-back-to-my-comms" class="btn-secondary small" style="margin-bottom:1rem;">← Retour à mes communautés</button><div id="all-communities-list" class="tg-list"></div></div>
     </section>
+    
     <section id="view-community" class="view">
       <div id="comm-banner-header" style="height: 120px; background: var(--bg-2); background-size: cover; background-position: center; width: 100%;"></div>
       <div class="comm-header-fixed" style="margin-top: -30px; border-radius: 15px 15px 0 0; background: var(--bg); z-index: 10; position: relative; padding-top: 10px;">
@@ -128,15 +157,17 @@
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
       </div>
     </section>
+    
     <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
+    
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2></div>
       <div id="chat-messages" class="chat-container"></div>
       <div class="chat-input-bar"><input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button><div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div><button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button></div>
     </section>
+    
     <section id="view-profile" class="view">
       <div class="fb-profile">
-        <!-- MODIFICATION : BANNIÈRE DYNAMIQUE -->
         <div class="fb-banner" id="profile-banner"></div>
         <div class="fb-avatar-container"><div class="fb-avatar" id="profile-avatar"></div><div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div></div>
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
@@ -151,6 +182,7 @@
         </div>
       </div>
     </section>
+    
     <section id="view-page" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-page" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="page-view-name" style="font-size: 1rem; margin-left: 10px;">Nom de la Page</h2></div>
       <div class="fb-profile">
@@ -163,7 +195,6 @@
       </div>
     </section>
     
-    <!-- PARAMÈTRES -->
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       
@@ -238,14 +269,9 @@
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
-
-<!-- MODIFICATION : MODAL PROFIL AVEC BANNIÈRE -->
 <div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
-
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
-
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
-
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>
 
 <div id="toast-container"></div>

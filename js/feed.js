@@ -16,11 +16,16 @@ function calculatePostScore(post) {
   return likesPoints + commentsPoints + freshnessPoints;
 }
 
-// NOUVEAU : SUGGESTIONS D'UTILISATEURS
 async function loadSuggestedUsers() {
   const container = $('suggested-users-container');
   const list = $('suggested-users-list');
   if(!container || !list) return;
+  
+  // Si on n'est pas sur Découvertes, on ne charge pas les suggestions
+  if (state.currentFeedMode !== 'discovery') {
+    container.style.display = 'none';
+    return;
+  }
   
   try {
     const snap = await getDocs(query(collection(db, 'users'), limit(10)));
@@ -28,9 +33,9 @@ async function loadSuggestedUsers() {
     let count = 0;
     
     snap.forEach(d => {
-      if (count >= 3) return; // Max 3 suggestions
-      if (d.id === state.currentUser.uid) return; // Pas soi-même
-      if (state.userProfile.following?.includes(d.id)) return; // Déjà suivi
+      if (count >= 3) return;
+      if (d.id === state.currentUser.uid) return;
+      if (state.userProfile.following?.includes(d.id)) return;
       
       const u = d.data();
       const avatar = u.photoURL ? `<img src="${u.photoURL}" class="tg-avatar">` : `<div class="tg-avatar">${u.username[0].toUpperCase()}</div>`;
@@ -77,7 +82,7 @@ export async function loadGlobalFeed(reset = false) {
     list.innerHTML = `<div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div><div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>`;
     state.lastVisiblePost = null;
     noMorePosts = false;
-    loadSuggestedUsers(); // Charger les suggestions
+    loadSuggestedUsers(); // Ne chargera que sur Découvertes
   }
   
   if (noMorePosts || isFetchingFeed) return;
@@ -147,7 +152,6 @@ export async function loadGlobalFeed(reset = false) {
   }
 }
 
-// generatePostHTML reste inchangé...
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -173,7 +177,6 @@ export function generatePostHTML(docSnap) {
   return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})"><div class="heart-animation" id="heart-${docSnap.id}">❤️</div><div class="post-header"><div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">${avatar} <div><strong>@${p.authorName}</strong>${pageBadge}</div></div><span class="post-time">${timeAgo(p.createdAt)}</span></div><p id="text-${docSnap.id}">${formattedContent}</p>${mediaHtml}<div class="post-actions"><button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};"><span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> <span id="like-count-${docSnap.id}">${likeCount}</span></button><button onclick="window.toggleComments('${docSnap.id}')" class="action-btn">💬 ${p.commentsCount || 0}</button><button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button><div class="more-menu-container"><button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button><div id="more-menu-${docSnap.id}" class="more-menu"><button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button><button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>${saveBtn}${pinBtn}${reportBtn}${deleteBtn}</div></div></div><div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;"><div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div><div class="comment-input-row"><input type="text" id="comment-input-${docSnap.id}" placeholder="Commenter..."><button onclick="window.addComment('${docSnap.id}', '${p.authorId}')" class="btn-primary small">Envoyer</button></div></div></div>`;
 }
 
-// ... populatePageSelector et initFeed restent inchangés jusqu'à l'événement "btn-global-publish"
 export async function populatePageSelector() {
   const select = $('post-as-select');
   if (!select) return;
@@ -193,7 +196,6 @@ export async function populatePageSelector() {
 }
 
 export function initFeed() {
-  // ... (Garder le code initial inchangé, je remets juste l'événement publication)
   if ($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
   const postContent = $('global-post-content');
   if (postContent) {
@@ -266,8 +268,6 @@ export function initFeed() {
       loadGlobalFeed(true);
     }
   });
-  
-  // ... Le reste de initFeed (refresh, observer, like, delete, etc.) reste identique
   if ($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
     $('btn-refresh-feed').textContent = "⏳";
     loadGlobalFeed(true);
