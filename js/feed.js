@@ -21,7 +21,6 @@ async function loadSuggestedUsers() {
   const list = $('suggested-users-list');
   if(!container || !list) return;
   
-  // Si on n'est pas sur Découvertes, on ne charge pas les suggestions
   if (state.currentFeedMode !== 'discovery') {
     container.style.display = 'none';
     return;
@@ -82,7 +81,7 @@ export async function loadGlobalFeed(reset = false) {
     list.innerHTML = `<div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div><div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>`;
     state.lastVisiblePost = null;
     noMorePosts = false;
-    loadSuggestedUsers(); // Ne chargera que sur Découvertes
+    loadSuggestedUsers();
   }
   
   if (noMorePosts || isFetchingFeed) return;
@@ -197,21 +196,34 @@ export async function populatePageSelector() {
 
 export function initFeed() {
   if ($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
+  
   const postContent = $('global-post-content');
+  const publishBtn = $('btn-global-publish');
+  
   if (postContent) {
     const savedDraft = localStorage.getItem('bluenexus_draft_global');
     if (savedDraft) postContent.value = savedDraft;
+    
+    const checkPublishState = () => {
+      const hasText = postContent.value.trim().length > 0;
+      const hasFile = $('global-post-file') && $('global-post-file').files.length > 0;
+      if(publishBtn) publishBtn.disabled = !(hasText || hasFile);
+    };
+
     postContent.addEventListener('input', function() {
       this.style.height = '40px';
       this.style.height = (this.scrollHeight) + 'px';
       localStorage.setItem('bluenexus_draft_global', this.value);
+      checkPublishState();
     });
+    setTimeout(checkPublishState, 100); 
   }
+  
   if ($('global-post-file')) {
     $('global-post-file').addEventListener('change', (e) => {
       const file = e.target.files[0];
       const previewContainer = $('global-file-preview');
-      if (!file) { previewContainer.innerHTML = ''; previewContainer.classList.add('hidden'); return; }
+      if (!file) { previewContainer.innerHTML = ''; previewContainer.classList.add('hidden'); if(publishBtn) publishBtn.disabled = true; return; }
       previewContainer.innerHTML = '';
       previewContainer.classList.remove('hidden');
       if (file.type.startsWith('image')) {
@@ -232,18 +244,20 @@ export function initFeed() {
       const removeBtn = document.createElement('button');
       removeBtn.className = 'file-preview-remove';
       removeBtn.textContent = '✕';
-      removeBtn.onclick = () => { $('global-post-file').value = ''; previewContainer.innerHTML = ''; previewContainer.classList.add('hidden'); };
+      removeBtn.onclick = () => { $('global-post-file').value = ''; previewContainer.innerHTML = ''; previewContainer.classList.add('hidden'); if(publishBtn) publishBtn.disabled = true; };
       previewContainer.appendChild(removeBtn);
+      if(publishBtn) publishBtn.disabled = false;
     });
   }
-  if ($('btn-global-publish')) $('btn-global-publish').addEventListener('click', async () => {
+
+  if (publishBtn) publishBtn.addEventListener('click', async () => {
     const content = $('global-post-content').value.trim();
     const file = $('global-post-file').files[0];
     const select = $('post-as-select');
     let pageId = null; let pageName = null;
     if (select && select.value !== 'user') { pageId = select.value; pageName = select.options[select.selectedIndex].dataset.pageName; }
     if (!content && !file) return;
-    $('btn-global-publish').textContent = "Publication...";
+    publishBtn.textContent = "Publication...";
     let mediaUrl = null, mediaType = null;
     if (file) {
       mediaUrl = await uploadFile(file);
@@ -259,7 +273,8 @@ export function initFeed() {
     $('global-file-preview').innerHTML = '';
     $('global-file-preview').classList.add('hidden');
     if (select) select.value = 'user';
-    $('btn-global-publish').textContent = "Publier";
+    publishBtn.textContent = "Publier";
+    publishBtn.disabled = true;
     showToast("✅ Publication réussie !", "success");
     
     if (state.currentFeedMode === 'discovery') {

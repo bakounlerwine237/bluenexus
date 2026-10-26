@@ -12,8 +12,9 @@ import { initVideo, loadVideoFeed } from './video.js';
 import { initSearch } from './search.js';
 import { initAdmin } from './admin.js';
 import { initSettings } from './settings.js';
-import { db, state } from './state.js'; // NOUVEAU
-import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js"; // NOUVEAU
+import { initStories, loadStories } from './stories.js';
+import { db, state } from './state.js';
+import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 window.speakText = speakText; 
 window.translateText = translateText; 
@@ -28,7 +29,7 @@ window.loadNotifications = loadNotifications;
 window.loadVideoFeed = loadVideoFeed; 
 window.populatePageSelector = populatePageSelector;
 
-// NOUVEAU : BADGE MESSAGE NON LU
+// BADGE MESSAGE NON LU
 function listenToUnreadMessages() {
   if(!state.currentUser) return;
   const q = query(collection(db, 'messages'), where('toUser', '==', state.currentUser.uid), where('read', '==', false));
@@ -57,11 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
   try { initSearch(); } catch(e) { console.error(e); } 
   try { initAdmin(); } catch(e) { console.error(e); } 
   try { initSettings(); } catch(e) { console.error(e); } 
+  try { initStories(); } catch(e) { console.error(e); }
 
   const themeToggleBtn = $('btn-theme-toggle-settings'); 
   if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
-  function updateThemeBtnText() { if(!themeToggleBtn) return; themeToggleBtn.textContent = document.body.classList.contains('light-mode') ? 'Passer en mode sombre 🌙' : 'Passer en mode clair ☀️'; } 
+  
+  function updateThemeBtnText() { 
+    if(!themeToggleBtn) return; 
+    themeToggleBtn.textContent = document.body.classList.contains('light-mode') ? 'Passer en mode sombre 🌙' : 'Passer en mode clair ☀️'; 
+  } 
   updateThemeBtnText();
+  
   if (themeToggleBtn) { 
     themeToggleBtn.addEventListener('click', () => { 
       document.body.classList.toggle('light-mode'); 
@@ -69,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updateThemeBtnText(); 
     }); 
   }
+  
   document.querySelectorAll('.btn-mic').forEach(btn => { 
     btn.addEventListener('click', (e) => { 
       e.preventDefault(); 
@@ -79,7 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
       recognition.lang = 'fr-FR'; 
       btn.textContent = "🔴"; 
       recognition.start(); 
-      recognition.onresult = (event) => { targetInput.value += " " + event.results[0][0].transcript; btn.textContent = "🎤"; }; 
+      recognition.onresult = (event) => { 
+        targetInput.value += " " + event.results[0][0].transcript; 
+        btn.textContent = "🎤"; 
+      }; 
       recognition.onerror = () => btn.textContent = "🎤"; 
       recognition.onend = () => btn.textContent = "🎤"; 
     }); 
@@ -89,7 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('userReady', () => { 
   try { loadGlobalFeed(true); } catch(e) { console.error(e); } 
   try { listenToNotifications(); } catch(e) { console.error(e); } 
-  try { listenToUnreadMessages(); } catch(e) { console.error(e); } // NOUVEAU
+  try { listenToUnreadMessages(); } catch(e) { console.error(e); } 
+  try { loadStories(); } catch(e) { console.error(e); } 
   try { populatePageSelector(); } catch(e) { console.error(e); } 
   if(document.getElementById('view-profile').classList.contains('active')) { 
     try { renderProfile(); } catch(e) { console.error(e); } 

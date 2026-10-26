@@ -68,14 +68,19 @@
   </header>
   <main id="main-content">
     <section id="view-home" class="view active">
+      <input type="file" id="story-file-input" accept="image/*" style="display: none;">
+      
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="tab-trending" class="btn-secondary small" style="flex:1;">🔥 Tendances</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
-      
-      <!-- 1. ZONE DE CRÉATION (TOUJOURS EN HAUT) -->
+
+      <!-- STORIES -->
+      <div id="stories-list" class="stories-container"></div>
+
+      <!-- ZONE DE CRÉATION AMÉLIORÉE -->
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -85,24 +90,25 @@
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
               <button id="btn-global-attach" class="btn-secondary small">📎</button>
-              <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button><button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;">Publier</button>
+              <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
+              <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;" disabled>Publier</button>
             </div>
             <div id="global-file-preview" class="file-preview-container hidden"></div>
           </div>
         </div>
       </div>
 
-      <!-- 2. SUGGESTIONS (S'AFFICHENT UNIQUEMENT SUR DÉCOUVERTES) -->
+      <!-- SUGGESTIONS -->
       <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
         <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
         <div id="suggested-users-list" class="tg-list"></div>
       </div>
 
-      <!-- 3. FIL D'ACTUALITÉ -->
+      <!-- FIL D'ACTUALITÉ -->
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
-    
+
     <section id="view-search" class="view">
       <div class="search-header">
         <div class="search-bar-container"><span class="search-icon">🔍</span><input id="search-input" type="text" placeholder="Rechercher sur BlueNexus..." autocomplete="off" /><button id="btn-clear-search" class="btn-clear-search" style="display:none;">✕</button></div>
@@ -111,17 +117,17 @@
       <div id="search-history-container"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;"><h4 style="font-size: 0.9rem; color: var(--muted);">Recherches récentes</h4><button id="btn-clear-history" style="background:none; border:none; color: var(--blue-light); cursor:pointer; font-size: 0.8rem;">Effacer</button></div><div id="search-history-list" class="tg-list"></div></div>
       <div id="search-results" style="display:none;"><div id="search-results-users"></div><div id="search-results-communities"></div><div id="search-results-posts"></div><p id="search-no-results" class="muted" style="display:none; text-align:center; padding: 2rem;">Aucun résultat trouvé.</p></div>
     </section>
-    
+
     <section id="view-video" class="view" style="padding: 0 !important;"><div id="video-feed" class="video-feed-container"></div></section>
-    
+
     <section id="view-notifications" class="view"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;"><h3>Notifications</h3><button id="btn-mark-all-read" class="btn-secondary small">Tout lire</button></div><div id="notif-list" class="tg-list"></div></section>
-    
+
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><h3>Mes Communautés</h3><button id="btn-discover-communities" class="btn-primary small">Découvrir</button></div>
       <div id="my-communities-list" class="tg-list"></div>
       <div id="discover-communities-section" style="display:none;"><button id="btn-back-to-my-comms" class="btn-secondary small" style="margin-bottom:1rem;">← Retour à mes communautés</button><div id="all-communities-list" class="tg-list"></div></div>
     </section>
-    
+
     <section id="view-community" class="view">
       <div id="comm-banner-header" style="height: 120px; background: var(--bg-2); background-size: cover; background-position: center; width: 100%;"></div>
       <div class="comm-header-fixed" style="margin-top: -30px; border-radius: 15px 15px 0 0; background: var(--bg); z-index: 10; position: relative; padding-top: 10px;">
@@ -157,15 +163,15 @@
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
       </div>
     </section>
-    
+
     <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
-    
+
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2></div>
       <div id="chat-messages" class="chat-container"></div>
       <div class="chat-input-bar"><input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button><div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div><button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button></div>
     </section>
-    
+
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner"></div>
@@ -182,7 +188,7 @@
         </div>
       </div>
     </section>
-    
+
     <section id="view-page" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-page" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="page-view-name" style="font-size: 1rem; margin-left: 10px;">Nom de la Page</h2></div>
       <div class="fb-profile">
@@ -194,7 +200,7 @@
         <div class="fb-tab-content" style="padding-top: 1rem; border-top: 1px solid var(--border);"><h3 style="margin-bottom: 1rem; font-size: 1rem;">Publications de la page</h3><div id="page-view-posts" class="media-list"></div></div>
       </div>
     </section>
-    
+
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       
@@ -230,7 +236,7 @@
 
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b; margin-bottom: 80px;">Se déconnecter</button>
     </section>
-    
+
     <section id="view-admin" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
         <h3>👑 Centre de Commandement</h3>
@@ -273,6 +279,16 @@
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>
+
+<!-- VIEWER DE STORY -->
+<div id="story-viewer">
+  <div class="story-progress-bar">
+    <div id="story-progress" class="story-progress-fill"></div>
+  </div>
+  <button class="story-close-btn" onclick="window.closeStory()">✕</button>
+  <h3 id="story-viewer-name" style="color:white; margin-bottom: 10px; z-index: 10;"></h3>
+  <img id="story-viewer-img" class="story-image" src="" alt="Story">
+</div>
 
 <div id="toast-container"></div>
 <button id="btn-back-to-top" title="Retour en haut">↑</button>
