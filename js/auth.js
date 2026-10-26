@@ -19,7 +19,7 @@ async function initTencentChat(userId) {
 }
 
 export function initAuth() {
-  // --- GESTION DES ÉCRANS (LANDING / AUTH / APP) ---
+  // --- NAVIGATION ENTRE LES ÉCRANS ---
   window.goToLanding = () => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     $('landing-screen').classList.add('active');
@@ -39,16 +39,14 @@ export function initAuth() {
     $('signup-form').style.display = 'block';
   };
 
-  // Écouteurs sur les boutons de la Landing Page
   if($('btn-landing-login')) $('btn-landing-login').onclick = window.goToLogin;
   if($('btn-landing-cta-login')) $('btn-landing-cta-login').onclick = window.goToLogin;
   if($('btn-landing-signup')) $('btn-landing-signup').onclick = window.goToSignup;
   if($('btn-landing-cta-signup')) $('btn-landing-cta-signup').onclick = window.goToSignup;
 
-  // --- LOGIQUE DE CONNEXION ---
+  // --- LOGIQUE DE CONNEXION / INSCRIPTION ---
   if($('link-to-signup')) $('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
   if($('link-to-login')) $('link-to-login').addEventListener('click', (e) => { e.preventDefault(); $('signup-form').style.display = 'none'; $('login-form').style.display = 'block'; });
-  if($('btn-settings-signup')) $('btn-settings-signup').addEventListener('click', async () => { await signOut(auth); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
   
   if($('btn-signup')) $('btn-signup').addEventListener('click', async () => { 
     const email = $('auth-email-signup').value.trim(), pass = $('auth-pass-signup').value.trim(), name = $('auth-name').value.trim(); 
@@ -86,9 +84,10 @@ export function initAuth() {
   
   if($('btn-logout')) $('btn-logout').addEventListener('click', () => signOut(auth));
 
-  // --- GESTION DE L'ÉTAT DE CONNEXION (Le chef d'orchestre) ---
+  // --- LE CHEF D'ORCHESTRE (SÉCURITÉ) ---
   onAuthStateChanged(auth, async (user) => { 
     if (user) { 
+      // L'utilisateur EST connecté
       state.currentUser = user; 
       const snap = await getDoc(doc(db, 'users', user.uid)); 
       if (snap.exists()) { 
@@ -119,7 +118,7 @@ export function initAuth() {
       
       await initTencentChat(user.uid); 
       
-      // AFFICHER L'APPLICATION (Cacher tout le reste)
+      // On affiche l'application
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       $('app-screen').classList.add('active'); 
       
@@ -127,13 +126,15 @@ export function initAuth() {
       switchView('home'); 
       document.dispatchEvent(new Event('userReady')); 
     } else { 
+      // L'utilisateur N'EST PAS connecté (ou vient de se déconnecter)
       state.currentUser = null; 
       state.userProfile = null; 
       
-      // DÉCONNEXION : AFFICHER LA LANDING PAGE PAR DÉFAUT
+      // SÉCURITÉ : On le renvoie IMMÉDIATEMENT sur la page d'accueil publique
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       $('landing-screen').classList.add('active');
       
+      // On prépare les formulaires au cas où il clique sur "Se connecter"
       $('login-form').style.display = 'block'; 
       $('signup-form').style.display = 'none'; 
     } 
