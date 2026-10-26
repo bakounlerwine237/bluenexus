@@ -19,7 +19,7 @@ async function initTencentChat(userId) {
 }
 
 export function initAuth() {
-  // --- LOGIQUE DU CARROUSEL (ONBOARDING) ---
+  // --- LOGIQUE DU CARROUSEL ---
   let currentSlide = 0;
   const totalSlides = 5;
   const track = $('onboarding-track');
@@ -28,7 +28,6 @@ export function initAuth() {
 
   function updateCarousel() {
     if(!track) return;
-    // 5 slides, chacune fait 20% de la largeur du track
     track.style.transform = `translateX(-${currentSlide * 20}%)`; 
     
     dots.forEach((dot, index) => {
@@ -37,7 +36,18 @@ export function initAuth() {
     });
 
     if (currentSlide === totalSlides - 1) {
-      nextBtn.style.display = 'none'; // Cacher le bouton au dernier slide
+      nextBtn.style.display = 'none';
+      
+      // Si l'utilisateur est déjà connecté en arrière-plan, on lui montre le bouton pour entrer
+      if (state.currentUser) {
+        if($('btn-final-enter-app')) $('btn-final-enter-app').style.display = 'block';
+        if($('btn-final-signup')) $('btn-final-signup').style.display = 'none';
+        if($('btn-final-login')) $('btn-final-login').style.display = 'none';
+      } else {
+        if($('btn-final-enter-app')) $('btn-final-enter-app').style.display = 'none';
+        if($('btn-final-signup')) $('btn-final-signup').style.display = 'block';
+        if($('btn-final-login')) $('btn-final-login').style.display = 'block';
+      }
     } else {
       nextBtn.style.display = 'block';
       nextBtn.textContent = currentSlide === totalSlides - 2 ? 'Commencer' : 'Suivant →';
@@ -53,12 +63,21 @@ export function initAuth() {
     });
   }
 
-  // --- NAVIGATION ENTRE LES ÉCRANS ---
+  // --- SÉCURITÉ / NAVIGATION FORCÉE ---
+  // On stocke dans le sessionStorage si l'utilisateur a décidé d'entrer dans l'app
+  function enterApp() {
+    sessionStorage.setItem('bypass_onboarding', 'true');
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    $('app-screen').classList.add('active');
+    switchView('home');
+    document.dispatchEvent(new Event('userReady'));
+  }
+
   window.goToLanding = () => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     $('landing-screen').classList.add('active');
     currentSlide = 0;
-    updateCarousel(); // Réinitialiser au premier slide
+    updateCarousel();
   };
 
   window.goToLogin = () => {
@@ -75,10 +94,16 @@ export function initAuth() {
     $('signup-form').style.display = 'block';
   };
 
-  // Boutons de navigation
   if($('btn-landing-login')) $('btn-landing-login').onclick = window.goToLogin;
   if($('btn-final-login')) $('btn-final-login').onclick = window.goToLogin;
   if($('btn-final-signup')) $('btn-final-signup').onclick = window.goToSignup;
+
+  // BOUTON MAGIQUE : Permet d'entrer dans l'app si on est déjà connecté
+  if($('btn-final-enter-app')) {
+    $('btn-final-enter-app').onclick = () => {
+      enterApp();
+    };
+  }
 
   // --- LOGIQUE DE CONNEXION / INSCRIPTION ---
   if($('link-to-signup')) $('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
@@ -102,6 +127,8 @@ export function initAuth() {
     $('auth-error').textContent = "Connexion..."; 
     try { 
       await signInWithEmailAndPassword(auth, email, pass); 
+      // Une fois connecté avec succès, on entre dans l'app
+      enterApp();
     } catch (e) { 
       $('auth-error').textContent = "Email ou mot de passe incorrect."; 
     } 
@@ -118,9 +145,12 @@ export function initAuth() {
     } 
   });
   
-  if($('btn-logout')) $('btn-logout').addEventListener('click', () => signOut(auth));
+  if($('btn-logout')) $('btn-logout').addEventListener('click', () => {
+    sessionStorage.removeItem('bypass_onboarding'); // On réinitialise la sécurité
+    signOut(auth);
+  });
 
-  // --- LE CHEF D'ORCHESTRE (SÉCURITÉ) ---
+  // --- LE CHEF D'ORCHESTRE ---
   onAuthStateChanged(auth, async (user) => { 
     if (user) { 
       // L'utilisateur EST connecté
@@ -154,23 +184,34 @@ export function initAuth() {
       
       await initTencentChat(user.uid); 
       
-      // On affiche l'application
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      $('app-screen').classList.add('active'); 
+      // SÉCURITÉ STRICTE : On regarde si l'utilisateur a déjà validé la page de présentation pour cette session
+      const bypass = sessionStorage.getItem('bypass_onboarding');
+      
+      if (bypass === 'true') {
+        // Il a déjà cliqué sur "Terminer" ou s'est connecté, on l'emmène dans l'app
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        $('app-screen').classList.add('active'); 
+        switchView('home'); 
+        document.dispatchEvent(new Event('userReady')); 
+      } else {
+        // Il est connecté mais n'a pas encore validé la landing page, on le laisse sur la landing page
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        $('landing-screen').classList.add('active');
+        // On met à jour le dernier slide pour lui afficher le bouton "Accéder"
+        currentSlide = totalSlides - 1;
+        updateCarousel();
+      }
       
       $('auth-error').textContent = ""; 
-      switchView('home'); 
-      document.dispatchEvent(new Event('userReady')); 
     } else { 
-      // L'utilisateur N'EST PAS connecté (ou vient de se déconnecter)
+      // L'utilisateur N'EST PAS connecté
       state.currentUser = null; 
       state.userProfile = null; 
       
-      // SÉCURITÉ : On le renvoie IMMÉDIATEMENT sur la page d'accueil publique
+      // On le renvoie sur la page d'accueil
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       $('landing-screen').classList.add('active');
       
-      // On prépare les formulaires au cas où il clique sur "Se connecter"
       $('login-form').style.display = 'block'; 
       $('signup-form').style.display = 'none'; 
     } 
