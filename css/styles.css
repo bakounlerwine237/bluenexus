@@ -449,3 +449,34 @@ body {
   cursor: not-allowed;
   opacity: 0.7;
 }
+/* Correction de la taille du titre pour éviter les coupures */
+#page-title {
+  font-size: 1.3rem !important;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Effet de survol pour le compteur de membres */
+#members-count {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
+}
+#members-count:hover {
+  text-decoration-color: var(--blue-light);
+  color: var(--blue-light);
+}
+
+/* Style de la liste des membres */
+.member-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}

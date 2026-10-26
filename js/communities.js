@@ -47,6 +47,52 @@ window.toggleCommMenu = () => {
   if(menu) menu.classList.toggle('active');
 };
 
+window.openMembersList = async () => {
+  if (!currentCommData) return;
+  $('modal-members').classList.remove('hidden');
+  const container = $('members-list-container');
+  container.innerHTML = '<p class="muted">Chargement...</p>';
+  
+  const isAdmin = (currentCommData.ownerId === state.currentUser.uid || state.userProfile.role === 'admin');
+  let html = '';
+  
+  for (const uid of currentCommData.members) {
+    const uSnap = await getDoc(doc(db, 'users', uid));
+    if (uSnap.exists()) {
+      const u = uSnap.data();
+      const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">` : `<div style="width:35px; height:35px; border-radius:50%; background:var(--blue); display:flex; align-items:center; justify-content:center; font-weight:bold;">${u.username[0].toUpperCase()}</div>`;
+      
+      const kickBtn = (isAdmin && uid !== state.currentUser.uid) ? `<button onclick="window.kickMember('${uid}')" class="btn-secondary small" style="padding:4px 8px; color:#ef4444; border-color:#ef4444; font-size:0.7rem;">Exclure</button>` : '';
+      
+      html += `
+        <div class="member-item">
+          <div style="display:flex; align-items:center; gap:10px;">
+            ${avatar}
+            <div>
+              <div style="font-weight:bold; font-size:0.9rem;">${u.username} ${u.role === 'admin' ? '👑' : ''}</div>
+              <div class="muted" style="font-size:0.75rem;">${u.bio || ''}</div>
+            </div>
+          </div>
+          ${kickBtn}
+        </div>
+      `;
+    }
+  }
+  container.innerHTML = html;
+};
+
+window.kickMember = async (uid) => {
+  if(!confirm("Voulez-vous vraiment exclure ce membre ?")) return;
+  try {
+    await updateDoc(doc(db, 'communities', currentCommId), { members: arrayRemove(uid) });
+    showToast("Membre exclu.", "success");
+    window.openMembersList(); // Rafraîchir
+    // Mettre à jour les données locales
+    currentCommData.members = currentCommData.members.filter(id => id !== uid);
+    if($('members-count')) $('members-count').textContent = `${currentCommData.members.length} membres`;
+  } catch(e) { showToast("Erreur", "error"); }
+};
+
 window.openCommunity = async (id) => { 
   currentCommId = id; 
   switchView('community'); 
@@ -70,7 +116,7 @@ window.openCommunity = async (id) => {
   joinBtn.style.display = 'none';
   leaveBtn.style.display = 'none';
   adminControls.style.display = 'none';
-  postForm.classList.add('hidden'); // CORRECTION ICI
+  postForm.classList.add('hidden');
 
   let infoBanner = $('comm-info-banner');
   if (!infoBanner) {
@@ -135,7 +181,7 @@ window.openCommunity = async (id) => {
         const canWrite = isAdmin || (isMember && data.type !== 'announcement');
         
         if (canWrite) {
-          postForm.classList.remove('hidden'); // CORRECTION ICI
+          postForm.classList.remove('hidden');
           if (data.type === 'announcement') {
             $('post-content').placeholder = "Écrire une annonce officielle...";
           } else if (data.type === 'private') {
@@ -144,15 +190,15 @@ window.openCommunity = async (id) => {
             $('post-content').placeholder = "Écrire un message...";
           }
         } else {
-          postForm.classList.add('hidden'); // CORRECTION ICI
-          infoBanner.textContent = "🔒 Seul l'administrateur peut publier dans cette chaîne. Vous pouvez interagir avec les publications ci-dessous.";
+          postForm.classList.add('hidden');
+          infoBanner.textContent = "🔒 Seul l'administrateur peut publier dans cette chaîne.";
           infoBanner.style.display = 'block';
         }
         
       } else {
         joinBtn.style.display = 'block';
         joinBtn.textContent = 'Rejoindre';
-        postForm.classList.add('hidden'); // CORRECTION ICI
+        postForm.classList.add('hidden');
       }
     }
 
@@ -296,6 +342,43 @@ export function initCommunities() {
   };
 
   if($('btn-close-requests')) $('btn-close-requests').addEventListener('click', () => $('modal-manage-requests').classList.add('hidden'));
+
+  // NOUVEAU : MODIFIER LES INFOS DE LA COMMUNAUTÉ
+  if($('btn-edit-comm-info')) {
+    $('btn-edit-comm-info').addEventListener('click', () => {
+      if (!currentCommData) return;
+      $('edit-comm-name').value = currentCommData.name;
+      $('edit-comm-desc').value = currentCommData.description || '';
+      $('edit-comm-type').value = currentCommData.type || 'public';
+      $('modal-edit-comm').classList.remove('hidden');
+      window.toggleCommMenu();
+    });
+  }
+  if($('btn-cancel-edit-comm')) $('btn-cancel-edit-comm').addEventListener('click', () => $('modal-edit-comm').classList.add('hidden'));
+
+  if($('btn-save-comm-info')) {
+    $('btn-save-comm-info').addEventListener('click', async () => {
+      const newName = $('edit-comm-name').value.trim();
+      if (!newName) return showToast("Le nom est requis.", "error");
+      $('btn-save-comm-info').textContent = "Enregistrement...";
+      try {
+        await updateDoc(doc(db, 'communities', currentCommId), {
+          name: newName,
+          description: $('edit-comm-desc').value.trim(),
+          type: $('edit-comm-type').value
+        });
+        showToast("✅ Infos mises à jour !");
+        $('modal-edit-comm').classList.add('hidden');
+        window.openCommunity(currentCommId);
+      } catch(e) {
+        showToast("Erreur : " + e.message, "error");
+      } finally {
+        $('btn-save-comm-info').textContent = "Enregistrer";
+      }
+    });
+  }
+
+  if($('btn-close-members')) $('btn-close-members').addEventListener('click', () => $('modal-members').classList.add('hidden'));
 
   if($('btn-change-comm-avatar')) { 
     $('btn-change-comm-avatar').addEventListener('click', () => $('comm-avatar-upload').click()); 

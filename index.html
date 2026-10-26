@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
   
-  <!-- SEO & Réseaux Sociaux -->
-  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération qui allie la puissance des communautés et la liberté d'expression." />
+  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
   
-  <!-- DÉTECTEUR D'ERREUR JS -->
   <script>
     window.addEventListener('error', function(e) {
       var showError = function() {
@@ -17,17 +15,13 @@
         errorDiv.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#ef4444; color:white; padding:15px; font-size:14px; z-index:999999; font-family:monospace; word-wrap:break-word; border-bottom: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);';
         var fileName = e.filename ? e.filename.split('/').pop() : 'Inconnu';
         errorDiv.innerHTML = '<b>⚠️ ERREUR JS DÉTECTÉE :</b><br>' + e.message + '<br><br><b>Fichier :</b> ' + fileName + '<br><b>Ligne :</b> ' + e.lineno;
-        if (document.body) {
-          document.body.appendChild(errorDiv);
-        } else {
-          document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(errorDiv); });
-        }
+        if (document.body) { document.body.appendChild(errorDiv); } 
+        else { document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(errorDiv); }); }
       };
       showError();
     });
   </script>
 
-  <!-- PWA & CSS -->
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
@@ -77,10 +71,8 @@
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
 
-      <!-- STORIES -->
       <div id="stories-list" class="stories-container"></div>
 
-      <!-- ZONE DE CRÉATION AMÉLIORÉE -->
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -98,13 +90,11 @@
         </div>
       </div>
 
-      <!-- SUGGESTIONS -->
       <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
         <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
         <div id="suggested-users-list" class="tg-list"></div>
       </div>
 
-      <!-- FIL D'ACTUALITÉ -->
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
@@ -132,17 +122,23 @@
       <div id="comm-banner-header" style="height: 120px; background: var(--bg-2); background-size: cover; background-position: center; width: 100%;"></div>
       <div class="comm-header-fixed" style="margin-top: -30px; border-radius: 15px 15px 0 0; background: var(--bg); z-index: 10; position: relative; padding-top: 10px;">
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px; align-self: flex-start;">←</button>
-        <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
+        <div style="flex: 1; display: flex; align-items: center; gap: 10px; margin-left: 10px;">
           <div id="comm-avatar-display" style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--bg); font-size: 1.2rem;">C</div>
-          <div style="overflow: hidden;"><h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2><p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;">0 membres</p></div>
+          <div style="overflow: hidden;">
+            <h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2>
+            <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;" onclick="window.openMembersList()">0 membres</p>
+          </div>
         </div>
         <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0; display:none; margin-left: 10px;">Rejoindre</button>
+        
         <div class="more-menu-container" style="flex: 0 0 auto; margin-left: 10px;">
           <button onclick="window.toggleCommMenu()" class="action-btn" style="background:var(--bg-2); border-radius:50%; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border: 1px solid var(--border);">⋮</button>
           <div id="comm-menu" class="more-menu" style="right: 0; top: 40px; bottom: auto; min-width: 200px;">
             <button id="btn-leave-community" style="color: #ef4444;">🚪 Quitter la communauté</button>
             <div id="comm-admin-controls" style="display:none; flex-direction: column; border-top: 1px solid var(--border); padding-top: 5px; margin-top: 5px;">
               <button id="btn-manage-requests" style="color: #f59e0b; display:none;">👥 Demandes (0)</button>
+              <!-- NOUVEAU BOUTON ADMIN -->
+              <button id="btn-edit-comm-info">✏️ Modifier les infos</button>
               <button id="btn-change-comm-avatar">🖼️ Changer l'avatar</button>
               <button id="btn-change-comm-banner">🏞️ Changer la bannière</button>
               <button id="btn-delete-community" style="color: #ef4444;">🗑️ Supprimer la communauté</button>
@@ -273,6 +269,13 @@
 
 <!-- MODALS -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
+
+<!-- NOUVELLE MODALE : MODIFIER LES INFOS DE LA COMMUNAUTÉ -->
+<div id="modal-edit-comm" class="modal hidden"><div class="modal-content"><h3>Modifier la communauté</h3><label class="muted" style="font-size: 0.8rem;">Nom</label><input id="edit-comm-name" placeholder="Nom" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="edit-comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Type</label><select id="edit-comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="btn-save-comm-info" class="btn-primary">Enregistrer</button><button id="btn-cancel-edit-comm" class="btn-secondary">Annuler</button></div></div>
+
+<!-- NOUVELLE MODALE : LISTE DES MEMBRES -->
+<div id="modal-members" class="modal hidden"><div class="modal-content"><h3>Membres de la communauté</h3><div id="members-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-members" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
+
 <div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
