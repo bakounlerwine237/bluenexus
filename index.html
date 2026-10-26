@@ -4,30 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
-  
-  <!-- SEO & Réseaux Sociaux -->
-  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération qui allie la puissance des communautés et la liberté d'expression." />
+  <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
-  
-  <!-- DÉTECTEUR D'ERREUR JS -->
-  <script>
-    window.addEventListener('error', function(e) {
-      var showError = function() {
-        var errorDiv = document.createElement('div');
-        errorDiv.style.cssText = 'position:fixed; top:0; left:0; right:0; background:#ef4444; color:white; padding:15px; font-size:14px; z-index:999999; font-family:monospace; word-wrap:break-word; border-bottom: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.5);';
-        var fileName = e.filename ? e.filename.split('/').pop() : 'Inconnu';
-        errorDiv.innerHTML = '<b>⚠️ ERREUR JS DÉTECTÉE :</b><br>' + e.message + '<br><br><b>Fichier :</b> ' + fileName + '<br><b>Ligne :</b> ' + e.lineno;
-        if (document.body) {
-          document.body.appendChild(errorDiv);
-        } else {
-          document.addEventListener('DOMContentLoaded', function() { document.body.appendChild(errorDiv); });
-        }
-      };
-      showError();
-    });
-  </script>
-
-  <!-- PWA & CSS -->
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
@@ -60,7 +38,8 @@
     <h2 id="page-title">Accueil</h2>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;">🔔<span id="notif-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
-      <button data-view="messages" class="nav-btn top-btn">✉️</button>
+      <!-- MODIFICATION : AJOUT DU BADGE MESSAGE -->
+      <button data-view="messages" class="nav-btn top-btn" style="position:relative;">✉️<span id="msg-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
       <button data-view="search" class="nav-btn top-btn">🔍</button>
       <button data-view="profile" class="nav-btn top-btn">👤</button>
       <button id="btn-settings-top" class="icon-btn">⚙️</button>
@@ -74,6 +53,13 @@
         <button id="tab-trending" class="btn-secondary small" style="flex:1;">🔥 Tendances</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
+      
+      <!-- MODIFICATION : SUGGESTIONS D'UTILISATEURS -->
+      <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
+        <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
+        <div id="suggested-users-list" class="tg-list"></div>
+      </div>
+
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -150,7 +136,8 @@
     </section>
     <section id="view-profile" class="view">
       <div class="fb-profile">
-        <div class="fb-banner"></div>
+        <!-- MODIFICATION : BANNIÈRE DYNAMIQUE -->
+        <div class="fb-banner" id="profile-banner"></div>
         <div class="fb-avatar-container"><div class="fb-avatar" id="profile-avatar"></div><div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div></div>
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
         <div class="fb-stats"><span><strong id="stat-posts">0</strong> Publications</span><span><strong id="stat-followers">0</strong> Abonnés</span><span><strong id="stat-following">0</strong> Abonnements</span></div>
@@ -180,14 +167,12 @@
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
       
-      <!-- MODIFICATION ICI : Ajout de onclick="window.openAdminPanel()" -->
       <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
         <h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4>
         <p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p>
         <button id="btn-open-admin-panel" onclick="window.openAdminPanel()" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button>
       </div>
       
-      <!-- NOUVEAU : MON COMPTE -->
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">👤 Mon Compte</h4>
         <p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Gérez vos informations de connexion.</p>
@@ -201,14 +186,12 @@
       
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>
 
-      <!-- NOUVEAU : AIDE & INFO -->
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">ℹ️ Informations</h4>
         <button id="btn-privacy-policy" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">🛡️ Confidentialité & Sécurité</button>
         <button id="btn-support" class="btn-secondary small" style="width: 100%; text-align: left;">❓ Centre d'aide</button>
       </div>
 
-      <!-- NOUVEAU : ZONE DANGEREUSE -->
       <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid rgba(239, 68, 68, 0.3);">
         <h4 style="margin-bottom: 0.5rem; color: #ef4444;">⚠️ Zone dangereuse</h4>
         <button id="btn-delete-account" class="btn-secondary small" style="width: 100%; color: #ef4444; border-color: #ef4444; text-align: left;">🗑️ Supprimer mon compte</button>
@@ -217,49 +200,28 @@
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b; margin-bottom: 80px;">Se déconnecter</button>
     </section>
     
-    <!-- ADMINISTRATION (CENTRE DE COMMANDEMENT) -->
     <section id="view-admin" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
         <h3>👑 Centre de Commandement</h3>
         <button id="btn-back-to-settings" class="btn-secondary small">← Retour</button>
       </div>
-
-      <!-- Onglets Admin -->
       <div style="display:flex; gap:10px; margin-bottom: 1rem;">
         <button id="admin-tab-dashboard" class="btn-primary small" style="flex:1;">📊 Tableau de bord</button>
         <button id="admin-tab-users" class="btn-secondary small" style="flex:1;">👥 Utilisateurs</button>
         <button id="admin-tab-reports" class="btn-secondary small" style="flex:1;">🚨 Signalements</button>
       </div>
-
-      <!-- Contenu : Tableau de bord -->
       <div id="admin-content-dashboard" style="display: block;">
         <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
-          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);">
-            <h2 id="admin-stat-users" style="font-size: 2rem; color: var(--blue-light);">0</h2>
-            <p class="muted" style="font-size: 0.8rem;">Utilisateurs</p>
-          </div>
-          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);">
-            <h2 id="admin-stat-posts" style="font-size: 2rem; color: #10b981;">0</h2>
-            <p class="muted" style="font-size: 0.8rem;">Publications</p>
-          </div>
-          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);">
-            <h2 id="admin-stat-comms" style="font-size: 2rem; color: #f59e0b;">0</h2>
-            <p class="muted" style="font-size: 0.8rem;">Communautés</p>
-          </div>
+          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-users" style="font-size: 2rem; color: var(--blue-light);">0</h2><p class="muted" style="font-size: 0.8rem;">Utilisateurs</p></div>
+          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-posts" style="font-size: 2rem; color: #10b981;">0</h2><p class="muted" style="font-size: 0.8rem;">Publications</p></div>
+          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-comms" style="font-size: 2rem; color: #f59e0b;">0</h2><p class="muted" style="font-size: 0.8rem;">Communautés</p></div>
         </div>
         <p class="muted" style="text-align: center; font-size: 0.8rem;">Bienvenue dans ton centre de contrôle, Lerwine.</p>
       </div>
-
-      <!-- Contenu : Gestion des Utilisateurs -->
       <div id="admin-content-users" style="display: none;">
-        <div class="search-bar-container" style="margin-bottom: 1rem; background: var(--bg-2);">
-          <span class="search-icon">🔍</span>
-          <input id="admin-search-user" type="text" placeholder="Chercher un utilisateur par pseudo..." style="border:none; background:transparent;" />
-        </div>
+        <div class="search-bar-container" style="margin-bottom: 1rem; background: var(--bg-2);"><span class="search-icon">🔍</span><input id="admin-search-user" type="text" placeholder="Chercher un utilisateur par pseudo..." style="border:none; background:transparent;" /></div>
         <div id="admin-users-list" class="tg-list"></div>
       </div>
-
-      <!-- Contenu : Signalements -->
       <div id="admin-content-reports" style="display: none;">
         <div id="admin-reports-list" class="tg-list"></div>
       </div>
@@ -276,10 +238,12 @@
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
-<div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
+
+<!-- MODIFICATION : MODAL PROFIL AVEC BANNIÈRE -->
+<div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
+
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
 
-<!-- NOUVELLES MODALES PARAMÈTRES -->
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>

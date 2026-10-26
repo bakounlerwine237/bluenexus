@@ -16,14 +16,70 @@ function calculatePostScore(post) {
   return likesPoints + commentsPoints + freshnessPoints;
 }
 
+// NOUVEAU : SUGGESTIONS D'UTILISATEURS
+async function loadSuggestedUsers() {
+  const container = $('suggested-users-container');
+  const list = $('suggested-users-list');
+  if(!container || !list) return;
+  
+  try {
+    const snap = await getDocs(query(collection(db, 'users'), limit(10)));
+    let html = '';
+    let count = 0;
+    
+    snap.forEach(d => {
+      if (count >= 3) return; // Max 3 suggestions
+      if (d.id === state.currentUser.uid) return; // Pas soi-même
+      if (state.userProfile.following?.includes(d.id)) return; // Déjà suivi
+      
+      const u = d.data();
+      const avatar = u.photoURL ? `<img src="${u.photoURL}" class="tg-avatar">` : `<div class="tg-avatar">${u.username[0].toUpperCase()}</div>`;
+      
+      html += `
+        <div class="tg-item" style="padding: 8px 12px;">
+          ${avatar}
+          <div class="tg-content" onclick="window.openUserProfile('${d.id}')" style="cursor:pointer;">
+            <div class="tg-title">${u.username} ${u.role === 'admin' ? '👑' : ''}</div>
+            <div class="tg-subtitle">${u.bio || 'Nouveau sur BlueNexus'}</div>
+          </div>
+          <button onclick="window.followFromSuggestion('${d.id}', this)" class="btn-primary small" style="padding: 4px 8px; font-size: 0.75rem;">Suivre</button>
+        </div>
+      `;
+      count++;
+    });
+    
+    if (count > 0) {
+      list.innerHTML = html;
+      container.style.display = 'block';
+    } else {
+      container.style.display = 'none';
+    }
+  } catch(e) { console.error("Erreur suggestions:", e); }
+}
+
+window.followFromSuggestion = async (userId, btn) => {
+  try {
+    await updateDoc(doc(db, 'users', state.currentUser.uid), { following: arrayUnion(userId) });
+    if(!state.userProfile.following) state.userProfile.following = [];
+    state.userProfile.following.push(userId);
+    btn.textContent = "Suivi ✅";
+    btn.className = "btn-secondary small";
+    btn.disabled = true;
+    showToast("✅ Vous suivez ce profil !");
+  } catch(e) { showToast("Erreur", "error"); }
+};
+
 export async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
   if (!list) return;
+  
   if (reset) {
     list.innerHTML = `<div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div><div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>`;
     state.lastVisiblePost = null;
     noMorePosts = false;
+    loadSuggestedUsers(); // Charger les suggestions
   }
+  
   if (noMorePosts || isFetchingFeed) return;
   isFetchingFeed = true;
   
@@ -50,7 +106,6 @@ export async function loadGlobalFeed(reset = false) {
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
         const isMe = p.data.authorId === state.currentUser.uid;
-        // Ajout de "?." pour éviter les erreurs si "following" est indéfini
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
         return isMe || isUserFollowed || isPageFollowed;
@@ -86,13 +141,13 @@ export async function loadGlobalFeed(reset = false) {
     bestPosts.forEach(p => { list.innerHTML += generatePostHTML(p.ref); });
   } catch (error) {
     console.error("Erreur de chargement:", error);
-    // AFFICHAGE DE L'ERREUR EXACTE POUR COMPRENDRE LE PROBLÈME
     list.innerHTML = `<p class="muted" style="color:#ef4444; padding: 1rem;">Erreur : ${error.message}</p>`;
   } finally {
     isFetchingFeed = false;
   }
 }
 
+// generatePostHTML reste inchangé...
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
@@ -118,6 +173,7 @@ export function generatePostHTML(docSnap) {
   return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})"><div class="heart-animation" id="heart-${docSnap.id}">❤️</div><div class="post-header"><div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">${avatar} <div><strong>@${p.authorName}</strong>${pageBadge}</div></div><span class="post-time">${timeAgo(p.createdAt)}</span></div><p id="text-${docSnap.id}">${formattedContent}</p>${mediaHtml}<div class="post-actions"><button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};"><span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> <span id="like-count-${docSnap.id}">${likeCount}</span></button><button onclick="window.toggleComments('${docSnap.id}')" class="action-btn">💬 ${p.commentsCount || 0}</button><button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button><div class="more-menu-container"><button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button><div id="more-menu-${docSnap.id}" class="more-menu"><button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button><button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>${saveBtn}${pinBtn}${reportBtn}${deleteBtn}</div></div></div><div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;"><div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div><div class="comment-input-row"><input type="text" id="comment-input-${docSnap.id}" placeholder="Commenter..."><button onclick="window.addComment('${docSnap.id}', '${p.authorId}')" class="btn-primary small">Envoyer</button></div></div></div>`;
 }
 
+// ... populatePageSelector et initFeed restent inchangés jusqu'à l'événement "btn-global-publish"
 export async function populatePageSelector() {
   const select = $('post-as-select');
   if (!select) return;
@@ -137,6 +193,7 @@ export async function populatePageSelector() {
 }
 
 export function initFeed() {
+  // ... (Garder le code initial inchangé, je remets juste l'événement publication)
   if ($('btn-global-attach')) $('btn-global-attach').addEventListener('click', () => $('global-post-file').click());
   const postContent = $('global-post-content');
   if (postContent) {
@@ -209,6 +266,8 @@ export function initFeed() {
       loadGlobalFeed(true);
     }
   });
+  
+  // ... Le reste de initFeed (refresh, observer, like, delete, etc.) reste identique
   if ($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
     $('btn-refresh-feed').textContent = "⏳";
     loadGlobalFeed(true);
@@ -312,7 +371,6 @@ export function initFeed() {
     }
     if ($('view-profile').classList.contains('active') && window.renderProfile) window.renderProfile();
   };
-
   window.reportPost = async (postId) => {
     const dupQuery = query(collection(db, 'reports'), where('postId', '==', postId), where('reporterId', '==', state.currentUser.uid));
     const dupSnap = await getDocs(dupQuery);
@@ -337,19 +395,10 @@ export function initFeed() {
     }
     modal.classList.remove('hidden');
   };
-
   window.submitReport = async (postId, reason) => {
     try {
-      await addDoc(collection(db, 'reports'), {
-        postId: postId,
-        reason: reason,
-        reporterId: state.currentUser.uid,
-        reporterName: state.userProfile.username,
-        createdAt: serverTimestamp()
-      });
+      await addDoc(collection(db, 'reports'), { postId: postId, reason: reason, reporterId: state.currentUser.uid, reporterName: state.userProfile.username, createdAt: serverTimestamp() });
       showToast("✅ Signalement envoyé. Merci !", "success");
-    } catch (e) {
-      showToast("Erreur lors du signalement : " + e.message, "error");
-    }
+    } catch (e) { showToast("Erreur lors du signalement : " + e.message, "error"); }
   };
 }
