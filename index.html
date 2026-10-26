@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
+  
   <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
+  
+  <!-- DÉTECTEUR D'ERREUR JS -->
   <script>
     window.addEventListener('error', function(e) {
       var showError = function() {
@@ -19,15 +22,70 @@
       showError();
     });
   </script>
+
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
 <body>
-<div id="auth-screen" class="screen active">
-  <div class="auth-box">
+
+<!-- 1. PAGE D'ACCUEIL (LANDING PAGE) -->
+<div id="landing-screen" class="screen active">
+  <header class="landing-header">
     <h1 class="logo">Blue<span>Nexus</span></h1>
+    <div class="landing-nav-buttons">
+      <button id="btn-landing-login" class="btn-secondary small" style="border: none;">Se connecter</button>
+      <button id="btn-landing-signup" class="btn-primary small">S'inscrire</button>
+    </div>
+  </header>
+
+  <main class="landing-hero">
+    <h2 class="landing-title">Bienvenue sur le futur des réseaux sociaux.</h2>
+    <p class="landing-subtitle">Rejoignez des communautés passionnantes, partagez vos idées et connectez-vous avec le monde. Le tout dans un espace sécurisé et sans limites.</p>
+    
+    <div class="landing-cta">
+      <button id="btn-landing-cta-signup" class="btn-primary" style="padding: 15px 30px; font-size: 1.1rem;">Créer mon compte gratuitement</button>
+      <button id="btn-landing-cta-login" class="btn-secondary" style="padding: 15px 30px; font-size: 1.1rem;">J'ai déjà un compte</button>
+    </div>
+
+    <div class="landing-features">
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Communautés</h3>
+        <p>Créez ou rejoignez des groupes publics, privés ou des chaînes d'annonces.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✨</div>
+        <h3>Profils Uniques</h3>
+        <p>Personnalisez votre vitrine avec des bannières, des badges et des effets.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📸</div>
+        <h3>Stories Éphémères</h3>
+        <p>Partagez des moments de votre vie qui disparaissent après 24 heures.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔒</div>
+        <h3>Sécurisé & Modéré</h3>
+        <p>Un espace sain grâce à notre système de signalement et de modération actif.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="landing-footer">
+    <p>&copy; 2024 BlueNexus. Tous droits réservés.</p>
+    <div style="display: flex; gap: 15px; margin-top: 10px; justify-content: center;">
+      <span style="cursor: pointer; color: var(--muted);" onclick="alert('Politique de confidentialité bientôt disponible.')">Confidentialité</span>
+      <span style="cursor: pointer; color: var(--muted);" onclick="alert('Support : support@bluenexus.com')">Support</span>
+    </div>
+  </footer>
+</div>
+
+<!-- 2. ÉCRAN DE CONNEXION (Caché par défaut) -->
+<div id="auth-screen" class="screen">
+  <div class="auth-box">
+    <h1 class="logo" style="cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
     <p class="tagline">Le réseau social des communautés</p>
     <div id="login-form">
       <input id="auth-email" type="email" placeholder="Email" />
@@ -35,6 +93,7 @@
       <button id="btn-login" class="btn-primary">Se connecter</button>
       <button id="btn-forgot-password" class="btn-secondary" style="border:none;color:var(--blue-light);font-size:0.8rem;">Mot de passe oublié ?</button>
       <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">Pas de compte ? <a href="#" id="link-to-signup" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">S'inscrire</a></p>
+      <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--muted); cursor: pointer;" onclick="window.goToLanding()">← Retour à l'accueil</p>
     </div>
     <div id="signup-form" style="display: none;">
       <input id="auth-name" type="text" placeholder="Nom d'utilisateur" />
@@ -42,10 +101,13 @@
       <input id="auth-pass-signup" type="password" placeholder="Mot de passe (6 car. min)" />
       <button id="btn-signup" class="btn-primary">Créer mon compte</button>
       <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">Déjà un compte ? <a href="#" id="link-to-login" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">Se connecter</a></p>
+      <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--muted); cursor: pointer;" onclick="window.goToLanding()">← Retour à l'accueil</p>
     </div>
     <p id="auth-error" class="error" style="text-align: center; margin-top: 10px; font-weight: bold;"></p>
   </div>
 </div>
+
+<!-- 3. APPLICATION PRINCIPALE -->
 <div id="app-screen" class="screen">
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
@@ -153,7 +215,7 @@
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner"></div>
-        <div class="fb-avatar-container"><div class="fb-avatar" id="profile-avatar"></div><div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div></div>
+        <div class="fb-avatar-container"><div id="profile-avatar-wrapper" class="avatar-effect-container"><div class="fb-avatar" id="profile-avatar"></div></div><div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div></div>
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
         <div class="fb-stats"><span><strong id="stat-posts">0</strong> Publications</span><span><strong id="stat-followers">0</strong> Abonnés</span><span><strong id="stat-following">0</strong> Abonnements</span></div>
         <div class="fb-action-buttons"><button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button><button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button></div>
@@ -237,21 +299,26 @@
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
   </nav>
 </div>
+
+<!-- MODALS -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-comm" class="modal hidden"><div class="modal-content"><h3>Modifier la communauté</h3><label class="muted" style="font-size: 0.8rem;">Nom</label><input id="edit-comm-name" placeholder="Nom" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="edit-comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Type</label><select id="edit-comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="btn-save-comm-info" class="btn-primary">Enregistrer</button><button id="btn-cancel-edit-comm" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-members" class="modal hidden"><div class="modal-content"><h3>Membres de la communauté</h3><div id="members-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-members" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
-<div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
+<div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Effet d'avatar</label><select id="edit-avatar-effect" style="margin-bottom: 1rem;"><option value="none">Aucun effet</option><option value="blue">💙 Aura Bleue</option><option value="pink">💖 Aura Rose</option><option value="rainbow">🌈 Arc-en-ciel</option><option value="fire">🔥 Feu</option></select><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>
+
+<!-- VIEWER DE STORY -->
 <div id="story-viewer">
   <div class="story-progress-bar"><div id="story-progress" class="story-progress-fill"></div></div>
   <button class="story-close-btn" onclick="window.closeStory()">✕</button>
   <h3 id="story-viewer-name" style="color:white; margin-bottom: 10px; z-index: 10;"></h3>
   <img id="story-viewer-img" class="story-image" src="" alt="Story">
 </div>
+
 <div id="toast-container"></div>
 <button id="btn-back-to-top" title="Retour en haut">↑</button>
 <script type="module" src="./js/app.js"></script>
