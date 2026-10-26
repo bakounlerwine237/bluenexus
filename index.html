@@ -4,10 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
-  
   <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
-  
   <script>
     window.addEventListener('error', function(e) {
       var showError = function() {
@@ -21,7 +19,6 @@
       showError();
     });
   </script>
-
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="stylesheet" href="./css/styles.css" />
@@ -63,16 +60,13 @@
   <main id="main-content">
     <section id="view-home" class="view active">
       <input type="file" id="story-file-input" accept="image/*" style="display: none;">
-      
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1;">Abonnements</button>
         <button id="tab-trending" class="btn-secondary small" style="flex:1;">🔥 Tendances</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
-
       <div id="stories-list" class="stories-container"></div>
-
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -89,16 +83,13 @@
           </div>
         </div>
       </div>
-
       <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
         <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
         <div id="suggested-users-list" class="tg-list"></div>
       </div>
-
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
     </section>
-
     <section id="view-search" class="view">
       <div class="search-header">
         <div class="search-bar-container"><span class="search-icon">🔍</span><input id="search-input" type="text" placeholder="Rechercher sur BlueNexus..." autocomplete="off" /><button id="btn-clear-search" class="btn-clear-search" style="display:none;">✕</button></div>
@@ -107,17 +98,13 @@
       <div id="search-history-container"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;"><h4 style="font-size: 0.9rem; color: var(--muted);">Recherches récentes</h4><button id="btn-clear-history" style="background:none; border:none; color: var(--blue-light); cursor:pointer; font-size: 0.8rem;">Effacer</button></div><div id="search-history-list" class="tg-list"></div></div>
       <div id="search-results" style="display:none;"><div id="search-results-users"></div><div id="search-results-communities"></div><div id="search-results-posts"></div><p id="search-no-results" class="muted" style="display:none; text-align:center; padding: 2rem;">Aucun résultat trouvé.</p></div>
     </section>
-
     <section id="view-video" class="view" style="padding: 0 !important;"><div id="video-feed" class="video-feed-container"></div></section>
-
     <section id="view-notifications" class="view"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;"><h3>Notifications</h3><button id="btn-mark-all-read" class="btn-secondary small">Tout lire</button></div><div id="notif-list" class="tg-list"></div></section>
-
     <section id="view-communities" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><h3>Mes Communautés</h3><button id="btn-discover-communities" class="btn-primary small">Découvrir</button></div>
       <div id="my-communities-list" class="tg-list"></div>
       <div id="discover-communities-section" style="display:none;"><button id="btn-back-to-my-comms" class="btn-secondary small" style="margin-bottom:1rem;">← Retour à mes communautés</button><div id="all-communities-list" class="tg-list"></div></div>
     </section>
-
     <section id="view-community" class="view">
       <div id="comm-banner-header" style="height: 120px; background: var(--bg-2); background-size: cover; background-position: center; width: 100%;"></div>
       <div class="comm-header-fixed" style="margin-top: -30px; border-radius: 15px 15px 0 0; background: var(--bg); z-index: 10; position: relative; padding-top: 10px;">
@@ -126,19 +113,17 @@
           <div id="comm-avatar-display" style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--bg); font-size: 1.2rem;">C</div>
           <div style="overflow: hidden;">
             <h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2>
-            <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0;" onclick="window.openMembersList()">0 membres</p>
+            <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0; cursor: pointer; text-decoration: underline;" onclick="window.openMembersList()">0 membres</p>
           </div>
         </div>
         <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0; display:none; margin-left: 10px;">Rejoindre</button>
-        
         <div class="more-menu-container" style="flex: 0 0 auto; margin-left: 10px;">
           <button onclick="window.toggleCommMenu()" class="action-btn" style="background:var(--bg-2); border-radius:50%; width:35px; height:35px; display:flex; justify-content:center; align-items:center; border: 1px solid var(--border);">⋮</button>
           <div id="comm-menu" class="more-menu" style="right: 0; top: 40px; bottom: auto; min-width: 200px;">
             <button id="btn-leave-community" style="color: #ef4444;">🚪 Quitter la communauté</button>
             <div id="comm-admin-controls" style="display:none; flex-direction: column; border-top: 1px solid var(--border); padding-top: 5px; margin-top: 5px;">
               <button id="btn-manage-requests" style="color: #f59e0b; display:none;">👥 Demandes (0)</button>
-              <!-- NOUVEAU BOUTON ADMIN -->
-              <button id="btn-edit-comm-info">✏️ Modifier les infos</button>
+              <button id="btn-edit-comm-info" onclick="window.openEditCommModal()">✏️ Modifier les infos</button>
               <button id="btn-change-comm-avatar">🖼️ Changer l'avatar</button>
               <button id="btn-change-comm-banner">🏞️ Changer la bannière</button>
               <button id="btn-delete-community" style="color: #ef4444;">🗑️ Supprimer la communauté</button>
@@ -159,15 +144,12 @@
         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
       </div>
     </section>
-
     <section id="view-messages" class="view"><h3>Messages Privés</h3><div id="users-list" class="tg-list" style="margin-top:1rem;"></div></section>
-
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2></div>
       <div id="chat-messages" class="chat-container"></div>
       <div class="chat-input-bar"><input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button><div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div><button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button></div>
     </section>
-
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner"></div>
@@ -184,7 +166,6 @@
         </div>
       </div>
     </section>
-
     <section id="view-page" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-page" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="page-view-name" style="font-size: 1rem; margin-left: 10px;">Nom de la Page</h2></div>
       <div class="fb-profile">
@@ -196,43 +177,33 @@
         <div class="fb-tab-content" style="padding-top: 1rem; border-top: 1px solid var(--border);"><h3 style="margin-bottom: 1rem; font-size: 1rem;">Publications de la page</h3><div id="page-view-posts" class="media-list"></div></div>
       </div>
     </section>
-
     <section id="view-settings" class="view">
       <h3>Paramètres</h3>
-      
       <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
         <h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4>
         <p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p>
         <button id="btn-open-admin-panel" onclick="window.openAdminPanel()" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button>
       </div>
-      
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">👤 Mon Compte</h4>
         <p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Gérez vos informations de connexion.</p>
         <button id="btn-change-username" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">✏️ Modifier mon nom d'utilisateur</button>
         <button id="btn-change-password" class="btn-secondary small" style="width: 100%; text-align: left;">🔑 Changer mon mot de passe</button>
       </div>
-
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Communauté</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Créez un groupe public, privé ou une chaîne de publication.</p><button id="btn-new-community-settings" class="btn-primary" style="width: 100%;">Créer une communauté</button></div>
-      
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p><button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button></div>
-      
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>
-
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
         <h4 style="margin-bottom: 0.5rem;">ℹ️ Informations</h4>
         <button id="btn-privacy-policy" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">🛡️ Confidentialité & Sécurité</button>
         <button id="btn-support" class="btn-secondary small" style="width: 100%; text-align: left;">❓ Centre d'aide</button>
       </div>
-
       <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid rgba(239, 68, 68, 0.3);">
         <h4 style="margin-bottom: 0.5rem; color: #ef4444;">⚠️ Zone dangereuse</h4>
         <button id="btn-delete-account" class="btn-secondary small" style="width: 100%; color: #ef4444; border-color: #ef4444; text-align: left;">🗑️ Supprimer mon compte</button>
       </div>
-
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b; margin-bottom: 80px;">Se déconnecter</button>
     </section>
-
     <section id="view-admin" class="view">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
         <h3>👑 Centre de Commandement</h3>
@@ -266,33 +237,21 @@
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
   </nav>
 </div>
-
-<!-- MODALS -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
-
-<!-- NOUVELLE MODALE : MODIFIER LES INFOS DE LA COMMUNAUTÉ -->
 <div id="modal-edit-comm" class="modal hidden"><div class="modal-content"><h3>Modifier la communauté</h3><label class="muted" style="font-size: 0.8rem;">Nom</label><input id="edit-comm-name" placeholder="Nom" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="edit-comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Type</label><select id="edit-comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="btn-save-comm-info" class="btn-primary">Enregistrer</button><button id="btn-cancel-edit-comm" class="btn-secondary">Annuler</button></div></div>
-
-<!-- NOUVELLE MODALE : LISTE DES MEMBRES -->
 <div id="modal-members" class="modal hidden"><div class="modal-content"><h3>Membres de la communauté</h3><div id="members-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-members" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
-
 <div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>
-
-<!-- VIEWER DE STORY -->
 <div id="story-viewer">
-  <div class="story-progress-bar">
-    <div id="story-progress" class="story-progress-fill"></div>
-  </div>
+  <div class="story-progress-bar"><div id="story-progress" class="story-progress-fill"></div></div>
   <button class="story-close-btn" onclick="window.closeStory()">✕</button>
   <h3 id="story-viewer-name" style="color:white; margin-bottom: 10px; z-index: 10;"></h3>
   <img id="story-viewer-img" class="story-image" src="" alt="Story">
 </div>
-
 <div id="toast-container"></div>
 <button id="btn-back-to-top" title="Retour en haut">↑</button>
 <script type="module" src="./js/app.js"></script>

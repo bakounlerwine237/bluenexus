@@ -18,7 +18,8 @@ export function switchView(viewId) {
   } else { 
     if($('main-nav')) $('main-nav').style.display = 'flex'; 
     if($('main-header')) $('main-header').style.display = 'flex'; 
-    const titles = { home: "Accueil", communities: "Communautés", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", video: "Vidéo", messages: "Messages", notifications: "Notifications", admin: "Panneau Admin" }; 
+    // MODIFICATION ICI : "Groupes" au lieu de "Communautés"
+    const titles = { home: "Accueil", communities: "Groupes", search: "Recherche", profile: "Mon Profil", settings: "Paramètres", video: "Vidéo", messages: "Messages", notifications: "Notifications", admin: "Panneau Admin" }; 
     if($('page-title')) $('page-title').textContent = titles[viewId] || "BlueNexus"; 
   } 
   
@@ -51,7 +52,6 @@ export function initNavigation() {
       if($('tab-following')) $('tab-following').className = 'btn-secondary small'; 
       if($('tab-trending')) $('tab-trending').className = 'btn-secondary small'; 
       if($('post-creation-container')) $('post-creation-container').style.display = 'flex'; 
-      // On affiche les suggestions
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
   } 
@@ -62,7 +62,6 @@ export function initNavigation() {
       if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small'; 
       if($('tab-trending')) $('tab-trending').className = 'btn-secondary small'; 
       if($('post-creation-container')) $('post-creation-container').style.display = 'none'; 
-      // On cache les suggestions
       if($('suggested-users-container')) $('suggested-users-container').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
@@ -74,7 +73,6 @@ export function initNavigation() {
       if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small'; 
       if($('tab-following')) $('tab-following').className = 'btn-secondary small'; 
       if($('post-creation-container')) $('post-creation-container').style.display = 'none'; 
-      // On cache les suggestions
       if($('suggested-users-container')) $('suggested-users-container').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
