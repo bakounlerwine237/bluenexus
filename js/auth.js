@@ -19,10 +19,46 @@ async function initTencentChat(userId) {
 }
 
 export function initAuth() {
+  // --- LOGIQUE DU CARROUSEL (ONBOARDING) ---
+  let currentSlide = 0;
+  const totalSlides = 5;
+  const track = $('onboarding-track');
+  const dots = document.querySelectorAll('.dot');
+  const nextBtn = $('btn-onboarding-next');
+
+  function updateCarousel() {
+    if(!track) return;
+    // 5 slides, chacune fait 20% de la largeur du track
+    track.style.transform = `translateX(-${currentSlide * 20}%)`; 
+    
+    dots.forEach((dot, index) => {
+      if(index === currentSlide) dot.classList.add('active');
+      else dot.classList.remove('active');
+    });
+
+    if (currentSlide === totalSlides - 1) {
+      nextBtn.style.display = 'none'; // Cacher le bouton au dernier slide
+    } else {
+      nextBtn.style.display = 'block';
+      nextBtn.textContent = currentSlide === totalSlides - 2 ? 'Commencer' : 'Suivant →';
+    }
+  }
+
+  if(nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateCarousel();
+      }
+    });
+  }
+
   // --- NAVIGATION ENTRE LES ÉCRANS ---
   window.goToLanding = () => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     $('landing-screen').classList.add('active');
+    currentSlide = 0;
+    updateCarousel(); // Réinitialiser au premier slide
   };
 
   window.goToLogin = () => {
@@ -39,10 +75,10 @@ export function initAuth() {
     $('signup-form').style.display = 'block';
   };
 
+  // Boutons de navigation
   if($('btn-landing-login')) $('btn-landing-login').onclick = window.goToLogin;
-  if($('btn-landing-cta-login')) $('btn-landing-cta-login').onclick = window.goToLogin;
-  if($('btn-landing-signup')) $('btn-landing-signup').onclick = window.goToSignup;
-  if($('btn-landing-cta-signup')) $('btn-landing-cta-signup').onclick = window.goToSignup;
+  if($('btn-final-login')) $('btn-final-login').onclick = window.goToLogin;
+  if($('btn-final-signup')) $('btn-final-signup').onclick = window.goToSignup;
 
   // --- LOGIQUE DE CONNEXION / INSCRIPTION ---
   if($('link-to-signup')) $('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });

@@ -30,59 +30,72 @@
 </head>
 <body>
 
-<!-- 1. PAGE D'ACCUEIL (LANDING PAGE) -->
+<!-- 1. PAGE D'ACCUEIL (LANDING PAGE AVEC ONBOARDING) -->
 <div id="landing-screen" class="screen active">
   <header class="landing-header">
     <h1 class="logo">Blue<span>Nexus</span></h1>
     <div class="landing-nav-buttons">
       <button id="btn-landing-login" class="btn-secondary small" style="border: none;">Se connecter</button>
-      <button id="btn-landing-signup" class="btn-primary small">S'inscrire</button>
     </div>
   </header>
 
-  <main class="landing-hero">
-    <h2 class="landing-title">Bienvenue sur le futur des réseaux sociaux.</h2>
-    <p class="landing-subtitle">Rejoignez des communautés passionnantes, partagez vos idées et connectez-vous avec le monde. Le tout dans un espace sécurisé et sans limites.</p>
-    
-    <div class="landing-cta">
-      <button id="btn-landing-cta-signup" class="btn-primary" style="padding: 15px 30px; font-size: 1.1rem;">Créer mon compte gratuitement</button>
-      <button id="btn-landing-cta-login" class="btn-secondary" style="padding: 15px 30px; font-size: 1.1rem;">J'ai déjà un compte</button>
-    </div>
+  <!-- Carrousel de présentation -->
+  <div class="onboarding-container">
+    <div id="onboarding-track" class="onboarding-track">
+      
+      <!-- Slide 1 -->
+      <div class="onboarding-slide">
+        <div class="slide-icon">🚀</div>
+        <h2 class="slide-title">Bienvenue sur BlueNexus</h2>
+        <p class="slide-desc">Le futur des réseaux sociaux. Un espace où vos idées prennent vie et où les communautés se rencontrent.</p>
+      </div>
 
-    <div class="landing-features">
-      <div class="feature-card">
-        <div class="feature-icon">💬</div>
-        <h3>Communautés</h3>
-        <p>Créez ou rejoignez des groupes publics, privés ou des chaînes d'annonces.</p>
+      <!-- Slide 2 -->
+      <div class="onboarding-slide">
+        <div class="slide-icon">💬</div>
+        <h2 class="slide-title">Rejoignez des Communautés</h2>
+        <p class="slide-desc">Créez ou rejoignez des groupes publics, privés ou des chaînes d'annonces. Discutez avec des personnes qui partagent vos passions.</p>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">✨</div>
-        <h3>Profils Uniques</h3>
-        <p>Personnalisez votre vitrine avec des bannières, des badges et des effets.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📸</div>
-        <h3>Stories Éphémères</h3>
-        <p>Partagez des moments de votre vie qui disparaissent après 24 heures.</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <h3>Sécurisé & Modéré</h3>
-        <p>Un espace sain grâce à notre système de signalement et de modération actif.</p>
-      </div>
-    </div>
-  </main>
 
-  <footer class="landing-footer">
-    <p>&copy; 2024 BlueNexus. Tous droits réservés.</p>
-    <div style="display: flex; gap: 15px; margin-top: 10px; justify-content: center;">
-      <span style="cursor: pointer; color: var(--muted);" onclick="alert('Politique de confidentialité bientôt disponible.')">Confidentialité</span>
-      <span style="cursor: pointer; color: var(--muted);" onclick="alert('Support : support@bluenexus.com')">Support</span>
+      <!-- Slide 3 -->
+      <div class="onboarding-slide">
+        <div class="slide-icon">✨</div>
+        <h2 class="slide-title">Un Profil Unique</h2>
+        <p class="slide-desc">Personnalisez votre vitrine avec des bannières animées, des badges exclusifs et des effets d'avatar spectaculaires.</p>
+      </div>
+
+      <!-- Slide 4 -->
+      <div class="onboarding-slide">
+        <div class="slide-icon">📸</div>
+        <h2 class="slide-title">Stories Éphémères</h2>
+        <p class="slide-desc">Partagez des moments de votre vie en temps réel. Vos stories disparaissent après 24 heures.</p>
+      </div>
+
+      <!-- Slide 5 (Final) -->
+      <div class="onboarding-slide final-slide">
+        <h2 class="slide-title">Prêt à nous rejoindre ?</h2>
+        <p class="slide-desc" style="margin-bottom: 2rem;">Créez votre compte gratuitement et commencez l'aventure BlueNexus dès aujourd'hui.</p>
+        <button id="btn-final-signup" class="btn-primary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1.1rem; margin-bottom: 10px;">Créer mon compte</button>
+        <button id="btn-final-login" class="btn-secondary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1.1rem;">J'ai déjà un compte</button>
+      </div>
+
     </div>
-  </footer>
+  </div>
+
+  <!-- Navigation du carrousel -->
+  <div class="onboarding-controls">
+    <div class="onboarding-dots" id="onboarding-dots">
+      <span class="dot active"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+    <button id="btn-onboarding-next" class="btn-primary" style="padding: 12px 30px; border-radius: 30px; width: 100%; max-width: 300px;">Suivant →</button>
+  </div>
 </div>
 
-<!-- 2. ÉCRAN DE CONNEXION (Caché par défaut) -->
+<!-- 2. ÉCRAN DE CONNEXION -->
 <div id="auth-screen" class="screen">
   <div class="auth-box">
     <h1 class="logo" style="cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
