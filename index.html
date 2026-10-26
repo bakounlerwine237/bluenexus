@@ -39,44 +39,37 @@
     </div>
   </header>
 
-  <!-- Carrousel de présentation -->
   <div class="onboarding-container">
     <div id="onboarding-track" class="onboarding-track">
       
-      <!-- Slide 1 -->
       <div class="onboarding-slide">
         <div class="slide-icon">🚀</div>
         <h2 class="slide-title">Bienvenue sur BlueNexus</h2>
         <p class="slide-desc">Le futur des réseaux sociaux. Un espace où vos idées prennent vie et où les communautés se rencontrent.</p>
       </div>
 
-      <!-- Slide 2 -->
       <div class="onboarding-slide">
         <div class="slide-icon">💬</div>
         <h2 class="slide-title">Rejoignez des Communautés</h2>
         <p class="slide-desc">Créez ou rejoignez des groupes publics, privés ou des chaînes d'annonces. Discutez avec des personnes qui partagent vos passions.</p>
       </div>
 
-      <!-- Slide 3 -->
       <div class="onboarding-slide">
         <div class="slide-icon">✨</div>
         <h2 class="slide-title">Un Profil Unique</h2>
         <p class="slide-desc">Personnalisez votre vitrine avec des bannières animées, des badges exclusifs et des effets d'avatar spectaculaires.</p>
       </div>
 
-      <!-- Slide 4 -->
       <div class="onboarding-slide">
         <div class="slide-icon">📸</div>
         <h2 class="slide-title">Stories Éphémères</h2>
         <p class="slide-desc">Partagez des moments de votre vie en temps réel. Vos stories disparaissent après 24 heures.</p>
       </div>
 
-      <!-- Slide 5 (Final) -->
       <div class="onboarding-slide final-slide">
         <h2 class="slide-title">Prêt à nous rejoindre ?</h2>
         <p class="slide-desc" style="margin-bottom: 1.5rem;">Créez votre compte gratuitement et commencez l'aventure.</p>
         
-        <!-- Bouton pour ceux qui sont déjà connectés -->
         <button id="btn-final-enter-app" class="btn-primary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1rem; margin-bottom: 10px; display: none;">Accéder à mon application</button>
         
         <button id="btn-final-signup" class="btn-primary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1rem; margin-bottom: 10px;">Créer mon compte</button>
@@ -86,7 +79,6 @@
     </div>
   </div>
 
-  <!-- Navigation du carrousel -->
   <div class="onboarding-controls">
     <div class="onboarding-dots" id="onboarding-dots">
       <span class="dot active"></span>
@@ -231,8 +223,20 @@
     </section>
     <section id="view-profile" class="view">
       <div class="fb-profile">
-        <div class="fb-banner" id="profile-banner"></div>
-        <div class="fb-avatar-container"><div id="profile-avatar-wrapper" class="avatar-effect-container"><div class="fb-avatar" id="profile-avatar"></div></div><div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div></div>
+        <!-- BANNIÈRE AVEC EFFET -->
+        <div class="fb-banner" id="profile-banner">
+          <div id="banner-effect-overlay" class="effect-overlay"></div>
+        </div>
+        
+        <div class="fb-avatar-container">
+          <!-- AVATAR AVEC EFFET -->
+          <div id="profile-avatar-wrapper" class="avatar-effect-container">
+            <div id="avatar-effect-overlay" class="effect-overlay" style="border-radius: 50%;"></div>
+            <div class="fb-avatar" id="profile-avatar"></div>
+          </div>
+          <div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div>
+        </div>
+        
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
         <div class="fb-stats"><span><strong id="stat-posts">0</strong> Publications</span><span><strong id="stat-followers">0</strong> Abonnés</span><span><strong id="stat-following">0</strong> Abonnements</span></div>
         <div class="fb-action-buttons"><button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button><button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button></div>
@@ -323,7 +327,34 @@
 <div id="modal-members" class="modal hidden"><div class="modal-content"><h3>Membres de la communauté</h3><div id="members-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-members" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-manage-requests" class="modal hidden"><div class="modal-content"><h3>Demandes de participation</h3><div id="requests-list" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-requests" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
 <div id="modal-page" class="modal hidden"><div class="modal-content"><h3>Créer une Page</h3><input id="page-name" placeholder="Nom" /><textarea id="page-desc" placeholder="Description"></textarea><select id="page-type" style="margin-bottom: 0.5rem;"><option value="creator">🎨 Créateur</option><option value="business">💼 Entreprise</option></select><select id="page-category" style="margin-bottom: 0.5rem;"><option value="tech">💻 Technologie</option><option value="music">🎵 Musique</option></select><button id="page-save" class="btn-primary">Créer</button><button id="page-cancel" class="btn-secondary">Annuler</button></div></div>
-<div id="modal-profile" class="modal hidden"><div class="modal-content"><h3>Modifier mon profil</h3><label class="muted">Photo de profil</label><input type="file" id="edit-avatar" accept="image/*"><label class="muted">Bannière de profil</label><input type="file" id="edit-banner" accept="image/*"><label class="muted">Effet d'avatar</label><select id="edit-avatar-effect" style="margin-bottom: 1rem;"><option value="none">Aucun effet</option><option value="blue">💙 Aura Bleue</option><option value="pink">💖 Aura Rose</option><option value="rainbow">🌈 Arc-en-ciel</option><option value="fire">🔥 Feu</option></select><label class="muted">Bio</label><textarea id="edit-bio"></textarea><button id="btn-save-profile" class="btn-primary">Enregistrer</button><button id="btn-cancel-profile" class="btn-secondary">Annuler</button></div></div>
+
+<!-- MODALE PROFIL MISE A JOUR -->
+<div id="modal-profile" class="modal hidden">
+  <div class="modal-content">
+    <h3>Modifier mon profil</h3>
+    
+    <label class="muted">Photo de profil (Image/GIF)</label>
+    <input type="file" id="edit-avatar" accept="image/*">
+    
+    <label class="muted">Bannière de profil (Image/GIF)</label>
+    <input type="file" id="edit-banner" accept="image/*">
+    
+    <label class="muted">✨ Effet de Profil (Style Discord)</label>
+    <select id="edit-profile-effect" style="margin-bottom: 1rem; background: var(--bg-2); border: 1px solid var(--border); color: var(--text);">
+      <option value="none">Aucun effet</option>
+      <option value="stars">✨ Étoiles Cosmiques</option>
+      <option value="sakura">🌸 Pétales de Sakura</option>
+      <option value="fire">🔥 Braises Ardentes</option>
+      <option value="neon">💜 Nébuleuse Néon</option>
+    </select>
+
+    <label class="muted">Bio</label>
+    <textarea id="edit-bio"></textarea>
+    <button id="btn-save-profile" class="btn-primary">Enregistrer</button>
+    <button id="btn-cancel-profile" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>

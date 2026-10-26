@@ -1,11 +1,32 @@
 // --- js/profile.js ---
-import { db, state } from './state.js'; import { $, uploadFile, showToast } from './utils.js'; import { switchView } from './navigation.js'; import { generatePostHTML } from './feed.js'; import { sendNotification } from './notifications.js'; import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { db, state } from './state.js'; 
+import { $, uploadFile, showToast } from './utils.js'; 
+import { switchView } from './navigation.js'; 
+import { generatePostHTML } from './feed.js'; 
+import { sendNotification } from './notifications.js'; 
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let viewingUserId = null; 
 
-export function renderProfile() { if (!state.userProfile || !state.currentUser) return; viewingUserId = state.currentUser.uid; displayProfileData(state.userProfile, true, viewingUserId); }
+export function renderProfile() { 
+  if (!state.userProfile || !state.currentUser) return; 
+  viewingUserId = state.currentUser.uid; 
+  displayProfileData(state.userProfile, true, viewingUserId); 
+}
 
-export async function openUserProfile(userId) { if (!state.currentUser) return; viewingUserId = userId; if (userId === state.currentUser.uid) { displayProfileData(state.userProfile, true, userId); } else { const snap = await getDoc(doc(db, 'users', userId)); if (snap.exists()) { displayProfileData(snap.data(), false, userId); } } switchView('profile'); }
+export async function openUserProfile(userId) { 
+  if (!state.currentUser) return; 
+  viewingUserId = userId; 
+  if (userId === state.currentUser.uid) { 
+    displayProfileData(state.userProfile, true, userId); 
+  } else { 
+    const snap = await getDoc(doc(db, 'users', userId)); 
+    if (snap.exists()) { 
+      displayProfileData(snap.data(), false, userId); 
+    } 
+  } 
+  switchView('profile'); 
+}
 
 async function displayProfileData(profile, isMe, targetId) { 
   if(viewingUserId !== targetId) return; 
@@ -15,19 +36,43 @@ async function displayProfileData(profile, isMe, targetId) {
   if($('about-username')) $('about-username').textContent = profile.username; 
   if($('about-bio')) $('about-bio').textContent = profile.bio || 'Aucune bio.'; 
   
+  // --- GESTION DE L'AVATAR ---
   const av = $('profile-avatar'); 
   if (av) { 
-    if (profile.photoURL) { av.style.backgroundImage = `url(${profile.photoURL})`; av.textContent = ''; } 
-    else { av.style.backgroundImage = 'none'; av.textContent = profile.username[0].toUpperCase(); } 
+    if (profile.photoURL) { 
+      av.style.backgroundImage = `url(${profile.photoURL})`; 
+      av.textContent = ''; 
+    } 
+    else { 
+      av.style.backgroundImage = 'none'; 
+      av.textContent = profile.username[0].toUpperCase(); 
+    } 
   } 
 
-  // MODIFICATION : AFFICHAGE DE LA BANNIÈRE
-  const bannerEl = $('profile-banner');
-  if (bannerEl) {
+  // --- NOUVEAU : GESTION DE L'EFFET DE PROFIL ---
+  const avatarWrapper = $('profile-avatar-wrapper');
+  const bannerContainer = $('profile-banner');
+  
+  // On nettoie les anciennes classes
+  if (avatarWrapper) {
+    avatarWrapper.className = 'avatar-effect-container'; // Reset
+  }
+  if (bannerContainer) {
+    bannerContainer.className = 'fb-banner'; // Reset
+  }
+
+  // On applique le nouvel effet si défini
+  if (profile.profileEffect && profile.profileEffect !== 'none') {
+    if (avatarWrapper) avatarWrapper.classList.add(`effect-${profile.profileEffect}`);
+    if (bannerContainer) bannerContainer.classList.add(`effect-${profile.profileEffect}`);
+  }
+
+  // --- GESTION DE LA BANNIÈRE ---
+  if (bannerContainer) {
     if (profile.bannerURL) {
-      bannerEl.style.backgroundImage = `url(${profile.bannerURL})`;
+      bannerContainer.style.backgroundImage = `url(${profile.bannerURL})`;
     } else {
-      bannerEl.style.backgroundImage = 'linear-gradient(135deg, var(--blue), #0a0e1a)';
+      bannerContainer.style.backgroundImage = 'linear-gradient(135deg, var(--blue), #0a0e1a)';
     }
   }
 
@@ -42,9 +87,14 @@ async function displayProfileData(profile, isMe, targetId) {
   if($('stat-following')) $('stat-following').textContent = profile.following?.length || 0; 
   
   const btnEdit = $('btn-edit-profile-trigger'); const btnFollow = $('btn-follow-user'); const favTab = $('tab-favorites-btn'); 
-  if (isMe) { if(btnEdit) btnEdit.style.display = 'block'; if(btnFollow) btnFollow.style.display = 'none'; if(favTab) favTab.style.display = 'block'; } 
+  if (isMe) { 
+    if(btnEdit) btnEdit.style.display = 'block'; 
+    if(btnFollow) btnFollow.style.display = 'none'; 
+    if(favTab) favTab.style.display = 'block'; 
+  } 
   else { 
-    if(btnEdit) btnEdit.style.display = 'none'; if(favTab) favTab.style.display = 'none'; 
+    if(btnEdit) btnEdit.style.display = 'none'; 
+    if(favTab) favTab.style.display = 'none'; 
     if(btnFollow) { 
       btnFollow.style.display = 'block'; 
       const isFollowing = state.userProfile.following?.includes(targetId); 
@@ -110,32 +160,39 @@ export function initProfile() {
   if(tabFav) tabFav.addEventListener('click', () => setActiveTab('tab-favorites-btn', 'profile-tab-favorites')); 
   if(tabAbout) tabAbout.addEventListener('click', () => setActiveTab('btn-tab-about', 'profile-tab-about')); 
   
-  if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => $('modal-profile').classList.remove('hidden')); 
+  if($('btn-edit-profile-trigger')) $('btn-edit-profile-trigger').addEventListener('click', () => {
+    // Pré-remplir l'effet actuel
+    if ($('edit-profile-effect')) $('edit-profile-effect').value = state.userProfile.profileEffect || 'none';
+    $('modal-profile').classList.remove('hidden');
+  }); 
   if($('btn-cancel-profile')) $('btn-cancel-profile').addEventListener('click', () => $('modal-profile').classList.add('hidden')); 
   
   if($('btn-save-profile')) $('btn-save-profile').addEventListener('click', async () => { 
     const file = $('edit-avatar').files[0]; 
-    const bannerFile = $('edit-banner').files[0]; // NOUVEAU
+    const bannerFile = $('edit-banner').files[0]; 
+    const effect = $('edit-profile-effect') ? $('edit-profile-effect').value : 'none';
     
     let photoURL = state.userProfile.photoURL; 
-    let bannerURL = state.userProfile.bannerURL; // NOUVEAU
+    let bannerURL = state.userProfile.bannerURL; 
     
     $('btn-save-profile').textContent = "Chargement..."; 
     $('btn-save-profile').disabled = true; 
     
     try { 
       if (file) photoURL = await uploadFile(file); 
-      if (bannerFile) bannerURL = await uploadFile(bannerFile); // NOUVEAU
+      if (bannerFile) bannerURL = await uploadFile(bannerFile); 
       
       await updateDoc(doc(db, 'users', state.currentUser.uid), { 
         bio: $('edit-bio').value.trim(), 
         photoURL: photoURL,
-        bannerURL: bannerURL // NOUVEAU
+        bannerURL: bannerURL,
+        profileEffect: effect // NOUVEAU
       }); 
       
       state.userProfile.bio = $('edit-bio').value.trim(); 
       state.userProfile.photoURL = photoURL; 
-      state.userProfile.bannerURL = bannerURL; // NOUVEAU
+      state.userProfile.bannerURL = bannerURL; 
+      state.userProfile.profileEffect = effect;
       
       const createAvatar = $('create-post-avatar'); 
       if (createAvatar) { 
@@ -147,6 +204,7 @@ export function initProfile() {
       renderProfile(); 
       showToast("✅ Profil mis à jour !"); 
     } catch (e) { 
+      console.error(e);
       showToast("Erreur d'envoi de l'image", "error"); 
     } finally { 
       $('btn-save-profile').textContent = "Enregistrer"; 
