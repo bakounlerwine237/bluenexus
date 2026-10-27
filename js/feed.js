@@ -1,7 +1,7 @@
 // --- js/feed.js ---
 import { db, state } from './state.js';
 import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast, formatPostText } from './utils.js';
-import { sendNotification } from './notifications.js'; // <-- IMPORT AJOUTÉ
+import { sendNotification } from './notifications.js';
 import { collection, addDoc, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc, deleteDoc, serverTimestamp, where } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 let isFetchingFeed = false;
@@ -105,6 +105,11 @@ export async function loadGlobalFeed(reset = false) {
     if (snap.docs.length < 50) noMorePosts = true;
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
+    
+    // --- CORRECTION ICI : On ne garde QUE les posts globaux ---
+    // On filtre les posts qui n'ont pas de communityId ou qui ont communityId === 'global'
+    postsToShow = postsToShow.filter(p => p.data.communityId === 'global' || !p.data.communityId);
+
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
     postsToShow.sort((a, b) => b.score - a.score);
 
@@ -321,8 +326,6 @@ export function initFeed() {
     const btn = document.querySelector(`#more-menu-${postId} button:nth-child(3)`);
     if (btn) btn.textContent = isSaved ? '🔖 Sauvegarder' : '🔖 Retirer des favoris';
   };
-  
-  // --- MODIFICATION ICI : Ajout de la notification au Like ---
   window.likePost = async (postId, authorId, isLiked) => {
     const ref = doc(db, 'posts', postId);
     const iconEl = $(`like-icon-${postId}`), countEl = $(`like-count-${postId}`), btnEl = $(`like-btn-${postId}`);
@@ -334,7 +337,6 @@ export function initFeed() {
         await updateDoc(ref, { likes: arrayRemove(state.currentUser.uid) });
       } else {
         await updateDoc(ref, { likes: arrayUnion(state.currentUser.uid) });
-        // ENVOI DE LA NOTIFICATION
         if (authorId !== state.currentUser.uid) {
           await sendNotification(authorId, "a aimé votre publication.");
         }
@@ -345,7 +347,6 @@ export function initFeed() {
       else { iconEl.textContent = '🤍'; countEl.textContent = currentCount - 1; }
     }
   };
-  
   window.deletePost = async (postId) => {
     if (confirm("Supprimer ce message ?")) {
       await deleteDoc(doc(db, 'posts', postId));
@@ -371,8 +372,6 @@ export function initFeed() {
     comments.sort((a, b) => a.createdAt - b.createdAt);
     list.innerHTML = comments.map(c => `<div class="comment-item"><strong>@${c.authorName}</strong> : ${c.content}</div>`).join('');
   };
-  
-  // --- MODIFICATION ICI : Ajout de la notification au Commentaire ---
   window.addComment = async (postId, authorId) => {
     const input = $(`comment-input-${postId}`);
     if (!input) return;
@@ -384,16 +383,12 @@ export function initFeed() {
       const postRef = doc(db, 'posts', postId);
       const postSnap = await getDoc(postRef);
       if (postSnap.exists()) await updateDoc(postRef, { commentsCount: (postSnap.data().commentsCount || 0) + 1 });
-      
-      // ENVOI DE LA NOTIFICATION
       if (authorId !== state.currentUser.uid) {
         await sendNotification(authorId, "a commenté votre publication : " + content.substring(0, 30) + (content.length > 30 ? "..." : ""));
       }
-      
       window.loadComments(postId);
     } catch (e) { alert("Erreur : " + e.message); }
   };
-  
   window.togglePin = async (postId, isPinned) => {
     const ref = doc(db, 'users', state.currentUser.uid);
     if (isPinned) {
