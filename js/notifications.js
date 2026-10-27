@@ -25,7 +25,14 @@ export function listenToNotifications() {
 
 export async function sendNotification(toUser, text, fromUserId, fromUsername) { 
   if(!state.currentUser || toUser === state.currentUser.uid) return; 
-  await addDoc(collection(db, 'notifications'), { toUser: toUser, fromUser: fromUserId || state.currentUser.uid, fromUsername: fromUsername || state.userProfile.username, text: text, read: false, createdAt: serverTimestamp() }); 
+  await addDoc(collection(db, 'notifications'), { 
+    toUser: toUser, 
+    fromUser: fromUserId || state.currentUser.uid, 
+    fromUsername: fromUsername || state.userProfile.username, 
+    text: text, 
+    read: false, 
+    createdAt: serverTimestamp() 
+  }); 
 }
 
 export async function loadNotifications() { 
@@ -33,12 +40,10 @@ export async function loadNotifications() {
   if(!list) return; 
   list.innerHTML = '<p class="muted" style="padding:1rem;">Chargement...</p>'; 
   try {
-    // On retire orderBy pour éviter l'erreur d'index Firebase
     const q = query(collection(db, 'notifications'), where('toUser', '==', state.currentUser.uid), limit(50)); 
     const snap = await getDocs(q); 
     if(snap.empty) return list.innerHTML = '<div style="text-align:center; padding:3rem 1rem; color:var(--muted);"><div style="font-size:3rem; margin-bottom:1rem;">🔕</div><p>Aucune notification pour le moment.</p></div>'; 
     
-    // On trie nous-mêmes par date
     const notifs = snap.docs.map(d => d.data());
     notifs.sort((a, b) => {
       const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
