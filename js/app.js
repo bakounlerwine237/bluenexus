@@ -220,10 +220,86 @@ document.addEventListener('DOMContentLoaded', () => {
   if (shareRefBtn) {
     shareRefBtn.addEventListener('click', () => {
       const code = $('my-referral-code').value;
-      // Lien vers ton site - à adapter si besoin
       const siteUrl = "https://bluenexus-psi.vercel.app"; 
       const message = encodeURIComponent(`Rejoins-moi sur BlueNexus, le nouveau réseau social ! 🚀\n\nUtilise mon code de parrainage lors de ton inscription : *${code}*\n\nOn gagne tous les deux des Nexus Coins ! 🪙\n\n${siteUrl}`);
       window.open(`https://wa.me/?text=${message}`, '_blank');
+    });
+  }
+
+  // --- LOGIQUE BONUS QUOTIDIEN ---
+  window.checkDailyBonus = () => {
+    if (!state.userProfile) return;
+    const banner = $('daily-bonus-banner');
+    if (!banner) return;
+    
+    const lastClaim = state.userProfile.lastDailyClaim || 0;
+    const now = Date.now();
+    const hoursElapsed = (now - lastClaim) / (1000 * 60 * 60);
+    
+    if (!lastClaim || hoursElapsed >= 24) {
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
+    }
+  };
+
+  if($('btn-close-daily')) {
+    $('btn-close-daily').addEventListener('click', () => $('modal-daily').classList.add('hidden'));
+  }
+
+  if($('btn-claim-daily')) {
+    $('btn-claim-daily').addEventListener('click', async () => {
+      if (!state.userProfile || !state.currentUser) return;
+      
+      const lastClaim = state.userProfile.lastDailyClaim || 0;
+      const now = Date.now();
+      const hoursElapsed = (now - lastClaim) / (1000 * 60 * 60);
+      
+      if (hoursElapsed < 24) {
+        window.showToast(`⏳ Revenez dans ${Math.ceil(24 - hoursElapsed)}h`, "error");
+        return;
+      }
+      
+      let streak = state.userProfile.dailyStreak || 0;
+      if (hoursElapsed < 48) streak++;
+      else streak = 1;
+      
+      const rewards = [25, 50, 75, 100, 150];
+      let reward = rewards[Math.floor(Math.random() * rewards.length)];
+      
+      if (streak >= 7) reward += 150;
+      else if (streak > 1) reward += streak * 10;
+      
+      try {
+        const userRef = doc(db, 'users', state.currentUser.uid);
+        const currentCoins = state.userProfile.coins || 0;
+        await updateDoc(userRef, {
+          coins: currentCoins + reward,
+          lastDailyClaim: now,
+          dailyStreak: streak
+        });
+        
+        state.userProfile.coins = currentCoins + reward;
+        state.userProfile.lastDailyClaim = now;
+        state.userProfile.dailyStreak = streak;
+        
+        $('daily-gift-display').textContent = '🎉';
+        $('daily-gift-display').style.animation = 'none';
+        setTimeout(() => { $('daily-gift-display').style.animation = 'bounce 0.6s'; }, 10);
+        
+        window.showToast(`🎉 +${reward} 🪙 Nexus Coins ! (Série: ${streak}j)`, "success");
+        
+        setTimeout(() => {
+          $('modal-daily').classList.add('hidden');
+          $('daily-bonus-banner').style.display = 'none';
+          $('daily-gift-display').textContent = '📦';
+          $('daily-streak-text').textContent = `${streak} jour${streak > 1 ? 's' : ''}`;
+          if (window.renderProfile) window.renderProfile();
+        }, 2000);
+        
+      } catch (e) {
+        window.showToast("Erreur : " + e.message, "error");
+      }
     });
   }
 });
@@ -234,6 +310,7 @@ document.addEventListener('userReady', () => {
   try { listenToUnreadMessages(); } catch(e) { console.error(e); } 
   try { loadStories(); } catch(e) { console.error(e); } 
   try { populatePageSelector(); } catch(e) { console.error(e); } 
+  try { window.checkDailyBonus(); } catch(e) { console.error(e); }
   if(document.getElementById('view-profile').classList.contains('active')) { 
     try { renderProfile(); } catch(e) { console.error(e); } 
   } 

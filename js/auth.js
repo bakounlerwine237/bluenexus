@@ -85,28 +85,26 @@ export function initAuth() {
   // --- INSCRIPTION AVEC PARRAINAGE ---
   if($('btn-signup')) $('btn-signup').addEventListener('click', async () => { 
     const email = $('auth-email-signup').value.trim(), pass = $('auth-pass-signup').value.trim(), name = $('auth-name').value.trim(); 
-    const refCode = $('auth-referral-code').value.trim().toUpperCase(); // NOUVEAU
+    const refCode = $('auth-referral-code') ? $('auth-referral-code').value.trim().toUpperCase() : ""; 
     
     if (!email || !pass || !name) return $('auth-error').textContent = "Remplissez tous les champs."; 
     $('auth-error').textContent = "Création..."; 
     
     try { 
       const cred = await createUserWithEmailAndPassword(auth, email, pass); 
-      const myRefCode = name.toUpperCase() + Math.floor(Math.random() * 100); // Code unique
+      const myRefCode = name.toUpperCase() + Math.floor(Math.random() * 100); 
       
       let initialCoins = 50;
       let referredBy = null;
 
-      // Vérification du code de parrainage
       if (refCode) {
         const q = query(collection(db, 'users'), where('referralCode', '==', refCode), limit(1));
         const refSnap = await getDocs(q);
         if (!refSnap.empty) {
           const parrainId = refSnap.docs[0].id;
           referredBy = parrainId;
-          initialCoins = 100; // Bonus filleul
+          initialCoins = 100; 
           
-          // Créditer le parrain (+100 coins)
           await updateDoc(doc(db, 'users', parrainId), {
             coins: increment(100),
             referrals: arrayUnion(cred.user.uid)
@@ -122,7 +120,9 @@ export function initAuth() {
         coins: initialCoins,
         referralCode: myRefCode,
         referredBy: referredBy,
-        referrals: []
+        referrals: [],
+        lastDailyClaim: 0,
+        dailyStreak: 0
       }); 
     } catch (e) { 
       $('auth-error').textContent = e.message; 
@@ -162,8 +162,10 @@ export function initAuth() {
         if(!state.userProfile.following) state.userProfile.following = []; 
         if(!state.userProfile.savedPosts) state.userProfile.savedPosts = []; 
         if(!state.userProfile.coins) state.userProfile.coins = 0; 
+        if(state.userProfile.lastDailyClaim === undefined) state.userProfile.lastDailyClaim = 0;
+        if(state.userProfile.dailyStreak === undefined) state.userProfile.dailyStreak = 0;
+        
         if(!state.userProfile.referralCode) {
-          // Sécurité : Si le code n'existe pas (vieux compte), on le crée
           const newCode = state.userProfile.username.toUpperCase() + Math.floor(Math.random() * 100);
           await updateDoc(doc(db, 'users', user.uid), { referralCode: newCode });
           state.userProfile.referralCode = newCode;
@@ -178,7 +180,7 @@ export function initAuth() {
         } 
       } else { 
         const newCode = user.email.split('@')[0].toUpperCase() + Math.floor(Math.random() * 100);
-        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50, referralCode: newCode, referrals: [] }; 
+        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50, referralCode: newCode, referrals: [], lastDailyClaim: 0, dailyStreak: 0 }; 
         await setDoc(doc(db, 'users', user.uid), state.userProfile); 
         if($('my-referral-code')) $('my-referral-code').value = newCode;
       } 

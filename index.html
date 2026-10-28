@@ -133,6 +133,15 @@
       
       <div id="stories-list" class="stories-container"></div>
       
+      <!-- BANNIÈRE BONUS QUOTIDIEN -->
+      <div id="daily-bonus-banner" style="display:none; margin-bottom: 1rem;">
+        <div onclick="document.getElementById('modal-daily').classList.remove('hidden')" style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1rem; border-radius: var(--radius); cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); position: relative; overflow: hidden;">
+          <div style="font-size: 2rem;">🎁</div>
+          <strong style="color: white;">Bonus quotidien disponible !</strong>
+          <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Cliquez pour récupérer vos Nexus Coins</p>
+        </div>
+      </div>
+      
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
@@ -142,7 +151,6 @@
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
               <button id="btn-global-attach" class="btn-secondary small">📎</button>
-              <!-- NOUVEAU BOUTON SONDAGE -->
               <button id="btn-create-poll" class="btn-secondary small" title="Créer un sondage">📊</button>
               <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
               <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;" disabled>Publier</button>
@@ -469,6 +477,17 @@
     
     <button id="btn-publish-poll" class="btn-primary" style="background: #a855f7; margin-top: 10px;">Publier le sondage</button>
     <button id="btn-cancel-poll" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
+<!-- MODALE BONUS QUOTIDIEN -->
+<div id="modal-daily" class="modal hidden">
+  <div class="modal-content" style="text-align: center;">
+    <h3 style="color: #f59e0b; margin-bottom: 1rem;">🎁 Bonus Quotidien</h3>
+    <p class="muted" style="margin-bottom: 1rem;">Série actuelle : <strong id="daily-streak-text" style="color: #f59e0b;">0 jour</strong></p>
+    <div style="font-size: 6rem; margin-bottom: 1rem;" id="daily-gift-display">📦</div>
+    <button id="btn-claim-daily" class="btn-primary" style="background: #f59e0b; width: 100%; padding: 15px; font-size: 1.1rem;">🎁 Ouvrir le coffre</button>
+    <button id="btn-close-daily" class="btn-secondary" style="width: 100%; margin-top: 10px;">Fermer</button>
   </div>
 </div>
 

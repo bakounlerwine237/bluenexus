@@ -1,4 +1,8 @@
-:root { --bg: #0a0e1a; --bg-2: #121829; --blue: #2563eb; --blue-light: #3b82f6; --text: #e6ecff; --muted: #7a86a8; --border: #1e2a45; --radius: 14px; --card-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
+}:root { --bg: #0a0e1a; --bg-2: #121829; --blue: #2563eb; --blue-light: #3b82f6; --text: #e6ecff; --muted: #7a86a8; --border: #1e2a45; --radius: 14px; --card-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 body.light-mode { --bg: #f0f2f5; --bg-2: #ffffff; --text: #1c1e21; --muted: #65676b; --border: #ced0d4; --blue: #1877f2; --blue-light: #166fe5; --card-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06); }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s; overflow-x: hidden; }
@@ -682,4 +686,9 @@ body.eco-mode .post-media.show-media {
   border-radius: 10px;
   z-index: 10;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-20px); }
+  60% { transform: translateY(-10px); }
 }
