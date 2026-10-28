@@ -8,6 +8,7 @@
   <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
   
+  <!-- DÉTECTEUR D'ERREUR JS -->
   <script>
     window.addEventListener('error', function(e) {
       var showError = function() {
@@ -29,6 +30,7 @@
 </head>
 <body>
 
+<!-- 1. PAGE D'ACCUEIL (LANDING PAGE AVEC ONBOARDING) -->
 <div id="landing-screen" class="screen active">
   <header class="landing-header">
     <h1 class="logo">Blue<span>Nexus</span></h1>
@@ -77,6 +79,7 @@
   </div>
 </div>
 
+<!-- 2. ÉCRAN DE CONNEXION -->
 <div id="auth-screen" class="screen">
   <div class="auth-box">
     <h1 class="logo" style="cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
@@ -101,6 +104,7 @@
   </div>
 </div>
 
+<!-- 3. APPLICATION PRINCIPALE -->
 <div id="app-screen" class="screen">
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
@@ -285,6 +289,14 @@
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p><button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>
       
+      <!-- SECTION BOUTIQUE NEXUS -->
+      <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="document.getElementById('modal-shop').classList.remove('hidden')">
+        <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🛍️</div>
+        <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">🛍️ Boutique Nexus</h4>
+        <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Dépensez vos Nexus Coins pour personnaliser votre profil et booster vos publications.</p>
+      </div>
+
+      <!-- SECTION BLUENEXUS PREMIUM -->
       <div style="background: linear-gradient(135deg, #4f46e5, #9333ea); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(147, 51, 234, 0.3); position: relative; overflow: hidden;">
         <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">👑</div>
         <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">✨ BlueNexus Premium</h4>
@@ -389,6 +401,58 @@
     
     <button id="btn-publish-opp" class="btn-primary" style="background: #10b981; margin-top: 10px;">Publier l'annonce (Coût: 5 🪙)</button>
     <button id="btn-cancel-opp" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
+<!-- MODALE BOUTIQUE -->
+<div id="modal-shop" class="modal hidden">
+  <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+    <h3 style="color: #f59e0b; margin-bottom: 0.5rem;">🛍️ Boutique Nexus</h3>
+    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solde actuel : <strong style="color: #f59e0b; font-size: 1.1rem;">🪙 <span id="shop-coins-balance">0</span></strong></p>
+    
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <!-- Article 1 : Effet Étoiles -->
+      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
+        <div class="tg-avatar" style="background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00);">✨</div>
+        <div class="tg-content">
+          <div class="tg-title">Effet Étoiles Cosmiques</div>
+          <div class="tg-subtitle">Durée : 7 jours</div>
+        </div>
+        <button onclick="window.buyShopItem('stars', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button>
+      </div>
+
+      <!-- Article 2 : Effet Sakura -->
+      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
+        <div class="tg-avatar" style="background: #ec4899;">🌸</div>
+        <div class="tg-content">
+          <div class="tg-title">Effet Pétales de Sakura</div>
+          <div class="tg-subtitle">Durée : 7 jours</div>
+        </div>
+        <button onclick="window.buyShopItem('sakura', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button>
+      </div>
+
+      <!-- Article 3 : Boost de Post -->
+      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
+        <div class="tg-avatar" style="background: #10b981;">🚀</div>
+        <div class="tg-content">
+          <div class="tg-title">Boost de Publication</div>
+          <div class="tg-subtitle">Remontez votre post dans le fil</div>
+        </div>
+        <button onclick="window.buyShopItem('boost', 50)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 50</button>
+      </div>
+
+      <!-- Article 4 : Badge Vérifié -->
+      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
+        <div class="tg-avatar" style="background: #3b82f6;">✅</div>
+        <div class="tg-content">
+          <div class="tg-title">Badge Vérifié</div>
+          <div class="tg-subtitle">Pour toujours</div>
+        </div>
+        <button onclick="window.buyShopItem('premium', 2000)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 2000</button>
+      </div>
+    </div>
+    
+    <button onclick="document.getElementById('modal-shop').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1.5rem;">Fermer</button>
   </div>
 </div>
 

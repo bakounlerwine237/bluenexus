@@ -13,7 +13,7 @@ import { initAdmin } from './admin.js';
 import { initSettings } from './settings.js';
 import { initStories, loadStories } from './stories.js';
 import { db, state } from './state.js';
-import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, limit, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 window.speakText = speakText; 
 window.translateText = translateText; 
@@ -137,6 +137,76 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // --- LOGIQUE BOUTIQUE NEXUS ---
+  const shopModal = $('modal-shop');
+  
+  // Mettre à jour le solde quand on ouvre la boutique
+  if (shopModal) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class' && !shopModal.classList.contains('hidden')) {
+          if ($('shop-coins-balance') && state.userProfile) {
+            $('shop-coins-balance').textContent = state.userProfile.coins || 0;
+          }
+        }
+      });
+    });
+    observer.observe(shopModal, { attributes: true });
+  }
+
+  window.buyShopItem = async (itemType, price) => {
+    if (!state.currentUser || !state.userProfile) return;
+
+    const currentCoins = state.userProfile.coins || 0;
+
+    if (currentCoins < price) {
+      if (window.showToast) window.showToast("❌ Solde insuffisant. Il vous manque " + (price - currentCoins) + " 🪙", "error");
+      return;
+    }
+
+    if (!confirm(`Voulez-vous acheter cet article pour ${price} 🪙 Nexus Coins ?`)) return;
+
+    try {
+      const userRef = doc(db, 'users', state.currentUser.uid);
+      const newCoins = currentCoins - price;
+      let updates = { coins: newCoins };
+
+      if (itemType === 'stars' || itemType === 'sakura') {
+        updates.profileEffect = itemType;
+      } else if (itemType === 'premium') {
+        updates.isPremium = true;
+      } else if (itemType === 'boost') {
+        // Le boost s'applique au post le plus récent de l'utilisateur
+        const q = query(collection(db, 'posts'), where('authorId', '==', state.currentUser.uid), orderBy('createdAt', 'desc'), limit(1));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          await updateDoc(doc(db, 'posts', snap.docs[0].id), { createdAt: serverTimestamp() });
+        }
+      }
+
+      await updateDoc(userRef, updates);
+      
+      state.userProfile.coins = newCoins;
+      if (updates.profileEffect) state.userProfile.profileEffect = updates.profileEffect;
+      if (updates.isPremium) state.userProfile.isPremium = true;
+
+      if ($('shop-coins-balance')) $('shop-coins-balance').textContent = newCoins;
+      if ($('profile-coins')) $('profile-coins').textContent = newCoins;
+      
+      if (window.showToast) window.showToast("✅ Achat réussi !", "success");
+      
+      setTimeout(() => {
+        if (shopModal) shopModal.classList.add('hidden');
+        if (window.renderProfile) window.renderProfile();
+        if (itemType === 'boost' && window.loadGlobalFeed) window.loadGlobalFeed(true);
+      }, 1000);
+
+    } catch (e) {
+      console.error(e);
+      if (window.showToast) window.showToast("Erreur lors de l'achat : " + e.message, "error");
+    }
+  };
 });
 
 document.addEventListener('userReady', () => { 
