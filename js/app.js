@@ -95,6 +95,44 @@ document.addEventListener('DOMContentLoaded', () => {
       recognition.onend = () => btn.textContent = "🎤"; 
     }); 
   });
+
+  // --- LOGIQUE PWA (INSTALLATION) ---
+  let deferredPrompt;
+  const installContainer = document.getElementById('pwa-install-container');
+  const installBtn = document.getElementById('btn-install-pwa');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if(installContainer) installContainer.style.display = 'block';
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        installContainer.style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    if(installContainer) installContainer.style.display = 'none';
+    if(window.showToast) window.showToast("✅ BlueNexus a été installé avec succès !");
+  });
+
+  // --- LOGIQUE PREMIUM (Paiement via WhatsApp) ---
+  const premiumBtn = document.getElementById('btn-go-premium');
+  if (premiumBtn) {
+    premiumBtn.addEventListener('click', () => {
+      const phone = "237650284435"; // TON NUMÉRO WHATSAPP (Lerwine)
+      const message = encodeURIComponent("Bonjour Admin, je souhaite passer au compte BlueNexus Premium à 1500 FCFA/mois. Mon pseudo est : " + (state.userProfile ? state.userProfile.username : ""));
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    });
+  }
 });
 
 document.addEventListener('userReady', () => { 
