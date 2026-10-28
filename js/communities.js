@@ -17,13 +17,9 @@ window.toggleCommMenu = () => {
 };
 
 window.openMembersList = async () => {
-  if (!currentCommData) {
-    showToast("Erreur : données non chargées.", "error");
-    return;
-  }
-  
+  if (!currentCommData) return;
   $('modal-members').classList.remove('hidden');
-  window.toggleCommMenu(); // Ferme le menu si ouvert
+  window.toggleCommMenu();
   
   const container = $('members-list-container');
   container.innerHTML = '<p class="muted" style="text-align:center;">Chargement...</p>';
@@ -64,20 +60,14 @@ window.kickMember = async (uid) => {
     await updateDoc(doc(db, 'communities', currentCommId), { members: arrayRemove(uid) });
     showToast("Membre exclu.", "success");
     
-    // Mettre à jour les données locales
     currentCommData.members = currentCommData.members.filter(id => id !== uid);
     if($('members-count')) $('members-count').textContent = `${currentCommData.members.length} membres`;
-    
-    // Rafraîchir la liste des membres
     window.openMembersList();
   } catch(e) { showToast("Erreur", "error"); }
 };
 
 window.openEditCommModal = () => {
-  if (!currentCommData) {
-    showToast("Erreur : données non chargées.", "error");
-    return;
-  }
+  if (!currentCommData) return;
   $('edit-comm-name').value = currentCommData.name;
   $('edit-comm-desc').value = currentCommData.description || '';
   $('edit-comm-type').value = currentCommData.type || 'public';
@@ -85,7 +75,7 @@ window.openEditCommModal = () => {
   window.toggleCommMenu();
 };
 
-// --- FIN DES FONCTIONS GLOBALES ---
+// --- FONCTIONS DE RENDU ---
 
 export async function renderMyCommunities() { 
   const list = $('my-communities-list'); 
@@ -102,21 +92,35 @@ export async function renderMyCommunities() {
     const data = c.data(); 
     const avatarStyle = data.avatarURL ? `background-image: url(${data.avatarURL}); background-size: cover; background-position: center;` : ''; 
     const avatarContent = data.avatarURL ? '' : data.name[0].toUpperCase(); 
-    return `<div class="tg-item" onclick="window.openCommunity('${c.id}')"><div class="tg-avatar" style="${avatarStyle}">${avatarContent}</div><div class="tg-content"><div class="tg-title">${data.name} ${data.type === 'private' ? '🔒' : data.type === 'announcement' ? '📢' : ''}</div><div class="tg-subtitle">${data.description || 'Aucune description'}</div></div></div>`; 
+    const boostedClass = data.isBoosted ? 'boosted-community' : '';
+    return `<div class="tg-item ${boostedClass}" onclick="window.openCommunity('${c.id}')"><div class="tg-avatar" style="${avatarStyle}">${avatarContent}</div><div class="tg-content"><div class="tg-title">${data.name} ${data.type === 'private' ? '🔒' : data.type === 'announcement' ? '📢' : ''}</div><div class="tg-subtitle">${data.description || 'Aucune description'}</div></div></div>`; 
   }).join(''); 
 }
 
 export async function renderAllCommunities() { 
   const list = $('all-communities-list'); 
   list.innerHTML = '<p class="muted" style="padding: 1rem;">Chargement...</p>'; 
+  
   const snap = await getDocs(collection(db, 'communities')); 
   if (snap.empty) return list.innerHTML = '<p class="muted" style="padding: 1rem;">Aucune communauté sur le réseau.</p>'; 
-  list.innerHTML = snap.docs.map(c => { 
-    const data = c.data(); 
+  
+  let communitiesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  
+  // Tri : Les communautés boostées d'abord, puis par nombre de membres
+  communitiesData.sort((a, b) => {
+    if (a.isBoosted && !b.isBoosted) return -1;
+    if (!a.isBoosted && b.isBoosted) return 1;
+    return (b.members?.length || 0) - (a.members?.length || 0);
+  });
+
+  list.innerHTML = communitiesData.map(c => { 
+    const data = c; 
     const isMember = data.members.includes(state.currentUser.uid); 
     const avatarStyle = data.avatarURL ? `background-image: url(${data.avatarURL}); background-size: cover; background-position: center;` : ''; 
     const avatarContent = data.avatarURL ? '' : data.name[0].toUpperCase(); 
-    return `<div class="tg-item" onclick="window.openCommunity('${c.id}')"><div class="tg-avatar" style="${avatarStyle}">${avatarContent}</div><div class="tg-content"><div class="tg-title">${data.name} ${data.type === 'private' ? '🔒' : data.type === 'announcement' ? '📢' : ''}</div><div class="tg-subtitle">${data.members.length} membres ${isMember ? '· Déjà rejoint' : ''}</div></div></div>`; 
+    const boostedClass = data.isBoosted ? 'boosted-community' : '';
+    
+    return `<div class="tg-item ${boostedClass}" onclick="window.openCommunity('${c.id}')"><div class="tg-avatar" style="${avatarStyle}">${avatarContent}</div><div class="tg-content"><div class="tg-title">${data.name} ${data.type === 'private' ? '🔒' : data.type === 'announcement' ? '📢' : ''}</div><div class="tg-subtitle">${data.members.length} membres ${isMember ? '· Déjà rejoint' : ''}</div></div></div>`; 
   }).join(''); 
 }
 
@@ -181,6 +185,10 @@ window.openCommunity = async (id) => {
         $('btn-manage-requests').textContent = `👥 Demandes (${data.joinRequests.length})`;
       } else {
         $('btn-manage-requests').style.display = 'none';
+      }
+      // Cacher le bouton Boost si la communauté est déjà boostée
+      if ($('btn-boost-community')) {
+        $('btn-boost-community').style.display = data.isBoosted ? 'none' : 'block';
       }
     } else { 
       adminControls.style.display = 'none'; 
@@ -281,6 +289,7 @@ export function initCommunities() {
         ownerId: state.currentUser.uid, 
         members: [state.currentUser.uid], 
         joinRequests: [],
+        isBoosted: false,
         createdAt: serverTimestamp() 
       }); 
       
@@ -368,7 +377,39 @@ export function initCommunities() {
   if($('btn-close-requests')) $('btn-close-requests').addEventListener('click', () => $('modal-manage-requests').classList.add('hidden'));
   if($('btn-close-members')) $('btn-close-members').addEventListener('click', () => $('modal-members').classList.add('hidden'));
 
-  // BOUTON MODIFIER LES INFOS
+  // --- LOGIQUE BOOST COMMUNAUTE ---
+  if($('btn-boost-community')) {
+    $('btn-boost-community').addEventListener('click', async () => {
+      const cost = 50;
+      const userCoins = state.userProfile.coins || 0;
+      
+      if (state.userProfile.role !== 'admin' && userCoins < cost) {
+        return showToast(`❌ Besoin de ${cost} 🪙 Nexus Coins pour booster.`, "error");
+      }
+      
+      if (!confirm(`Voulez-vous vraiment booster cette communauté pour ${cost} 🪙 ? Elle apparaîtra en tête des découvertes.`)) return;
+      
+      try {
+        if (state.userProfile.role !== 'admin') {
+          const userRef = doc(db, 'users', state.currentUser.uid);
+          await updateDoc(userRef, { coins: userCoins - cost });
+          state.userProfile.coins = userCoins - cost;
+        }
+        
+        await updateDoc(doc(db, 'communities', currentCommId), {
+          isBoosted: true,
+          boostedAt: serverTimestamp()
+        });
+        
+        showToast("🚀 Communauté boostée avec succès !");
+        window.openCommunity(currentCommId); 
+        
+      } catch(e) {
+        showToast("Erreur lors du boost : " + e.message, "error");
+      }
+    });
+  }
+
   if($('btn-cancel-edit-comm')) $('btn-cancel-edit-comm').addEventListener('click', () => $('modal-edit-comm').classList.add('hidden'));
 
   if($('btn-save-comm-info')) {
