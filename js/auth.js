@@ -3,7 +3,7 @@ import { auth, db, state, TENCENT_SDK_APP_ID } from './state.js';
 import { $, showToast } from './utils.js';
 import { switchView } from './navigation.js';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-auth.js";
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, increment, collection, query, where, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
 
 async function initTencentChat(userId) { 
   try { 
@@ -12,10 +12,7 @@ async function initTencentChat(userId) {
     const data = await response.json(); 
     state.tencentChat = TIM.create({ SDKAppID: TENCENT_SDK_APP_ID }); 
     await state.tencentChat.login({ userID: userId, userSig: data.userSig }); 
-    console.log("Tencent Chat connecté !"); 
-  } catch (error) { 
-    console.error("Erreur Tencent:", error); 
-  } 
+  } catch (error) { console.error("Erreur Tencent:", error); } 
 }
 
 export function initAuth() {
@@ -29,12 +26,10 @@ export function initAuth() {
   function updateCarousel() {
     if(!track) return;
     track.style.transform = `translateX(-${currentSlide * 20}%)`; 
-    
     dots.forEach((dot, index) => {
       if(index === currentSlide) dot.classList.add('active');
       else dot.classList.remove('active');
     });
-
     if (currentSlide === totalSlides - 1) {
       nextBtn.style.display = 'none';
       if (state.currentUser) {
@@ -54,10 +49,7 @@ export function initAuth() {
 
   if(nextBtn) {
     nextBtn.addEventListener('click', () => {
-      if (currentSlide < totalSlides - 1) {
-        currentSlide++;
-        updateCarousel();
-      }
+      if (currentSlide < totalSlides - 1) { currentSlide++; updateCarousel(); }
     });
   }
 
@@ -72,46 +64,65 @@ export function initAuth() {
   window.goToLanding = () => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     $('landing-screen').classList.add('active');
-    currentSlide = 0;
-    updateCarousel();
+    currentSlide = 0; updateCarousel();
   };
-
   window.goToLogin = () => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     $('auth-screen').classList.add('active');
-    $('login-form').style.display = 'block';
-    $('signup-form').style.display = 'none';
+    $('login-form').style.display = 'block'; $('signup-form').style.display = 'none';
   };
-
   window.goToSignup = () => {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     $('auth-screen').classList.add('active');
-    $('login-form').style.display = 'none';
-    $('signup-form').style.display = 'block';
+    $('login-form').style.display = 'none'; $('signup-form').style.display = 'block';
   };
 
   if($('btn-landing-login')) $('btn-landing-login').onclick = window.goToLogin;
   if($('btn-final-login')) $('btn-final-login').onclick = window.goToLogin;
   if($('btn-final-signup')) $('btn-final-signup').onclick = window.goToSignup;
+  if($('btn-final-enter-app')) $('btn-final-enter-app').onclick = () => enterApp();
 
-  if($('btn-final-enter-app')) {
-    $('btn-final-enter-app').onclick = () => {
-      enterApp();
-    };
-  }
-
-  // --- LOGIQUE DE CONNEXION / INSCRIPTION ---
-  if($('link-to-signup')) $('link-to-signup').addEventListener('click', (e) => { e.preventDefault(); $('login-form').style.display = 'none'; $('signup-form').style.display = 'block'; });
-  if($('link-to-login')) $('link-to-login').addEventListener('click', (e) => { e.preventDefault(); $('signup-form').style.display = 'none'; $('login-form').style.display = 'block'; });
-  
+  // --- INSCRIPTION AVEC PARRAINAGE ---
   if($('btn-signup')) $('btn-signup').addEventListener('click', async () => { 
     const email = $('auth-email-signup').value.trim(), pass = $('auth-pass-signup').value.trim(), name = $('auth-name').value.trim(); 
+    const refCode = $('auth-referral-code').value.trim().toUpperCase(); // NOUVEAU
+    
     if (!email || !pass || !name) return $('auth-error').textContent = "Remplissez tous les champs."; 
     $('auth-error').textContent = "Création..."; 
+    
     try { 
       const cred = await createUserWithEmailAndPassword(auth, email, pass); 
+      const myRefCode = name.toUpperCase() + Math.floor(Math.random() * 100); // Code unique
+      
+      let initialCoins = 50;
+      let referredBy = null;
+
+      // Vérification du code de parrainage
+      if (refCode) {
+        const q = query(collection(db, 'users'), where('referralCode', '==', refCode), limit(1));
+        const refSnap = await getDocs(q);
+        if (!refSnap.empty) {
+          const parrainId = refSnap.docs[0].id;
+          referredBy = parrainId;
+          initialCoins = 100; // Bonus filleul
+          
+          // Créditer le parrain (+100 coins)
+          await updateDoc(doc(db, 'users', parrainId), {
+            coins: increment(100),
+            referrals: arrayUnion(cred.user.uid)
+          });
+        }
+      }
+
       await setDoc(doc(db, 'users', cred.user.uid), { 
-        username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: [], coins: 50 // <-- 50 COINS DE DEPART
+        username: name, 
+        email: email, 
+        bio: "Nouveau sur BlueNexus 🚀", 
+        photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: [], 
+        coins: initialCoins,
+        referralCode: myRefCode,
+        referredBy: referredBy,
+        referrals: []
       }); 
     } catch (e) { 
       $('auth-error').textContent = e.message; 
@@ -125,20 +136,14 @@ export function initAuth() {
     try { 
       await signInWithEmailAndPassword(auth, email, pass); 
       enterApp();
-    } catch (e) { 
-      $('auth-error').textContent = "Email ou mot de passe incorrect."; 
-    } 
+    } catch (e) { $('auth-error').textContent = "Email ou mot de passe incorrect."; }
   });
   
   if($('btn-forgot-password')) $('btn-forgot-password').addEventListener('click', async () => { 
     const email = $('auth-email').value.trim(); 
     if (!email) return $('auth-error').textContent = "Entrez votre email."; 
-    try { 
-      await sendPasswordResetEmail(auth, email); 
-      alert("Email envoyé !"); 
-    } catch (e) { 
-      $('auth-error').textContent = e.message; 
-    } 
+    try { await sendPasswordResetEmail(auth, email); alert("Email envoyé !"); } 
+    catch (e) { $('auth-error').textContent = e.message; }
   });
   
   if($('btn-logout')) $('btn-logout').addEventListener('click', () => {
@@ -156,32 +161,37 @@ export function initAuth() {
         if(!state.userProfile.badges) state.userProfile.badges = []; 
         if(!state.userProfile.following) state.userProfile.following = []; 
         if(!state.userProfile.savedPosts) state.userProfile.savedPosts = []; 
-        if(!state.userProfile.coins) state.userProfile.coins = 0; // Initialisation
+        if(!state.userProfile.coins) state.userProfile.coins = 0; 
+        if(!state.userProfile.referralCode) {
+          // Sécurité : Si le code n'existe pas (vieux compte), on le crée
+          const newCode = state.userProfile.username.toUpperCase() + Math.floor(Math.random() * 100);
+          await updateDoc(doc(db, 'users', user.uid), { referralCode: newCode });
+          state.userProfile.referralCode = newCode;
+        }
+        
+        if($('my-referral-code')) $('my-referral-code').value = state.userProfile.referralCode;
+        
         if (state.userProfile.role === 'admin') { 
           if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'block'; 
         } else { 
           if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'none'; 
         } 
       } else { 
-        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50 }; 
+        const newCode = user.email.split('@')[0].toUpperCase() + Math.floor(Math.random() * 100);
+        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50, referralCode: newCode, referrals: [] }; 
         await setDoc(doc(db, 'users', user.uid), state.userProfile); 
+        if($('my-referral-code')) $('my-referral-code').value = newCode;
       } 
       
       const createAvatar = $('create-post-avatar'); 
       if (createAvatar) { 
-        if (state.userProfile.photoURL) { 
-          createAvatar.style.backgroundImage = `url(${state.userProfile.photoURL})`; 
-          createAvatar.textContent = ''; 
-        } else { 
-          createAvatar.style.backgroundImage = 'none'; 
-          createAvatar.textContent = state.userProfile.username[0].toUpperCase(); 
-        } 
+        if (state.userProfile.photoURL) { createAvatar.style.backgroundImage = `url(${state.userProfile.photoURL})`; createAvatar.textContent = ''; } 
+        else { createAvatar.style.backgroundImage = 'none'; createAvatar.textContent = state.userProfile.username[0].toUpperCase(); } 
       } 
       
       await initTencentChat(user.uid); 
       
       const bypass = sessionStorage.getItem('bypass_onboarding');
-      
       if (bypass === 'true') {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         $('app-screen').classList.add('active'); 
@@ -190,18 +200,14 @@ export function initAuth() {
       } else {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         $('landing-screen').classList.add('active');
-        currentSlide = totalSlides - 1;
-        updateCarousel();
+        currentSlide = totalSlides - 1; updateCarousel();
       }
-      
       $('auth-error').textContent = ""; 
     } else { 
-      state.currentUser = null; 
-      state.userProfile = null; 
+      state.currentUser = null; state.userProfile = null; 
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       $('landing-screen').classList.add('active');
-      $('login-form').style.display = 'block'; 
-      $('signup-form').style.display = 'none'; 
+      $('login-form').style.display = 'block'; $('signup-form').style.display = 'none'; 
     } 
   });
 }

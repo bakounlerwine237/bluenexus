@@ -1,3 +1,4 @@
+// --- js/app.js ---
 import { $, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
 import { initNavigation } from './navigation.js';
 import { initAuth } from './auth.js';
@@ -141,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- LOGIQUE BOUTIQUE NEXUS ---
   const shopModal = $('modal-shop');
   
-  // Mettre à jour le solde quand on ouvre la boutique
   if (shopModal) {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -157,7 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.buyShopItem = async (itemType, price) => {
     if (!state.currentUser || !state.userProfile) return;
-
     const currentCoins = state.userProfile.coins || 0;
 
     if (currentCoins < price) {
@@ -177,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (itemType === 'premium') {
         updates.isPremium = true;
       } else if (itemType === 'boost') {
-        // Le boost s'applique au post le plus récent de l'utilisateur
         const q = query(collection(db, 'posts'), where('authorId', '==', state.currentUser.uid), orderBy('createdAt', 'desc'), limit(1));
         const snap = await getDocs(q);
         if (!snap.empty) {
@@ -186,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       await updateDoc(userRef, updates);
-      
       state.userProfile.coins = newCoins;
       if (updates.profileEffect) state.userProfile.profileEffect = updates.profileEffect;
       if (updates.isPremium) state.userProfile.isPremium = true;
@@ -207,6 +204,28 @@ document.addEventListener('DOMContentLoaded', () => {
       if (window.showToast) window.showToast("Erreur lors de l'achat : " + e.message, "error");
     }
   };
+
+  // --- LOGIQUE PARRAINAGE ---
+  const copyRefBtn = $('btn-copy-referral');
+  if (copyRefBtn) {
+    copyRefBtn.addEventListener('click', () => {
+      const code = $('my-referral-code').value;
+      navigator.clipboard.writeText(code).then(() => {
+        if(window.showToast) window.showToast("✅ Code de parrainage copié !");
+      });
+    });
+  }
+
+  const shareRefBtn = $('btn-share-referral');
+  if (shareRefBtn) {
+    shareRefBtn.addEventListener('click', () => {
+      const code = $('my-referral-code').value;
+      // Lien vers ton site - à adapter si besoin
+      const siteUrl = "https://bluenexus-psi.vercel.app"; 
+      const message = encodeURIComponent(`Rejoins-moi sur BlueNexus, le nouveau réseau social ! 🚀\n\nUtilise mon code de parrainage lors de ton inscription : *${code}*\n\nOn gagne tous les deux des Nexus Coins ! 🪙\n\n${siteUrl}`);
+      window.open(`https://wa.me/?text=${message}`, '_blank');
+    });
+  }
 });
 
 document.addEventListener('userReady', () => { 

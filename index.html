@@ -96,6 +96,8 @@
       <input id="auth-name" type="text" placeholder="Nom d'utilisateur" />
       <input id="auth-email-signup" type="email" placeholder="Email" />
       <input id="auth-pass-signup" type="password" placeholder="Mot de passe (6 car. min)" />
+      <!-- NOUVEAU : Champ de parrainage -->
+      <input id="auth-referral-code" type="text" placeholder="Code de parrainage (Optionnel)" style="background: rgba(255,255,255,0.05);" />
       <button id="btn-signup" class="btn-primary">Créer mon compte</button>
       <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">Déjà un compte ? <a href="#" id="link-to-login" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">Se connecter</a></p>
       <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: var(--muted); cursor: pointer;" onclick="window.goToLanding()">← Retour à l'accueil</p>
@@ -198,10 +200,7 @@
             <button id="btn-leave-community" style="color: #ef4444;">🚪 Quitter la communauté</button>
             <div id="comm-admin-controls" style="display:none; flex-direction: column; border-top: 1px solid var(--border); padding-top: 5px; margin-top: 5px;">
               <button id="btn-manage-requests" style="color: #f59e0b; display:none;">👥 Demandes (0)</button>
-              
-              <!-- BOUTON BOOST -->
               <button id="btn-boost-community" style="color: #f59e0b;">🚀 Booster la communauté</button>
-              
               <button id="btn-edit-comm-info" onclick="window.openEditCommModal()">✏️ Modifier les infos</button>
               <button id="btn-change-comm-avatar">🖼️ Changer l'avatar</button>
               <button id="btn-change-comm-banner">🏞️ Changer la bannière</button>
@@ -293,6 +292,19 @@
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p><button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>
       
+      <!-- SECTION PARRAINAGE -->
+      <div style="background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid var(--blue-light);">
+        <h4 style="margin-bottom: 0.5rem;">🎁 Invitez des amis</h4>
+        <p class="muted" style="font-size: 0.85rem; margin-bottom: 10px;">Gagnez des Nexus Coins en invitant vos amis sur BlueNexus.</p>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input id="my-referral-code" type="text" readonly style="text-align: center; font-weight: bold; font-size: 1.2rem; color: var(--blue-light); background: var(--bg); border: 1px dashed var(--blue-light); margin: 0;" />
+          <button id="btn-copy-referral" class="btn-primary" style="padding: 0 15px;">Copier</button>
+        </div>
+        
+        <button id="btn-share-referral" class="btn-primary" style="width: 100%; background: #25D366; border: none;">Partager sur WhatsApp</button>
+      </div>
+
       <!-- SECTION BOUTIQUE NEXUS -->
       <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="document.getElementById('modal-shop').classList.remove('hidden')">
         <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🛍️</div>
@@ -415,47 +427,27 @@
     <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solde actuel : <strong style="color: #f59e0b; font-size: 1.1rem;">🪙 <span id="shop-coins-balance">0</span></strong></p>
     
     <div style="display: flex; flex-direction: column; gap: 10px;">
-      <!-- Article 1 : Effet Étoiles -->
       <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
         <div class="tg-avatar" style="background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00);">✨</div>
-        <div class="tg-content">
-          <div class="tg-title">Effet Étoiles Cosmiques</div>
-          <div class="tg-subtitle">Durée : 7 jours</div>
-        </div>
+        <div class="tg-content"><div class="tg-title">Effet Étoiles Cosmiques</div><div class="tg-subtitle">Durée : 7 jours</div></div>
         <button onclick="window.buyShopItem('stars', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button>
       </div>
-
-      <!-- Article 2 : Effet Sakura -->
       <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
         <div class="tg-avatar" style="background: #ec4899;">🌸</div>
-        <div class="tg-content">
-          <div class="tg-title">Effet Pétales de Sakura</div>
-          <div class="tg-subtitle">Durée : 7 jours</div>
-        </div>
+        <div class="tg-content"><div class="tg-title">Effet Pétales de Sakura</div><div class="tg-subtitle">Durée : 7 jours</div></div>
         <button onclick="window.buyShopItem('sakura', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button>
       </div>
-
-      <!-- Article 3 : Boost de Post -->
       <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
         <div class="tg-avatar" style="background: #10b981;">🚀</div>
-        <div class="tg-content">
-          <div class="tg-title">Boost de Publication</div>
-          <div class="tg-subtitle">Remontez votre post dans le fil</div>
-        </div>
+        <div class="tg-content"><div class="tg-title">Boost de Publication</div><div class="tg-subtitle">Remontez votre post dans le fil</div></div>
         <button onclick="window.buyShopItem('boost', 50)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 50</button>
       </div>
-
-      <!-- Article 4 : Badge Vérifié -->
       <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
         <div class="tg-avatar" style="background: #3b82f6;">✅</div>
-        <div class="tg-content">
-          <div class="tg-title">Badge Vérifié</div>
-          <div class="tg-subtitle">Pour toujours</div>
-        </div>
+        <div class="tg-content"><div class="tg-title">Badge Vérifié</div><div class="tg-subtitle">Pour toujours</div></div>
         <button onclick="window.buyShopItem('premium', 2000)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 2000</button>
       </div>
     </div>
-    
     <button onclick="document.getElementById('modal-shop').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1.5rem;">Fermer</button>
   </div>
 </div>
