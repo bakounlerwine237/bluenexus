@@ -30,6 +30,9 @@ async function displayProfileData(profile, isMe, targetId) {
   if($('about-username')) $('about-username').textContent = profile.username; 
   if($('about-bio')) $('about-bio').textContent = profile.bio || 'Aucune bio.'; 
   
+  // --- NEXUS COINS ---
+  if($('profile-coins')) $('profile-coins').textContent = profile.coins || 0;
+
   // --- GESTION DE L'AVATAR ---
   const av = $('profile-avatar'); 
   if (av) { 
@@ -130,11 +133,9 @@ export function initProfile() {
   
   if($('btn-edit-profile-trigger')) {
     $('btn-edit-profile-trigger').addEventListener('click', () => {
-      // PAYWALL : On pré-remplit l'effet actuel
       if ($('edit-profile-effect')) {
         $('edit-profile-effect').value = state.userProfile.profileEffect || 'none';
         
-        // On bloque les options si le mec n'est pas premium
         const options = $('edit-profile-effect').querySelectorAll('option');
         options.forEach(opt => {
           if (opt.value !== 'none' && !state.userProfile.isPremium && state.userProfile.role !== 'admin') {
@@ -155,7 +156,6 @@ export function initProfile() {
     const bannerFile = $('edit-banner').files[0]; 
     const effect = $('edit-profile-effect') ? $('edit-profile-effect').value : 'none';
     
-    // PAYWALL : Sécurité côté code (si l'utilisateur force l'inspection)
     if (effect !== 'none' && !state.userProfile.isPremium && state.userProfile.role !== 'admin') {
       showToast("❌ Devenez Premium pour utiliser les effets animés.", "error");
       return;

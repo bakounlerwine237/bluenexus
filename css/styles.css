@@ -645,3 +645,19 @@ input:focus, textarea:focus { border-color: var(--blue-light); outline: none; }
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* --- MODE ÉCO (DATA SAVER) --- */
+body.eco-mode .post-media, 
+body.eco-mode .story-avatar-img,
+body.eco-mode .fb-banner {
+  filter: blur(15px) !important;
+  transition: filter 0.3s ease;
+  cursor: pointer;
+}
+body.eco-mode .post-media.show-media {
+  filter: none !important;
+}
+#btn-eco-mode.active {
+  opacity: 1 !important;
+  color: #10b981; /* Vert pour indiquer que c'est activé */
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}

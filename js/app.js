@@ -128,9 +128,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const premiumBtn = document.getElementById('btn-go-premium');
   if (premiumBtn) {
     premiumBtn.addEventListener('click', () => {
-      const phone = "237650284435"; // TON NUMÉRO WHATSAPP (Lerwine)
+      const phone = "237650284435"; // TON NUMÉRO WHATSAPP
       const message = encodeURIComponent("Bonjour Admin, je souhaite passer au compte BlueNexus Premium à 1500 FCFA/mois. Mon pseudo est : " + (state.userProfile ? state.userProfile.username : ""));
       window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    });
+  }
+
+  // --- LOGIQUE MODE ÉCO (DATA SAVER) ---
+  const ecoBtn = document.getElementById('btn-eco-mode');
+  const isEcoMode = localStorage.getItem('bluenexus_eco_mode') === 'true';
+
+  if (isEcoMode) {
+    document.body.classList.add('eco-mode');
+    if(ecoBtn) ecoBtn.classList.add('active');
+  }
+
+  if (ecoBtn) {
+    ecoBtn.addEventListener('click', () => {
+      document.body.classList.toggle('eco-mode');
+      const isNowEco = document.body.classList.contains('eco-mode');
+      localStorage.setItem('bluenexus_eco_mode', isNowEco);
+      
+      if (isNowEco) {
+        ecoBtn.classList.add('active');
+        if(window.showToast) window.showToast("🍃 Mode Éco activé : Les médias sont masqués pour économiser votre data.");
+      } else {
+        ecoBtn.classList.remove('active');
+        if(window.showToast) window.showToast("Mode Éco désactivé.");
+      }
     });
   }
 });

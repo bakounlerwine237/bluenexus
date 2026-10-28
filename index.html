@@ -121,6 +121,7 @@
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
     <div style="display: flex; gap: 12px; align-items: center;">
+      <button id="btn-eco-mode" class="nav-btn top-btn" title="Mode Économie de Data" style="font-size: 1.2rem; opacity: 0.5;">🍃</button>
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;">🔔<span id="notif-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
       <button data-view="messages" class="nav-btn top-btn" style="position:relative;">✉️<span id="msg-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
       <button data-view="search" class="nav-btn top-btn">🔍</button>
@@ -234,6 +235,13 @@
           <div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div>
         </div>
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
+        
+        <div style="padding: 0 1rem; margin-bottom: 10px;">
+          <span style="background: linear-gradient(135deg, #f59e0b, #b45309); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+            🪙 <span id="profile-coins">0</span> Nexus Coins
+          </span>
+        </div>
+
         <div class="fb-stats"><span><strong id="stat-posts">0</strong> Publications</span><span><strong id="stat-followers">0</strong> Abonnés</span><span><strong id="stat-following">0</strong> Abonnements</span></div>
         <div class="fb-action-buttons"><button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button><button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button></div>
         <div class="fb-tabs"><button class="fb-tab active" id="btn-tab-posts">Publications</button><button class="fb-tab" id="btn-tab-pages">Pages</button><button class="fb-tab" id="tab-favorites-btn" style="display:none;">Favoris 🔖</button><button class="fb-tab" id="btn-tab-about">À propos</button></div>

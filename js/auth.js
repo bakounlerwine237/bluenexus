@@ -37,8 +37,6 @@ export function initAuth() {
 
     if (currentSlide === totalSlides - 1) {
       nextBtn.style.display = 'none';
-      
-      // Si l'utilisateur est déjà connecté en arrière-plan, on lui montre le bouton pour entrer
       if (state.currentUser) {
         if($('btn-final-enter-app')) $('btn-final-enter-app').style.display = 'block';
         if($('btn-final-signup')) $('btn-final-signup').style.display = 'none';
@@ -63,8 +61,6 @@ export function initAuth() {
     });
   }
 
-  // --- SÉCURITÉ / NAVIGATION FORCÉE ---
-  // On stocke dans le sessionStorage si l'utilisateur a décidé d'entrer dans l'app
   function enterApp() {
     sessionStorage.setItem('bypass_onboarding', 'true');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -98,7 +94,6 @@ export function initAuth() {
   if($('btn-final-login')) $('btn-final-login').onclick = window.goToLogin;
   if($('btn-final-signup')) $('btn-final-signup').onclick = window.goToSignup;
 
-  // BOUTON MAGIQUE : Permet d'entrer dans l'app si on est déjà connecté
   if($('btn-final-enter-app')) {
     $('btn-final-enter-app').onclick = () => {
       enterApp();
@@ -115,7 +110,9 @@ export function initAuth() {
     $('auth-error').textContent = "Création..."; 
     try { 
       const cred = await createUserWithEmailAndPassword(auth, email, pass); 
-      await setDoc(doc(db, 'users', cred.user.uid), { username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: [] }); 
+      await setDoc(doc(db, 'users', cred.user.uid), { 
+        username: name, email: email, bio: "Nouveau sur BlueNexus 🚀", photoURL: "", pinned: [], following: [], followers: [], badges: [], savedPosts: [], coins: 50 // <-- 50 COINS DE DEPART
+      }); 
     } catch (e) { 
       $('auth-error').textContent = e.message; 
     } 
@@ -127,7 +124,6 @@ export function initAuth() {
     $('auth-error').textContent = "Connexion..."; 
     try { 
       await signInWithEmailAndPassword(auth, email, pass); 
-      // Une fois connecté avec succès, on entre dans l'app
       enterApp();
     } catch (e) { 
       $('auth-error').textContent = "Email ou mot de passe incorrect."; 
@@ -146,14 +142,13 @@ export function initAuth() {
   });
   
   if($('btn-logout')) $('btn-logout').addEventListener('click', () => {
-    sessionStorage.removeItem('bypass_onboarding'); // On réinitialise la sécurité
+    sessionStorage.removeItem('bypass_onboarding');
     signOut(auth);
   });
 
   // --- LE CHEF D'ORCHESTRE ---
   onAuthStateChanged(auth, async (user) => { 
     if (user) { 
-      // L'utilisateur EST connecté
       state.currentUser = user; 
       const snap = await getDoc(doc(db, 'users', user.uid)); 
       if (snap.exists()) { 
@@ -161,13 +156,14 @@ export function initAuth() {
         if(!state.userProfile.badges) state.userProfile.badges = []; 
         if(!state.userProfile.following) state.userProfile.following = []; 
         if(!state.userProfile.savedPosts) state.userProfile.savedPosts = []; 
+        if(!state.userProfile.coins) state.userProfile.coins = 0; // Initialisation
         if (state.userProfile.role === 'admin') { 
           if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'block'; 
         } else { 
           if($('admin-panel-btn-container')) $('admin-panel-btn-container').style.display = 'none'; 
         } 
       } else { 
-        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [] }; 
+        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50 }; 
         await setDoc(doc(db, 'users', user.uid), state.userProfile); 
       } 
       
@@ -184,34 +180,26 @@ export function initAuth() {
       
       await initTencentChat(user.uid); 
       
-      // SÉCURITÉ STRICTE : On regarde si l'utilisateur a déjà validé la page de présentation pour cette session
       const bypass = sessionStorage.getItem('bypass_onboarding');
       
       if (bypass === 'true') {
-        // Il a déjà cliqué sur "Terminer" ou s'est connecté, on l'emmène dans l'app
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         $('app-screen').classList.add('active'); 
         switchView('home'); 
         document.dispatchEvent(new Event('userReady')); 
       } else {
-        // Il est connecté mais n'a pas encore validé la landing page, on le laisse sur la landing page
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         $('landing-screen').classList.add('active');
-        // On met à jour le dernier slide pour lui afficher le bouton "Accéder"
         currentSlide = totalSlides - 1;
         updateCarousel();
       }
       
       $('auth-error').textContent = ""; 
     } else { 
-      // L'utilisateur N'EST PAS connecté
       state.currentUser = null; 
       state.userProfile = null; 
-      
-      // On le renvoie sur la page d'accueil
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       $('landing-screen').classList.add('active');
-      
       $('login-form').style.display = 'block'; 
       $('signup-form').style.display = 'none'; 
     } 

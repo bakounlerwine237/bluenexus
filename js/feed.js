@@ -163,15 +163,19 @@ export function generatePostHTML(docSnap) {
   const likeCount = p.likes?.length || 0;
   const formattedContent = formatPostText(p.content);
   
-  // NOUVEAU : Le badge vérifié pour les Premium
   const verifiedIcon = p.authorIsPremium ? '<span style="color: #3b82f6; font-size: 0.9rem; margin-left: 4px;" title="Compte Vérifié">✅</span>' : '';
 
   let mediaHtml = '';
   if (p.mediaUrl) {
-    if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media" loading="lazy">`;
-    else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="post-media" preload="metadata"></video>`;
+    const isEco = document.body.classList.contains('eco-mode');
+    const ecoClass = isEco ? 'post-media' : 'post-media show-media';
+    const clickHandler = isEco ? `onclick="this.classList.add('show-media')"` : '';
+
+    if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="${ecoClass}" ${clickHandler} loading="lazy">`;
+    else if (p.mediaType === 'video') mediaHtml = `<video src="${p.mediaUrl}" controls class="${ecoClass}" ${clickHandler} preload="metadata"></video>`;
     else if (p.mediaType === 'audio') mediaHtml = `<audio src="${p.mediaUrl}" controls style="width:100%; margin-top:10px;" preload="metadata"></audio>`;
   }
+  
   const isPinned = state.userProfile.pinned && state.userProfile.pinned.includes(docSnap.id);
   const pinBtn = (p.authorId === state.currentUser.uid) ? `<button onclick="window.togglePin('${docSnap.id}', ${isPinned}); window.toggleMoreMenu('${docSnap.id}')">${isPinned ? '📌 Désépingler' : '📍 Épingler'}</button>` : '';
   const isAdmin = state.userProfile.role === 'admin';
@@ -182,7 +186,6 @@ export function generatePostHTML(docSnap) {
   const reportBtn = (p.authorId !== state.currentUser.uid) ? `<button onclick="window.reportPost('${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')" style="color:#f59e0b;">🚨 Signaler</button>` : '';
   const pageBadge = p.pageName ? `<div style="font-size: 0.75rem; color: #10b981; margin-top: 2px; font-weight: bold;">📄 Publié en tant que ${p.pageName}</div>` : '';
   
-  // NOUVEAU : Le bouton Boost (visible seulement pour le créateur s'il est Premium ou Admin)
   const isCreator = (p.authorId === state.currentUser.uid);
   const canBoost = isCreator && (state.userProfile.isPremium || isAdmin);
   const boostBtn = canBoost ? `<button onclick="window.boostPost('${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')" style="color: #a855f7; font-weight: bold;">🚀 Booster ce post</button>` : '';
@@ -279,7 +282,7 @@ export function initFeed() {
       else if (file.type.startsWith('video')) mediaType = 'video';
       else mediaType = 'audio';
     }
-    // On sauvegarde le statut Premium de l'auteur
+    
     await addDoc(collection(db, 'posts'), { 
       communityId: 'global', communityType: 'global', content, 
       authorId: state.currentUser.uid, authorName: state.userProfile.username, 
@@ -288,6 +291,18 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName 
     });
     
+    // GAGNER DES NEXUS COINS
+    try {
+      const userRef = doc(db, 'users', state.currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        const currentCoins = userSnap.data().coins || 0;
+        await updateDoc(userRef, { coins: currentCoins + 10 });
+        state.userProfile.coins = currentCoins + 10; // Mise à jour locale
+        showToast("🪙 +10 Nexus Coins gagnés pour votre publication !", "success");
+      }
+    } catch(e) { console.error("Erreur coins:", e); }
+
     $('global-post-content').value = '';
     $('global-post-content').style.height = '40px';
     localStorage.removeItem('bluenexus_draft_global');
@@ -297,7 +312,6 @@ export function initFeed() {
     if (select) select.value = 'user';
     publishBtn.textContent = "Publier";
     publishBtn.disabled = true;
-    showToast("✅ Publication réussie !", "success");
     
     if (state.currentFeedMode === 'discovery') {
       if($('tab-following')) $('tab-following').click();
@@ -328,14 +342,10 @@ export function initFeed() {
     if (!isLiked) window.likePost(postId, authorId, false);
   };
   
-  // NOUVEAU : Fonction Boost
   window.boostPost = async (postId) => {
     try {
-      // On met à jour la date de création pour la mettre à maintenant
       await updateDoc(doc(db, 'posts', postId), { createdAt: serverTimestamp() });
       showToast("🚀 Publication boostée au sommet du fil !", "success");
-      
-      // On recharge le fil
       if (document.getElementById('view-home').classList.contains('active')) {
         window.loadGlobalFeed(true);
       }
