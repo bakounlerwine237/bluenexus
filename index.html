@@ -96,7 +96,6 @@
       <input id="auth-name" type="text" placeholder="Nom d'utilisateur" />
       <input id="auth-email-signup" type="email" placeholder="Email" />
       <input id="auth-pass-signup" type="password" placeholder="Mot de passe (6 car. min)" />
-      <!-- NOUVEAU : Champ de parrainage -->
       <input id="auth-referral-code" type="text" placeholder="Code de parrainage (Optionnel)" style="background: rgba(255,255,255,0.05);" />
       <button id="btn-signup" class="btn-primary">Créer mon compte</button>
       <p style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem;">Déjà un compte ? <a href="#" id="link-to-login" style="color: var(--blue-light); font-weight: bold; text-decoration: none;">Se connecter</a></p>
@@ -143,6 +142,8 @@
             <div style="display: flex; gap: 10px; align-items: center;">
               <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
               <button id="btn-global-attach" class="btn-secondary small">📎</button>
+              <!-- NOUVEAU BOUTON SONDAGE -->
+              <button id="btn-create-poll" class="btn-secondary small" title="Créer un sondage">📊</button>
               <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
               <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;" disabled>Publier</button>
             </div>
@@ -449,6 +450,25 @@
       </div>
     </div>
     <button onclick="document.getElementById('modal-shop').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1.5rem;">Fermer</button>
+  </div>
+</div>
+
+<!-- MODALE SONDAGE -->
+<div id="modal-poll" class="modal hidden">
+  <div class="modal-content">
+    <h3 style="color: #a855f7; margin-bottom: 1rem;">📊 Créer un sondage</h3>
+    
+    <label class="muted" style="font-size: 0.8rem;">Votre question</label>
+    <input id="poll-question" placeholder="Ex: Quel est le meilleur rappeur camerounais ?" />
+    
+    <label class="muted" style="font-size: 0.8rem;">Options (2 à 4)</label>
+    <input id="poll-opt-1" placeholder="Option 1" style="margin-bottom: 5px;" />
+    <input id="poll-opt-2" placeholder="Option 2" style="margin-bottom: 5px;" />
+    <input id="poll-opt-3" placeholder="Option 3 (optionnel)" style="margin-bottom: 5px;" />
+    <input id="poll-opt-4" placeholder="Option 4 (optionnel)" />
+    
+    <button id="btn-publish-poll" class="btn-primary" style="background: #a855f7; margin-top: 10px;">Publier le sondage</button>
+    <button id="btn-cancel-poll" class="btn-secondary">Annuler</button>
   </div>
 </div>
 

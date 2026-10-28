@@ -189,6 +189,53 @@ export function generatePostHTML(docSnap) {
     </div>`;
   }
 
+  // --- DESIGN SPECIAL POUR LES SONDAGES ---
+  if (p.postType === 'poll') {
+    const totalVotes = (p.pollVotes || []).length;
+    const hasVoted = p.pollVotes?.some(v => v.userId === state.currentUser.uid);
+    const myVote = p.pollVotes?.find(v => v.userId === state.currentUser.uid);
+
+    let optionsHtml = '';
+    p.pollOptions.forEach((opt, index) => {
+      const votesForOpt = (p.pollVotes || []).filter(v => v.optionIndex === index).length;
+      const percentage = totalVotes > 0 ? Math.round((votesForOpt / totalVotes) * 100) : 0;
+      const isMyChoice = myVote && myVote.optionIndex === index;
+      const barColor = isMyChoice ? '#a855f7' : 'var(--blue-light)';
+
+      optionsHtml += `
+        <div onclick="window.votePoll('${docSnap.id}', ${index})" style="background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; cursor: pointer; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${hasVoted ? percentage : 0}%; background: ${barColor}; opacity: 0.2; transition: width 0.5s;"></div>
+          <div style="position: relative; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: ${isMyChoice ? 'bold' : 'normal'}; color: ${isMyChoice ? barColor : 'var(--text)'};">${isMyChoice ? '✓ ' : ''}${opt}</span>
+            ${hasVoted ? `<span style="font-size: 0.85rem; color: var(--muted);">${percentage}%</span>` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    return `<div class="media-item" style="border-left: 4px solid #a855f7;">
+      <div class="post-header">
+        <div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">
+          ${p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar" style="background: #a855f7;">${p.authorName[0].toUpperCase()}</div>`}
+          <div>
+            <strong>@${p.authorName}</strong>
+            <div style="font-size: 0.7rem; color: #a855f7; font-weight: bold;">📊 SONDAGE</div>
+          </div>
+        </div>
+        <span class="post-time">${timeAgo(p.createdAt)}</span>
+      </div>
+      <p style="font-weight: bold; margin: 10px 0; font-size: 1.05rem;">${p.pollQuestion}</p>
+      ${optionsHtml}
+      <div style="font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 5px;">
+        ${totalVotes} vote${totalVotes > 1 ? 's' : ''} ${hasVoted ? '· Cliquez pour changer votre vote' : ''}
+      </div>
+      <div class="post-actions">
+        <button onclick="window.sharePost('${docSnap.id}')" class="action-btn">📤 Partager</button>
+        ${(p.authorId === state.currentUser.uid || state.userProfile.role === 'admin') ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete">🗑️ Supprimer</button>` : ''}
+      </div>
+    </div>`;
+  }
+
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
@@ -321,7 +368,6 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName 
     });
 
-    // NOUVEAU : On déclenche l'analyse des mentions
     if (content) {
       processMentions(content, state.currentUser.uid);
     }
@@ -566,4 +612,72 @@ export function initFeed() {
     });
   }
   if($('btn-cancel-opp')) $('btn-cancel-opp').addEventListener('click', () => $('modal-opportunity').classList.add('hidden'));
+
+  // --- LOGIQUE SONDAGES ---
+  if($('btn-create-poll')) {
+    $('btn-create-poll').addEventListener('click', () => {
+      if (!state.userProfile.isPremium && state.userProfile.role !== 'admin') {
+        showToast("❌ Devenez Premium pour créer des sondages.", "error");
+        return;
+      }
+      $('modal-poll').classList.remove('hidden');
+    });
+  }
+
+  if($('btn-cancel-poll')) $('btn-cancel-poll').addEventListener('click', () => $('modal-poll').classList.add('hidden'));
+
+  if($('btn-publish-poll')) {
+    $('btn-publish-poll').addEventListener('click', async () => {
+      const question = $('poll-question').value.trim();
+      const options = [$('poll-opt-1').value.trim(), $('poll-opt-2').value.trim(), $('poll-opt-3').value.trim(), $('poll-opt-4').value.trim()].filter(o => o !== '');
+      
+      if (!question || options.length < 2) {
+        return showToast("Remplissez la question et au moins 2 options.", "error");
+      }
+      
+      try {
+        await addDoc(collection(db, 'posts'), {
+          postType: 'poll',
+          pollQuestion: question,
+          pollOptions: options,
+          pollVotes: [],
+          authorId: state.currentUser.uid,
+          authorName: state.userProfile.username,
+          authorPhoto: state.userProfile.photoURL || "",
+          authorIsPremium: state.userProfile.isPremium || false,
+          createdAt: serverTimestamp()
+        });
+        
+        showToast("✅ Sondage publié !");
+        $('modal-poll').classList.add('hidden');
+        $('poll-question').value = '';
+        $('poll-opt-1').value = ''; $('poll-opt-2').value = ''; $('poll-opt-3').value = ''; $('poll-opt-4').value = '';
+        loadGlobalFeed(true);
+      } catch (e) { showToast("Erreur : " + e.message, "error"); }
+    });
+  }
+
+  // Fonction de vote
+  window.votePoll = async (postId, optionIndex) => {
+    try {
+      const postRef = doc(db, 'posts', postId);
+      const postSnap = await getDoc(postRef);
+      if (!postSnap.exists()) return;
+      
+      const data = postSnap.data();
+      let votes = data.pollVotes || [];
+      
+      // Retirer le vote précédent s'il existe
+      votes = votes.filter(v => v.userId !== state.currentUser.uid);
+      // Ajouter le nouveau vote
+      votes.push({ userId: state.currentUser.uid, optionIndex });
+      
+      await updateDoc(postRef, { pollVotes: votes });
+      
+      // Mise à jour visuelle immédiate
+      const newHtml = generatePostHTML({ id: postId, data: { ...data, pollVotes: votes }, exists: () => true });
+      const oldEl = document.getElementById(`post-${postId}`);
+      if (oldEl) oldEl.outerHTML = newHtml;
+    } catch (e) { showToast("Erreur : " + e.message, "error"); }
+  };
 }
