@@ -1,3 +1,4 @@
+// --- js/feed.js ---
 import { db, state } from './state.js';
 import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast, formatPostText } from './utils.js';
 import { sendNotification } from './notifications.js';
@@ -47,6 +48,30 @@ window.followFromSuggestion = async (userId, btn) => {
   } catch(e) { showToast("Erreur", "error"); }
 };
 
+// --- NOUVELLE FONCTION : Analyse des Mentions ---
+async function processMentions(text, postAuthorId) {
+  const mentions = text.match(/@([a-zA-Z0-9_]+)/g);
+  if (!mentions) return;
+
+  const usernames = [...new Set(mentions.map(m => m.substring(1)))];
+  
+  for (const username of usernames) {
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
+      const snap = await getDocs(q);
+      
+      if (!snap.empty) {
+        const mentionedUser = snap.docs[0];
+        if (mentionedUser.id !== postAuthorId) {
+          await sendNotification(mentionedUser.id, "vous a mentionné dans une publication.");
+        }
+      }
+    } catch (e) {
+      console.error("Erreur mention:", e);
+    }
+  }
+}
+
 export async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
   if (!list) return;
@@ -74,7 +99,7 @@ export async function loadGlobalFeed(reset = false) {
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
     
-    // Filtre global vs communautés
+    // On ne garde QUE les posts globaux
     postsToShow = postsToShow.filter(p => p.data.communityId === 'global' || !p.data.communityId);
 
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
@@ -82,7 +107,7 @@ export async function loadGlobalFeed(reset = false) {
 
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity') return false; // Pas d'opportunités dans le fil abonnements
+        if (p.data.postType === 'opportunity') return false; 
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -94,7 +119,7 @@ export async function loadGlobalFeed(reset = false) {
       }
     } else if (state.currentFeedMode === 'discovery') {
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity') return false; // Pas d'opportunités dans le fil découvertes
+        if (p.data.postType === 'opportunity') return false; 
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -136,6 +161,7 @@ export async function loadGlobalFeed(reset = false) {
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   
+  // --- DESIGN SPECIAL POUR LES OPPORTUNITES ---
   if (p.postType === 'opportunity') {
     const typeIcons = { emploi: '💼', vente: '🛒', service: '🛠️', immobilier: '🏠' };
     const icon = typeIcons[p.oppType] || '📌';
@@ -294,6 +320,11 @@ export function initFeed() {
       authorIsPremium: state.userProfile.isPremium || false,
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName 
     });
+
+    // NOUVEAU : On déclenche l'analyse des mentions
+    if (content) {
+      processMentions(content, state.currentUser.uid);
+    }
     
     try {
       const userRef = doc(db, 'users', state.currentUser.uid);
