@@ -1,4 +1,3 @@
-// --- js/feed.js ---
 import { db, state } from './state.js';
 import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast, formatPostText } from './utils.js';
 import { sendNotification } from './notifications.js';
@@ -22,43 +21,19 @@ async function loadSuggestedUsers() {
   const list = $('suggested-users-list');
   if(!container || !list) return;
   
-  if (state.currentFeedMode !== 'discovery') {
-    container.style.display = 'none';
-    return;
-  }
+  if (state.currentFeedMode !== 'discovery') { container.style.display = 'none'; return; }
   
   try {
     const snap = await getDocs(query(collection(db, 'users'), limit(10)));
-    let html = '';
-    let count = 0;
-    
+    let html = ''; let count = 0;
     snap.forEach(d => {
-      if (count >= 3) return;
-      if (d.id === state.currentUser.uid) return;
-      if (state.userProfile.following?.includes(d.id)) return;
-      
+      if (count >= 3 || d.id === state.currentUser.uid || state.userProfile.following?.includes(d.id)) return;
       const u = d.data();
       const avatar = u.photoURL ? `<img src="${u.photoURL}" class="tg-avatar">` : `<div class="tg-avatar">${u.username[0].toUpperCase()}</div>`;
-      
-      html += `
-        <div class="tg-item" style="padding: 8px 12px;">
-          ${avatar}
-          <div class="tg-content" onclick="window.openUserProfile('${d.id}')" style="cursor:pointer;">
-            <div class="tg-title">${u.username} ${u.role === 'admin' ? '👑' : ''}</div>
-            <div class="tg-subtitle">${u.bio || 'Nouveau sur BlueNexus'}</div>
-          </div>
-          <button onclick="window.followFromSuggestion('${d.id}', this)" class="btn-primary small" style="padding: 4px 8px; font-size: 0.75rem;">Suivre</button>
-        </div>
-      `;
+      html += `<div class="tg-item" style="padding: 8px 12px;">${avatar}<div class="tg-content" onclick="window.openUserProfile('${d.id}')" style="cursor:pointer;"><div class="tg-title">${u.username} ${u.role === 'admin' ? '👑' : ''}</div><div class="tg-subtitle">${u.bio || 'Nouveau sur BlueNexus'}</div></div><button onclick="window.followFromSuggestion('${d.id}', this)" class="btn-primary small" style="padding: 4px 8px; font-size: 0.75rem;">Suivre</button></div>`;
       count++;
     });
-    
-    if (count > 0) {
-      list.innerHTML = html;
-      container.style.display = 'block';
-    } else {
-      container.style.display = 'none';
-    }
+    if (count > 0) { list.innerHTML = html; container.style.display = 'block'; } else { container.style.display = 'none'; }
   } catch(e) { console.error("Erreur suggestions:", e); }
 }
 
@@ -67,9 +42,7 @@ window.followFromSuggestion = async (userId, btn) => {
     await updateDoc(doc(db, 'users', state.currentUser.uid), { following: arrayUnion(userId) });
     if(!state.userProfile.following) state.userProfile.following = [];
     state.userProfile.following.push(userId);
-    btn.textContent = "Suivi ✅";
-    btn.className = "btn-secondary small";
-    btn.disabled = true;
+    btn.textContent = "Suivi ✅"; btn.className = "btn-secondary small"; btn.disabled = true;
     showToast("✅ Vous suivez ce profil !");
   } catch(e) { showToast("Erreur", "error"); }
 };
@@ -80,25 +53,20 @@ export async function loadGlobalFeed(reset = false) {
   
   if (reset) {
     list.innerHTML = `<div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div><div class="skeleton-post"><div class="skeleton-line short"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>`;
-    state.lastVisiblePost = null;
-    noMorePosts = false;
-    loadSuggestedUsers();
+    state.lastVisiblePost = null; noMorePosts = false; loadSuggestedUsers();
   }
   
   if (noMorePosts || isFetchingFeed) return;
   isFetchingFeed = true;
   
   let q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(50));
-  if (state.lastVisiblePost && !reset) {
-    q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(50));
-  }
+  if (state.lastVisiblePost && !reset) q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), startAfter(state.lastVisiblePost), limit(50));
   
   try {
     const snap = await getDocs(q);
     if (snap.empty && reset) {
       list.innerHTML = '<p class="muted" style="padding: 1rem; text-align: center;">Aucune publication pour le moment.</p>';
-      noMorePosts = true;
-      return;
+      noMorePosts = true; return;
     }
     if (reset) list.innerHTML = '';
     if (snap.docs.length > 0) state.lastVisiblePost = snap.docs[snap.docs.length - 1];
@@ -106,7 +74,7 @@ export async function loadGlobalFeed(reset = false) {
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
     
-    // On ne garde QUE les posts globaux
+    // Filtre global vs communautés
     postsToShow = postsToShow.filter(p => p.data.communityId === 'global' || !p.data.communityId);
 
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
@@ -114,6 +82,7 @@ export async function loadGlobalFeed(reset = false) {
 
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
+        if (p.data.postType === 'opportunity') return false; // Pas d'opportunités dans le fil abonnements
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -125,6 +94,7 @@ export async function loadGlobalFeed(reset = false) {
       }
     } else if (state.currentFeedMode === 'discovery') {
       postsToShow = postsToShow.filter(p => {
+        if (p.data.postType === 'opportunity') return false; // Pas d'opportunités dans le fil découvertes
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -133,15 +103,22 @@ export async function loadGlobalFeed(reset = false) {
       if (postsToShow.length === 0 && reset) {
         list.innerHTML = `<div style="text-align: center; padding: 3rem 1rem; color: var(--muted);"><div style="font-size: 4rem; margin-bottom: 1rem;">🌟</div><h3 style="color: var(--text); margin-bottom: 10px;">Vous êtes à jour !</h3><p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Vous suivez déjà tous les créateurs actifs.</p></div>`;
       }
+    } else if (state.currentFeedMode === 'opportunities') {
+      postsToShow = postsToShow.filter(p => p.data.postType === 'opportunity');
+      if (postsToShow.length === 0 && reset) {
+        list.innerHTML = `<div style="text-align: center; padding: 3rem 1rem; color: var(--muted);"><div style="font-size: 4rem; margin-bottom: 1rem;">💼</div><h3 style="color: var(--text); margin-bottom: 10px;">Aucune opportunité</h3><p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Soyez le premier à publier une offre d'emploi ou un service !</p><button onclick="document.getElementById('modal-opportunity').classList.remove('hidden')" class="btn-primary small" style="background: #10b981;">Publier une annonce</button></div>`;
+        return;
+      }
     } else if (state.currentFeedMode === 'trending') {
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
       postsToShow = postsToShow.filter(p => {
+        if (p.data.postType === 'opportunity') return false;
         const postTime = p.data.createdAt ? (p.data.createdAt.toMillis ? p.data.createdAt.toMillis() : p.data.createdAt) : 0;
         const hasEngagement = (p.data.likes?.length || 0) > 0 || (p.data.commentsCount || 0) > 0;
         return postTime > sevenDaysAgo && hasEngagement;
       });
       if (postsToShow.length === 0 && reset) {
-        list.innerHTML = `<div style="text-align: center; padding: 3rem 1rem; color: var(--muted);"><div style="font-size: 4rem; margin-bottom: 1rem;">🔥</div><h3 style="color: var(--text); margin-bottom: 10px;">Aucune tendance pour le moment</h3><p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Les publications les plus populaires de la semaine apparaîtront ici.</p></div>`;
+        list.innerHTML = `<div style="text-align: center; padding: 3rem 1rem; color: var(--muted);"><div style="font-size: 4rem; margin-bottom: 1rem;">🔥</div><h3 style="color: var(--text); margin-bottom: 10px;">Aucune tendance</h3><p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Les publications les plus populaires de la semaine apparaîtront ici.</p></div>`;
         return;
       }
     }
@@ -158,11 +135,38 @@ export async function loadGlobalFeed(reset = false) {
 
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
+  
+  if (p.postType === 'opportunity') {
+    const typeIcons = { emploi: '💼', vente: '🛒', service: '🛠️', immobilier: '🏠' };
+    const icon = typeIcons[p.oppType] || '📌';
+    
+    return `<div class="media-item" style="border-left: 4px solid #10b981;">
+      <div class="post-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="post-avatar" style="background: #10b981;">${icon}</div>
+          <div>
+            <strong style="font-size: 1.05rem; color: #10b981;">${p.oppTitle}</strong>
+            <div style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">📍 ${p.oppCity} · Par @${p.authorName}</div>
+          </div>
+        </div>
+        <span class="post-time">${timeAgo(p.createdAt)}</span>
+      </div>
+      <p style="margin-top: 10px;">${p.content}</p>
+      <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; border: 1px dashed var(--border);">
+        <strong>📞 Contact :</strong> ${p.oppContact || 'Message privé'}
+      </div>
+      <div class="post-actions">
+        <button onclick="window.sharePost('${docSnap.id}')" class="action-btn">📤 Partager</button>
+        <button onclick="window.openUserProfile('${p.authorId}')" class="action-btn" style="color: var(--blue-light);">💬 Contacter</button>
+        ${(p.authorId === state.currentUser.uid || state.userProfile.role === 'admin') ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete">🗑️ Supprimer</button>` : ''}
+      </div>
+    </div>`;
+  }
+
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
   const formattedContent = formatPostText(p.content);
-  
   const verifiedIcon = p.authorIsPremium ? '<span style="color: #3b82f6; font-size: 0.9rem; margin-left: 4px;" title="Compte Vérifié">✅</span>' : '';
 
   let mediaHtml = '';
@@ -291,15 +295,14 @@ export function initFeed() {
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName 
     });
     
-    // GAGNER DES NEXUS COINS
     try {
       const userRef = doc(db, 'users', state.currentUser.uid);
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const currentCoins = userSnap.data().coins || 0;
         await updateDoc(userRef, { coins: currentCoins + 10 });
-        state.userProfile.coins = currentCoins + 10; // Mise à jour locale
-        showToast("🪙 +10 Nexus Coins gagnés pour votre publication !", "success");
+        state.userProfile.coins = currentCoins + 10;
+        showToast("🪙 +10 Nexus Coins gagnés !", "success");
       }
     } catch(e) { console.error("Erreur coins:", e); }
 
@@ -313,17 +316,16 @@ export function initFeed() {
     publishBtn.textContent = "Publier";
     publishBtn.disabled = true;
     
-    if (state.currentFeedMode === 'discovery') {
-      if($('tab-following')) $('tab-following').click();
-    } else {
-      loadGlobalFeed(true);
-    }
+    if (state.currentFeedMode === 'discovery') { if($('tab-following')) $('tab-following').click(); } 
+    else { loadGlobalFeed(true); }
   });
+  
   if ($('btn-refresh-feed')) $('btn-refresh-feed').addEventListener('click', () => {
     $('btn-refresh-feed').textContent = "⏳";
     loadGlobalFeed(true);
     setTimeout(() => { $('btn-refresh-feed').textContent = "🔄"; }, 1000);
   });
+  
   const sentinel = $('feed-sentinel');
   if (sentinel) {
     const observer = new IntersectionObserver((entries) => {
@@ -331,11 +333,13 @@ export function initFeed() {
     }, { rootMargin: '200px' });
     observer.observe(sentinel);
   }
+  
   const btnBackToTop = $('btn-back-to-top');
   if (btnBackToTop) {
     window.addEventListener('scroll', () => { btnBackToTop.classList.toggle('show', window.scrollY > 300); });
     btnBackToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
+  
   window.doubleTapLike = async (postId, authorId, isLiked) => {
     const heart = $(`heart-${postId}`);
     if (heart) { heart.classList.add('animate'); setTimeout(() => heart.classList.remove('animate'), 600); }
@@ -345,13 +349,9 @@ export function initFeed() {
   window.boostPost = async (postId) => {
     try {
       await updateDoc(doc(db, 'posts', postId), { createdAt: serverTimestamp() });
-      showToast("🚀 Publication boostée au sommet du fil !", "success");
-      if (document.getElementById('view-home').classList.contains('active')) {
-        window.loadGlobalFeed(true);
-      }
-    } catch (e) {
-      showToast("Erreur lors du boost : " + e.message, "error");
-    }
+      showToast("🚀 Publication boostée !", "success");
+      if (document.getElementById('view-home').classList.contains('active')) window.loadGlobalFeed(true);
+    } catch (e) { showToast("Erreur lors du boost", "error"); }
   };
 
   window.toggleSavePost = async (postId, isSaved) => {
@@ -366,9 +366,8 @@ export function initFeed() {
       state.userProfile.savedPosts.push(postId);
       showToast("🔖 Post sauvegardé !", "success");
     }
-    const btn = document.querySelector(`#more-menu-${postId} button:nth-child(3)`);
-    if (btn) btn.textContent = isSaved ? '🔖 Sauvegarder' : '🔖 Retirer des favoris';
   };
+  
   window.likePost = async (postId, authorId, isLiked) => {
     const ref = doc(db, 'posts', postId);
     const iconEl = $(`like-icon-${postId}`), countEl = $(`like-count-${postId}`), btnEl = $(`like-btn-${postId}`);
@@ -376,13 +375,10 @@ export function initFeed() {
     if (isLiked) { iconEl.textContent = '🤍'; countEl.textContent = Math.max(0, currentCount - 1); btnEl.style.color = 'var(--text)'; }
     else { iconEl.textContent = '💙'; countEl.textContent = currentCount + 1; btnEl.style.color = 'var(--blue-light)'; }
     try {
-      if (isLiked) {
-        await updateDoc(ref, { likes: arrayRemove(state.currentUser.uid) });
-      } else {
+      if (isLiked) await updateDoc(ref, { likes: arrayRemove(state.currentUser.uid) });
+      else {
         await updateDoc(ref, { likes: arrayUnion(state.currentUser.uid) });
-        if (authorId !== state.currentUser.uid) {
-          await sendNotification(authorId, "a aimé votre publication.");
-        }
+        if (authorId !== state.currentUser.uid) await sendNotification(authorId, "a aimé votre publication.");
       }
       btnEl.setAttribute('onclick', `window.likePost('${postId}', '${authorId}', ${!isLiked})`);
     } catch (e) {
@@ -390,6 +386,7 @@ export function initFeed() {
       else { iconEl.textContent = '🤍'; countEl.textContent = currentCount - 1; }
     }
   };
+  
   window.deletePost = async (postId) => {
     if (confirm("Supprimer ce message ?")) {
       await deleteDoc(doc(db, 'posts', postId));
@@ -398,12 +395,14 @@ export function initFeed() {
       showToast("🗑️ Post supprimé.", "error");
     }
   };
+  
   window.toggleComments = (postId) => {
     const section = $(`comments-section-${postId}`);
     if (!section) return;
     if (section.style.display === 'none') { section.style.display = 'block'; window.loadComments(postId); }
     else section.style.display = 'none';
   };
+  
   window.loadComments = async (postId) => {
     const list = $(`comments-list-${postId}`);
     if (!list) return;
@@ -415,6 +414,7 @@ export function initFeed() {
     comments.sort((a, b) => a.createdAt - b.createdAt);
     list.innerHTML = comments.map(c => `<div class="comment-item"><strong>@${c.authorName}</strong> : ${c.content}</div>`).join('');
   };
+  
   window.addComment = async (postId, authorId) => {
     const input = $(`comment-input-${postId}`);
     if (!input) return;
@@ -426,12 +426,11 @@ export function initFeed() {
       const postRef = doc(db, 'posts', postId);
       const postSnap = await getDoc(postRef);
       if (postSnap.exists()) await updateDoc(postRef, { commentsCount: (postSnap.data().commentsCount || 0) + 1 });
-      if (authorId !== state.currentUser.uid) {
-        await sendNotification(authorId, "a commenté votre publication : " + content.substring(0, 30) + (content.length > 30 ? "..." : ""));
-      }
+      if (authorId !== state.currentUser.uid) await sendNotification(authorId, "a commenté votre publication.");
       window.loadComments(postId);
     } catch (e) { alert("Erreur : " + e.message); }
   };
+  
   window.togglePin = async (postId, isPinned) => {
     const ref = doc(db, 'users', state.currentUser.uid);
     if (isPinned) {
@@ -444,34 +443,96 @@ export function initFeed() {
     }
     if ($('view-profile').classList.contains('active') && window.renderProfile) window.renderProfile();
   };
+  
   window.reportPost = async (postId) => {
     const dupQuery = query(collection(db, 'reports'), where('postId', '==', postId), where('reporterId', '==', state.currentUser.uid));
     const dupSnap = await getDocs(dupQuery);
-    if (!dupSnap.empty) {
-      showToast("Vous avez déjà signalé ce post.", "error");
-      return;
-    }
+    if (!dupSnap.empty) return showToast("Vous avez déjà signalé ce post.", "error");
     let modal = $('modal-report');
     if (!modal) {
-      modal = document.createElement('div');
-      modal.id = 'modal-report';
-      modal.className = 'modal hidden';
-      modal.innerHTML = `<div class="modal-content"><h3 style="margin-bottom:1rem;">🚨 Signaler ce post</h3><p class="muted" style="margin-bottom:1rem; font-size:0.85rem;">Choisissez un motif. Un administrateur examinera votre signalement.</p><div id="report-reasons" style="display:flex; flex-direction:column; gap:8px; margin-bottom:1rem;"><button class="btn-secondary" data-reason="Contenu haineux ou discriminatoire" style="text-align:left;">🚫 Contenu haineux ou discriminatoire</button><button class="btn-secondary" data-reason="Harcèlement" style="text-align:left;">😠 Harcèlement</button><button class="btn-secondary" data-reason="Spam ou contenu trompeur" style="text-align:left;">📢 Spam ou contenu trompeur</button><button class="btn-secondary" data-reason="Violence ou contenu choquant" style="text-align:left;">⚠️ Violence ou contenu choquant</button><button class="btn-secondary" data-reason="Autre" style="text-align:left;">❓ Autre</button></div><button id="btn-cancel-report" class="btn-secondary" style="width:100%;">Annuler</button></div>`;
+      modal = document.createElement('div'); modal.id = 'modal-report'; modal.className = 'modal hidden';
+      modal.innerHTML = `<div class="modal-content"><h3 style="margin-bottom:1rem;">🚨 Signaler ce post</h3><div id="report-reasons" style="display:flex; flex-direction:column; gap:8px; margin-bottom:1rem;"><button class="btn-secondary" data-reason="Haineux" style="text-align:left;">🚫 Contenu haineux</button><button class="btn-secondary" data-reason="Harcèlement" style="text-align:left;">😠 Harcèlement</button><button class="btn-secondary" data-reason="Spam" style="text-align:left;">📢 Spam</button><button class="btn-secondary" data-reason="Autre" style="text-align:left;">❓ Autre</button></div><button id="btn-cancel-report" class="btn-secondary" style="width:100%;">Annuler</button></div>`;
       document.body.appendChild(modal);
       $('btn-cancel-report').addEventListener('click', () => modal.classList.add('hidden'));
       modal.querySelectorAll('#report-reasons button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          window.submitReport(postId, btn.dataset.reason);
-          modal.classList.add('hidden');
-        });
+        btn.addEventListener('click', () => { window.submitReport(postId, btn.dataset.reason); modal.classList.add('hidden'); });
       });
     }
     modal.classList.remove('hidden');
   };
+  
   window.submitReport = async (postId, reason) => {
     try {
-      await addDoc(collection(db, 'reports'), { postId: postId, reason: reason, reporterId: state.currentUser.uid, reporterName: state.userProfile.username, createdAt: serverTimestamp() });
-      showToast("✅ Signalement envoyé. Merci !", "success");
-    } catch (e) { showToast("Erreur lors du signalement : " + e.message, "error"); }
+      await addDoc(collection(db, 'reports'), { postId, reason, reporterId: state.currentUser.uid, reporterName: state.userProfile.username, createdAt: serverTimestamp() });
+      showToast("✅ Signalement envoyé.", "success");
+    } catch (e) { showToast("Erreur", "error"); }
   };
+
+  // --- LOGIQUE OPPORTUNITES ---
+  const tabOpp = $('tab-opportunities');
+  const floatOpp = $('btn-float-opp');
+
+  function resetTabs() {
+    if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
+    if($('tab-following')) $('tab-following').className = 'btn-secondary small';
+    if($('tab-trending')) $('tab-trending').className = 'btn-secondary small';
+    if($('tab-opportunities')) { $('tab-opportunities').className = 'btn-secondary small'; $('tab-opportunities').style.background = ''; }
+    if(floatOpp) floatOpp.style.display = 'none';
+    if($('post-creation-container')) $('post-creation-container').style.display = 'none';
+  }
+
+  if(tabOpp) {
+    tabOpp.addEventListener('click', () => {
+      resetTabs();
+      state.currentFeedMode = 'opportunities';
+      tabOpp.className = 'btn-primary small';
+      tabOpp.style.background = '#10b981';
+      if(floatOpp) floatOpp.style.display = 'flex';
+      loadGlobalFeed(true);
+    });
+  }
+
+  if(floatOpp) {
+    floatOpp.onclick = () => {
+      if($('modal-opportunity')) $('modal-opportunity').classList.remove('hidden');
+    };
+  }
+
+  const publishOppBtn = $('btn-publish-opp');
+  if (publishOppBtn) {
+    publishOppBtn.addEventListener('click', async () => {
+      const title = $('opp-title').value.trim();
+      const desc = $('opp-desc').value.trim();
+      const city = $('opp-city').value.trim();
+      const type = $('opp-type').value;
+      
+      if (!title || !desc || !city) return showToast("Remplissez tous les champs.", "error");
+      
+      const userCoins = state.userProfile.coins || 0;
+      if (userCoins < 5 && state.userProfile.role !== 'admin') return showToast("❌ Besoin de 5 🪙 Nexus Coins.", "error");
+
+      publishOppBtn.textContent = "Publication..."; publishOppBtn.disabled = true;
+
+      try {
+        if (state.userProfile.role !== 'admin') {
+          await updateDoc(doc(db, 'users', state.currentUser.uid), { coins: userCoins - 5 });
+          state.userProfile.coins = userCoins - 5;
+        }
+        await addDoc(collection(db, 'posts'), {
+          postType: 'opportunity', oppTitle: title, oppCity: city, oppType: type, content: desc, oppContact: "Message privé",
+          authorId: state.currentUser.uid, authorName: state.userProfile.username, authorIsPremium: state.userProfile.isPremium || false,
+          createdAt: serverTimestamp(), likes: [], commentsCount: 0
+        });
+        showToast("✅ Annonce publiée ! (-5 🪙)");
+        $('modal-opportunity').classList.add('hidden');
+        $('opp-title').value = ''; $('opp-desc').value = ''; $('opp-city').value = '';
+        if(tabOpp) tabOpp.click();
+      } catch (e) {
+        showToast("Erreur : " + e.message, "error");
+      } finally {
+        publishOppBtn.textContent = "Publier l'annonce (Coût: 5 🪙)"; publishOppBtn.disabled = false;
+      }
+    });
+  }
+  if($('btn-cancel-opp')) $('btn-cancel-opp').addEventListener('click', () => $('modal-opportunity').classList.add('hidden'));
 }

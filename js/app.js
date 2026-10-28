@@ -1,4 +1,3 @@
-// --- js/app.js ---
 import { $, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
 import { initNavigation } from './navigation.js';
 import { initAuth } from './auth.js';
@@ -29,20 +28,15 @@ window.loadNotifications = loadNotifications;
 window.loadVideoFeed = loadVideoFeed; 
 window.populatePageSelector = populatePageSelector;
 
-// BADGE MESSAGE NON LU
 function listenToUnreadMessages() {
   if(!state.currentUser) return;
   const q = query(collection(db, 'messages'), where('toUser', '==', state.currentUser.uid), where('read', '==', false));
   onSnapshot(q, (snap) => {
     const badge = $('msg-badge');
     if(!badge) return;
-    if(snap.docs.length > 0) {
-      badge.style.display = 'block';
-      badge.textContent = snap.docs.length;
-    } else {
-      badge.style.display = 'none';
-    }
-  }, (error) => console.log("Erreur badge messages", error));
+    if(snap.docs.length > 0) { badge.style.display = 'block'; badge.textContent = snap.docs.length; } 
+    else { badge.style.display = 'none'; }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -87,23 +81,18 @@ document.addEventListener('DOMContentLoaded', () => {
       recognition.lang = 'fr-FR'; 
       btn.textContent = "🔴"; 
       recognition.start(); 
-      recognition.onresult = (event) => { 
-        targetInput.value += " " + event.results[0][0].transcript; 
-        btn.textContent = "🎤"; 
-      }; 
+      recognition.onresult = (event) => { targetInput.value += " " + event.results[0][0].transcript; btn.textContent = "🎤"; }; 
       recognition.onerror = () => btn.textContent = "🎤"; 
       recognition.onend = () => btn.textContent = "🎤"; 
     }); 
   });
 
-  // --- LOGIQUE PWA (INSTALLATION) ---
   let deferredPrompt;
   const installContainer = document.getElementById('pwa-install-container');
   const installBtn = document.getElementById('btn-install-pwa');
 
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
+    e.preventDefault(); deferredPrompt = e;
     if(installContainer) installContainer.style.display = 'block';
   });
 
@@ -112,29 +101,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        installContainer.style.display = 'none';
-      }
+      if (outcome === 'accepted') installContainer.style.display = 'none';
       deferredPrompt = null;
     });
   }
 
-  window.addEventListener('appinstalled', () => {
-    if(installContainer) installContainer.style.display = 'none';
-    if(window.showToast) window.showToast("✅ BlueNexus a été installé avec succès !");
-  });
-
-  // --- LOGIQUE PREMIUM (Paiement via WhatsApp) ---
   const premiumBtn = document.getElementById('btn-go-premium');
   if (premiumBtn) {
     premiumBtn.addEventListener('click', () => {
-      const phone = "237650284435"; // TON NUMÉRO WHATSAPP
-      const message = encodeURIComponent("Bonjour Admin, je souhaite passer au compte BlueNexus Premium à 1500 FCFA/mois. Mon pseudo est : " + (state.userProfile ? state.userProfile.username : ""));
+      const phone = "237650284435";
+      const message = encodeURIComponent("Bonjour Admin, je souhaite passer au compte BlueNexus Premium. Mon pseudo est : " + (state.userProfile ? state.userProfile.username : ""));
       window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
     });
   }
 
-  // --- LOGIQUE MODE ÉCO (DATA SAVER) ---
   const ecoBtn = document.getElementById('btn-eco-mode');
   const isEcoMode = localStorage.getItem('bluenexus_eco_mode') === 'true';
 
@@ -148,10 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.toggle('eco-mode');
       const isNowEco = document.body.classList.contains('eco-mode');
       localStorage.setItem('bluenexus_eco_mode', isNowEco);
-      
       if (isNowEco) {
         ecoBtn.classList.add('active');
-        if(window.showToast) window.showToast("🍃 Mode Éco activé : Les médias sont masqués pour économiser votre data.");
+        if(window.showToast) window.showToast("🍃 Mode Éco activé.");
       } else {
         ecoBtn.classList.remove('active');
         if(window.showToast) window.showToast("Mode Éco désactivé.");
