@@ -106,8 +106,7 @@ export async function loadGlobalFeed(reset = false) {
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
     
-    // --- CORRECTION ICI : On ne garde QUE les posts globaux ---
-    // On filtre les posts qui n'ont pas de communityId ou qui ont communityId === 'global'
+    // On ne garde QUE les posts globaux
     postsToShow = postsToShow.filter(p => p.data.communityId === 'global' || !p.data.communityId);
 
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
@@ -163,6 +162,10 @@ export function generatePostHTML(docSnap) {
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
   const formattedContent = formatPostText(p.content);
+  
+  // NOUVEAU : Le badge vérifié pour les Premium
+  const verifiedIcon = p.authorIsPremium ? '<span style="color: #3b82f6; font-size: 0.9rem; margin-left: 4px;" title="Compte Vérifié">✅</span>' : '';
+
   let mediaHtml = '';
   if (p.mediaUrl) {
     if (p.mediaType === 'image') mediaHtml = `<img src="${p.mediaUrl}" class="post-media" loading="lazy">`;
@@ -179,7 +182,12 @@ export function generatePostHTML(docSnap) {
   const reportBtn = (p.authorId !== state.currentUser.uid) ? `<button onclick="window.reportPost('${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')" style="color:#f59e0b;">🚨 Signaler</button>` : '';
   const pageBadge = p.pageName ? `<div style="font-size: 0.75rem; color: #10b981; margin-top: 2px; font-weight: bold;">📄 Publié en tant que ${p.pageName}</div>` : '';
   
-  return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})"><div class="heart-animation" id="heart-${docSnap.id}">❤️</div><div class="post-header"><div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">${avatar} <div><strong>@${p.authorName}</strong>${pageBadge}</div></div><span class="post-time">${timeAgo(p.createdAt)}</span></div><p id="text-${docSnap.id}">${formattedContent}</p>${mediaHtml}<div class="post-actions"><button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};"><span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> <span id="like-count-${docSnap.id}">${likeCount}</span></button><button onclick="window.toggleComments('${docSnap.id}')" class="action-btn">💬 ${p.commentsCount || 0}</button><button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button><div class="more-menu-container"><button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button><div id="more-menu-${docSnap.id}" class="more-menu"><button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button><button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>${saveBtn}${pinBtn}${reportBtn}${deleteBtn}</div></div></div><div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;"><div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div><div class="comment-input-row"><input type="text" id="comment-input-${docSnap.id}" placeholder="Commenter..."><button onclick="window.addComment('${docSnap.id}', '${p.authorId}')" class="btn-primary small">Envoyer</button></div></div></div>`;
+  // NOUVEAU : Le bouton Boost (visible seulement pour le créateur s'il est Premium ou Admin)
+  const isCreator = (p.authorId === state.currentUser.uid);
+  const canBoost = isCreator && (state.userProfile.isPremium || isAdmin);
+  const boostBtn = canBoost ? `<button onclick="window.boostPost('${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')" style="color: #a855f7; font-weight: bold;">🚀 Booster ce post</button>` : '';
+
+  return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})"><div class="heart-animation" id="heart-${docSnap.id}">❤️</div><div class="post-header"><div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">${avatar} <div><strong>@${p.authorName}</strong>${verifiedIcon}${pageBadge}</div></div><span class="post-time">${timeAgo(p.createdAt)}</span></div><p id="text-${docSnap.id}">${formattedContent}</p>${mediaHtml}<div class="post-actions"><button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};"><span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> <span id="like-count-${docSnap.id}">${likeCount}</span></button><button onclick="window.toggleComments('${docSnap.id}')" class="action-btn">💬 ${p.commentsCount || 0}</button><button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button><div class="more-menu-container"><button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button><div id="more-menu-${docSnap.id}" class="more-menu"><button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button><button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>${boostBtn}${saveBtn}${pinBtn}${reportBtn}${deleteBtn}</div></div></div><div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;"><div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div><div class="comment-input-row"><input type="text" id="comment-input-${docSnap.id}" placeholder="Commenter..."><button onclick="window.addComment('${docSnap.id}', '${p.authorId}')" class="btn-primary small">Envoyer</button></div></div></div>`;
 }
 
 export async function populatePageSelector() {
@@ -271,7 +279,15 @@ export function initFeed() {
       else if (file.type.startsWith('video')) mediaType = 'video';
       else mediaType = 'audio';
     }
-    await addDoc(collection(db, 'posts'), { communityId: 'global', communityType: 'global', content, authorId: state.currentUser.uid, authorName: state.userProfile.username, authorPhoto: state.userProfile.photoURL || "", mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName });
+    // On sauvegarde le statut Premium de l'auteur
+    await addDoc(collection(db, 'posts'), { 
+      communityId: 'global', communityType: 'global', content, 
+      authorId: state.currentUser.uid, authorName: state.userProfile.username, 
+      authorPhoto: state.userProfile.photoURL || "", 
+      authorIsPremium: state.userProfile.isPremium || false,
+      mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName 
+    });
+    
     $('global-post-content').value = '';
     $('global-post-content').style.height = '40px';
     localStorage.removeItem('bluenexus_draft_global');
@@ -311,6 +327,23 @@ export function initFeed() {
     if (heart) { heart.classList.add('animate'); setTimeout(() => heart.classList.remove('animate'), 600); }
     if (!isLiked) window.likePost(postId, authorId, false);
   };
+  
+  // NOUVEAU : Fonction Boost
+  window.boostPost = async (postId) => {
+    try {
+      // On met à jour la date de création pour la mettre à maintenant
+      await updateDoc(doc(db, 'posts', postId), { createdAt: serverTimestamp() });
+      showToast("🚀 Publication boostée au sommet du fil !", "success");
+      
+      // On recharge le fil
+      if (document.getElementById('view-home').classList.contains('active')) {
+        window.loadGlobalFeed(true);
+      }
+    } catch (e) {
+      showToast("Erreur lors du boost : " + e.message, "error");
+    }
+  };
+
   window.toggleSavePost = async (postId, isSaved) => {
     const ref = doc(db, 'users', state.currentUser.uid);
     if (isSaved) {
