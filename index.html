@@ -8,7 +8,6 @@
   <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
   
-  <!-- DÉTECTEUR D'ERREUR JS -->
   <script>
     window.addEventListener('error', function(e) {
       var showError = function() {
@@ -30,7 +29,6 @@
 </head>
 <body>
 
-<!-- 1. PAGE D'ACCUEIL (LANDING PAGE AVEC ONBOARDING) -->
 <div id="landing-screen" class="screen active">
   <header class="landing-header">
     <h1 class="logo">Blue<span>Nexus</span></h1>
@@ -79,7 +77,6 @@
   </div>
 </div>
 
-<!-- 2. ÉCRAN DE CONNEXION -->
 <div id="auth-screen" class="screen">
   <div class="auth-box">
     <h1 class="logo" style="cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
@@ -105,7 +102,6 @@
   </div>
 </div>
 
-<!-- 3. APPLICATION PRINCIPALE -->
 <div id="app-screen" class="screen">
   <header class="top-bar" id="main-header">
     <h2 id="page-title">Accueil</h2>
@@ -127,13 +123,13 @@
         <button id="tab-discovery" class="btn-primary small" style="flex:1; white-space: nowrap;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1; white-space: nowrap;">Abonnements</button>
         <button id="tab-opportunities" class="btn-secondary small" style="flex:1; white-space: nowrap;">💼 Opportunités</button>
+        <button id="tab-confessions" class="btn-secondary small" style="flex:1; white-space: nowrap;">🤫 Confessions</button>
         <button id="tab-trending" class="btn-secondary small" style="flex:1; white-space: nowrap;">🔥 Tendances</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
       
       <div id="stories-list" class="stories-container"></div>
       
-      <!-- BANNIÈRE BONUS QUOTIDIEN -->
       <div id="daily-bonus-banner" style="display:none; margin-bottom: 1rem;">
         <div onclick="document.getElementById('modal-daily').classList.remove('hidden')" style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1rem; border-radius: var(--radius); cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); position: relative; overflow: hidden;">
           <div style="font-size: 2rem;">🎁</div>
@@ -143,7 +139,12 @@
       </div>
       
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
-        <div style="width: 100%;"><select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"><option value="user">👤 Publier en tant que moi</option></select></div>
+        <div style="width: 100%;">
+          <select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+            <option value="user">👤 Publier en tant que moi</option>
+            <option value="confession">🤫 Publier une confession anonyme</option>
+          </select>
+        </div>
         <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
           <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
           <div style="flex: 1;">
@@ -168,7 +169,6 @@
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
       
-      <!-- BOUTON FLOTTANT OPPORTUNITES -->
       <button id="btn-float-opp" style="position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #10b981; color: white; border: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); display: none; align-items: center; justify-content: center; z-index: 99;" title="Publier une opportunité">💼</button>
     </section>
     
@@ -240,7 +240,6 @@
       <div class="chat-input-bar"><input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button><div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div><button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button></div>
     </section>
     
-    <!-- SECTION PROFIL MISE A JOUR AVEC VISITEURS -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner">
@@ -267,7 +266,6 @@
           <span><strong id="stat-following">0</strong> Abonnements</span>
         </div>
 
-        <!-- NOUVEAU : COMPTEUR DE VISITEURS -->
         <div style="padding: 0 1rem; margin-bottom: 10px;">
           <div onclick="window.openProfileViewers()" style="background: var(--bg); padding: 8px 12px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);">
             <span style="font-size: 1.2rem;">👁️</span>
@@ -316,7 +314,6 @@
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p><button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>
       
-      <!-- SECTION PARRAINAGE -->
       <div style="background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid var(--blue-light);">
         <h4 style="margin-bottom: 0.5rem;">🎁 Invitez des amis</h4>
         <p class="muted" style="font-size: 0.85rem; margin-bottom: 10px;">Gagnez des Nexus Coins en invitant vos amis sur BlueNexus.</p>
@@ -329,14 +326,12 @@
         <button id="btn-share-referral" class="btn-primary" style="width: 100%; background: #25D366; border: none;">Partager sur WhatsApp</button>
       </div>
 
-      <!-- SECTION BOUTIQUE NEXUS -->
       <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="document.getElementById('modal-shop').classList.remove('hidden')">
         <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🛍️</div>
         <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">🛍️ Boutique Nexus</h4>
         <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Dépensez vos Nexus Coins pour personnaliser votre profil et booster vos publications.</p>
       </div>
 
-      <!-- SECTION BLUENEXUS PREMIUM -->
       <div style="background: linear-gradient(135deg, #4f46e5, #9333ea); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(147, 51, 234, 0.3); position: relative; overflow: hidden;">
         <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">👑</div>
         <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">✨ BlueNexus Premium</h4>
@@ -401,7 +396,6 @@
   </nav>
 </div>
 
-<!-- MODALS -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-comm" class="modal hidden"><div class="modal-content"><h3>Modifier la communauté</h3><label class="muted" style="font-size: 0.8rem;">Nom</label><input id="edit-comm-name" placeholder="Nom" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="edit-comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Type</label><select id="edit-comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="btn-save-comm-info" class="btn-primary">Enregistrer</button><button id="btn-cancel-edit-comm" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-members" class="modal hidden"><div class="modal-content"><h3>Membres de la communauté</h3><div id="members-list-container" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;"></div><button id="btn-close-members" class="btn-secondary" style="width:100%;">Fermer</button></div></div>
@@ -412,14 +406,11 @@
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>
 
-<!-- MODALE OPPORTUNITÉ -->
 <div id="modal-opportunity" class="modal hidden">
   <div class="modal-content">
     <h3 style="color: #10b981; margin-bottom: 1rem;">💼 Publier une Opportunité</h3>
-    
     <label class="muted" style="font-size: 0.8rem;">Titre de l'annonce</label>
     <input id="opp-title" placeholder="Ex: Cherche développeur web, Vends moto..." />
-    
     <div style="display: flex; gap: 10px;">
       <div style="flex: 1;">
         <label class="muted" style="font-size: 0.8rem;">Type</label>
@@ -435,21 +426,17 @@
         <input id="opp-city" placeholder="Ex: Douala" style="padding: 10px;" />
       </div>
     </div>
-
     <label class="muted" style="font-size: 0.8rem;">Description & Contact</label>
     <textarea id="opp-desc" placeholder="Détails de l'offre et numéro de téléphone..." rows="4"></textarea>
-    
     <button id="btn-publish-opp" class="btn-primary" style="background: #10b981; margin-top: 10px;">Publier l'annonce (Coût: 5 🪙)</button>
     <button id="btn-cancel-opp" class="btn-secondary">Annuler</button>
   </div>
 </div>
 
-<!-- MODALE BOUTIQUE -->
 <div id="modal-shop" class="modal hidden">
   <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
     <h3 style="color: #f59e0b; margin-bottom: 0.5rem;">🛍️ Boutique Nexus</h3>
     <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solde actuel : <strong style="color: #f59e0b; font-size: 1.1rem;">🪙 <span id="shop-coins-balance">0</span></strong></p>
-    
     <div style="display: flex; flex-direction: column; gap: 10px;">
       <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
         <div class="tg-avatar" style="background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00);">✨</div>
@@ -476,26 +463,21 @@
   </div>
 </div>
 
-<!-- MODALE SONDAGE -->
 <div id="modal-poll" class="modal hidden">
   <div class="modal-content">
     <h3 style="color: #a855f7; margin-bottom: 1rem;">📊 Créer un sondage</h3>
-    
     <label class="muted" style="font-size: 0.8rem;">Votre question</label>
     <input id="poll-question" placeholder="Ex: Quel est le meilleur rappeur camerounais ?" />
-    
     <label class="muted" style="font-size: 0.8rem;">Options (2 à 4)</label>
     <input id="poll-opt-1" placeholder="Option 1" style="margin-bottom: 5px;" />
     <input id="poll-opt-2" placeholder="Option 2" style="margin-bottom: 5px;" />
     <input id="poll-opt-3" placeholder="Option 3 (optionnel)" style="margin-bottom: 5px;" />
     <input id="poll-opt-4" placeholder="Option 4 (optionnel)" />
-    
     <button id="btn-publish-poll" class="btn-primary" style="background: #a855f7; margin-top: 10px;">Publier le sondage</button>
     <button id="btn-cancel-poll" class="btn-secondary">Annuler</button>
   </div>
 </div>
 
-<!-- MODALE BONUS QUOTIDIEN -->
 <div id="modal-daily" class="modal hidden">
   <div class="modal-content" style="text-align: center;">
     <h3 style="color: #f59e0b; margin-bottom: 1rem;">🎁 Bonus Quotidien</h3>
@@ -506,21 +488,17 @@
   </div>
 </div>
 
-<!-- MODALE VISITEURS DE PROFIL -->
 <div id="modal-profile-viewers" class="modal hidden">
   <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
     <h3 style="color: var(--blue-light); margin-bottom: 0.5rem;">👁️ Visiteurs du profil</h3>
     <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Les personnes qui ont consulté votre profil récemment.</p>
-    
     <div id="viewers-list-container">
       <p class="muted" style="text-align: center;">Chargement...</p>
     </div>
-    
     <button onclick="document.getElementById('modal-profile-viewers').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button>
   </div>
 </div>
 
-<!-- VIEWER DE STORY -->
 <div id="story-viewer">
   <div class="story-progress-bar"><div id="story-progress" class="story-progress-fill"></div></div>
   <button class="story-close-btn" onclick="window.closeStory()">✕</button>

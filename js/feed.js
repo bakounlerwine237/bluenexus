@@ -48,29 +48,65 @@ window.followFromSuggestion = async (userId, btn) => {
   } catch(e) { showToast("Erreur", "error"); }
 };
 
-// --- NOUVELLE FONCTION : Analyse des Mentions ---
 async function processMentions(text, postAuthorId) {
   const mentions = text.match(/@([a-zA-Z0-9_]+)/g);
   if (!mentions) return;
-
   const usernames = [...new Set(mentions.map(m => m.substring(1)))];
   
   for (const username of usernames) {
     try {
       const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
       const snap = await getDocs(q);
-      
       if (!snap.empty) {
         const mentionedUser = snap.docs[0];
         if (mentionedUser.id !== postAuthorId) {
           await sendNotification(mentionedUser.id, "vous a mentionné dans une publication.");
         }
       }
-    } catch (e) {
-      console.error("Erreur mention:", e);
-    }
+    } catch (e) { console.error("Erreur mention:", e); }
   }
 }
+
+// --- NOUVELLE FONCTION : Révéler une confession ---
+window.revealConfession = async (postId, authorId) => {
+  if (!state.userProfile.isPremium && state.userProfile.role !== 'admin') {
+    return showToast("❌ Devenez Premium pour révéler l'auteur.", "error");
+  }
+  
+  const userCoins = state.userProfile.coins || 0;
+  if (userCoins < 50 && state.userProfile.role !== 'admin') {
+    return showToast("❌ Il vous faut 50 🪙 pour révéler l'auteur.", "error");
+  }
+  
+  if (!confirm("Voulez-vous vraiment dépenser 50 🪙 pour révéler l'auteur de cette confession ?")) return;
+  
+  try {
+    if (state.userProfile.role !== 'admin') {
+      await updateDoc(doc(db, 'users', state.currentUser.uid), { coins: userCoins - 50 });
+      state.userProfile.coins = userCoins - 50;
+      if ($('profile-coins')) $('profile-coins').textContent = state.userProfile.coins;
+      if ($('shop-coins-balance')) $('shop-coins-balance').textContent = state.userProfile.coins;
+    }
+    
+    // On met à jour l'affichage local
+    const postEl = document.getElementById(`post-${postId}`);
+    if (postEl) {
+      const nameEl = postEl.querySelector('.confession-author');
+      const actionEl = postEl.querySelector('.confession-action');
+      if (nameEl) nameEl.textContent = `@${state.userProfile.username} (vous)`;
+      if (actionEl) actionEl.remove();
+    }
+    
+    // On stocke dans Firestore que ce user a payé pour voir cette confession
+    await updateDoc(doc(db, 'posts', postId), {
+      revealedTo: arrayUnion(state.currentUser.uid)
+    });
+    
+    showToast("✅ Vous avez révélé l'auteur ! (-50 🪙)");
+  } catch(e) {
+    showToast("Erreur : " + e.message, "error");
+  }
+};
 
 export async function loadGlobalFeed(reset = false) {
   const list = $('global-feed-list');
@@ -98,8 +134,6 @@ export async function loadGlobalFeed(reset = false) {
     if (snap.docs.length < 50) noMorePosts = true;
     
     let postsToShow = snap.docs.map(d => ({ id: d.id, data: d.data(), ref: d }));
-    
-    // On ne garde QUE les posts globaux
     postsToShow = postsToShow.filter(p => p.data.communityId === 'global' || !p.data.communityId);
 
     postsToShow.forEach(p => { p.score = calculatePostScore(p.data); });
@@ -107,7 +141,7 @@ export async function loadGlobalFeed(reset = false) {
 
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity') return false; 
+        if (p.data.postType === 'opportunity' || p.data.postType === 'confession') return false; 
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -119,7 +153,7 @@ export async function loadGlobalFeed(reset = false) {
       }
     } else if (state.currentFeedMode === 'discovery') {
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity') return false; 
+        if (p.data.postType === 'opportunity' || p.data.postType === 'confession') return false; 
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -134,10 +168,16 @@ export async function loadGlobalFeed(reset = false) {
         list.innerHTML = `<div style="text-align: center; padding: 3rem 1rem; color: var(--muted);"><div style="font-size: 4rem; margin-bottom: 1rem;">💼</div><h3 style="color: var(--text); margin-bottom: 10px;">Aucune opportunité</h3><p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Soyez le premier à publier une offre d'emploi ou un service !</p><button onclick="document.getElementById('modal-opportunity').classList.remove('hidden')" class="btn-primary small" style="background: #10b981;">Publier une annonce</button></div>`;
         return;
       }
+    } else if (state.currentFeedMode === 'confessions') {
+      postsToShow = postsToShow.filter(p => p.data.postType === 'confession');
+      if (postsToShow.length === 0 && reset) {
+        list.innerHTML = `<div style="text-align: center; padding: 3rem 1rem; color: var(--muted);"><div style="font-size: 4rem; margin-bottom: 1rem;">🤫</div><h3 style="color: var(--text); margin-bottom: 10px;">Aucune confession</h3><p style="margin-bottom: 1.5rem; font-size: 0.9rem;">Soyez le premier à balancer ton secret anonymement !</p><button onclick="document.getElementById('global-post-content').focus(); document.getElementById('post-as-select').value = 'confession';" class="btn-primary small" style="background: #6366f1;">Écrire une confession</button></div>`;
+        return;
+      }
     } else if (state.currentFeedMode === 'trending') {
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity') return false;
+        if (p.data.postType === 'opportunity' || p.data.postType === 'confession') return false;
         const postTime = p.data.createdAt ? (p.data.createdAt.toMillis ? p.data.createdAt.toMillis() : p.data.createdAt) : 0;
         const hasEngagement = (p.data.likes?.length || 0) > 0 || (p.data.commentsCount || 0) > 0;
         return postTime > sevenDaysAgo && hasEngagement;
@@ -161,7 +201,52 @@ export async function loadGlobalFeed(reset = false) {
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   
-  // --- DESIGN SPECIAL POUR LES OPPORTUNITES ---
+  // --- CONFESSIONS ANONYMES ---
+  if (p.postType === 'confession') {
+    const isAuthor = p.authorId === state.currentUser.uid;
+    const canReveal = p.allowReveal && !isAuthor;
+    const alreadyRevealed = p.revealedTo?.includes(state.currentUser.uid) || isAuthor || state.userProfile.role === 'admin';
+    
+    let authorDisplay = '';
+    let actionHtml = '';
+    
+    if (isAuthor) {
+      authorDisplay = `@${p.authorRealName} <span style="font-size: 0.7rem; color: #6366f1;">(vous)</span>`;
+    } else if (alreadyRevealed) {
+      authorDisplay = `@${p.authorRealName}`;
+    } else {
+      authorDisplay = `<span class="confession-author" style="color: #6366f1;">🤫 Anonyme</span>`;
+      if (p.allowReveal) {
+        actionHtml = `<div class="confession-action" style="margin-top: 10px; text-align: center;">
+          <button onclick="window.revealConfession('${docSnap.id}', '${p.authorId}')" class="btn-primary small" style="background: #6366f1; width: 100%;">🔍 Révéler l'auteur (50 🪙)</button>
+        </div>`;
+      } else {
+        actionHtml = `<div class="confession-action" style="margin-top: 10px; text-align: center;">
+          <p class="muted" style="font-size: 0.8rem;">🔒 L'auteur n'autorise pas la révélation.</p>
+        </div>`;
+      }
+    }
+
+    return `<div class="media-item" style="border-left: 4px solid #6366f1;">
+      <div class="post-header">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div class="post-avatar" style="background: #6366f1;">🤫</div>
+          <div>
+            <strong style="color: #6366f1;">${authorDisplay}</strong>
+            <div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">Confession anonyme · ${timeAgo(p.createdAt)}</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top: 10px; font-style: italic; font-size: 1.05rem;">"${formatPostText(p.content)}"</p>
+      ${actionHtml}
+      <div class="post-actions">
+        <button onclick="window.sharePost('${docSnap.id}')" class="action-btn">📤 Partager</button>
+        ${(p.authorId === state.currentUser.uid || state.userProfile.role === 'admin') ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete">🗑️ Supprimer</button>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // --- OPPORTUNITES ---
   if (p.postType === 'opportunity') {
     const typeIcons = { emploi: '💼', vente: '🛒', service: '🛠️', immobilier: '🏠' };
     const icon = typeIcons[p.oppType] || '📌';
@@ -189,7 +274,7 @@ export function generatePostHTML(docSnap) {
     </div>`;
   }
 
-  // --- DESIGN SPECIAL POUR LES SONDAGES ---
+  // --- SONDAGES ---
   if (p.postType === 'poll') {
     const totalVotes = (p.pollVotes || []).length;
     const hasVoted = p.pollVotes?.some(v => v.userId === state.currentUser.uid);
@@ -275,7 +360,7 @@ export async function populatePageSelector() {
   if (!select) return;
   const q = query(collection(db, 'pages'), where('ownerId', '==', state.currentUser.uid));
   const snap = await getDocs(q);
-  select.innerHTML = '<option value="user">👤 Publier en tant que moi</option>';
+  select.innerHTML = '<option value="user">👤 Publier en tant que moi</option><option value="confession">🤫 Publier une confession anonyme</option>';
   if (!snap.empty) {
     snap.docs.forEach(d => {
       const page = d.data();
@@ -349,7 +434,17 @@ export function initFeed() {
     const file = $('global-post-file').files[0];
     const select = $('post-as-select');
     let pageId = null; let pageName = null;
-    if (select && select.value !== 'user') { pageId = select.value; pageName = select.options[select.selectedIndex].dataset.pageName; }
+    let isConfession = false;
+    
+    if (select) {
+      if (select.value === 'confession') {
+        isConfession = true;
+      } else if (select.value !== 'user') {
+        pageId = select.value; 
+        pageName = select.options[select.selectedIndex].dataset.pageName;
+      }
+    }
+    
     if (!content && !file) return;
     publishBtn.textContent = "Publication...";
     let mediaUrl = null, mediaType = null;
@@ -360,15 +455,29 @@ export function initFeed() {
       else mediaType = 'audio';
     }
     
-    await addDoc(collection(db, 'posts'), { 
+    // Construction du post
+    let postData = {
       communityId: 'global', communityType: 'global', content, 
       authorId: state.currentUser.uid, authorName: state.userProfile.username, 
       authorPhoto: state.userProfile.photoURL || "", 
       authorIsPremium: state.userProfile.isPremium || false,
       mediaUrl, mediaType, likes: [], commentsCount: 0, createdAt: serverTimestamp(), pageId: pageId, pageName: pageName 
-    });
+    };
+    
+    if (isConfession) {
+      postData = {
+        postType: 'confession',
+        content,
+        authorId: state.currentUser.uid,
+        authorRealName: state.userProfile.username,
+        allowReveal: true,
+        createdAt: serverTimestamp()
+      };
+    }
+    
+    await addDoc(collection(db, 'posts'), postData);
 
-    if (content) {
+    if (content && !isConfession) {
       processMentions(content, state.currentUser.uid);
     }
     
@@ -448,6 +557,7 @@ export function initFeed() {
   window.likePost = async (postId, authorId, isLiked) => {
     const ref = doc(db, 'posts', postId);
     const iconEl = $(`like-icon-${postId}`), countEl = $(`like-count-${postId}`), btnEl = $(`like-btn-${postId}`);
+    if (!iconEl || !countEl) return;
     let currentCount = parseInt(countEl.textContent) || 0;
     if (isLiked) { iconEl.textContent = '🤍'; countEl.textContent = Math.max(0, currentCount - 1); btnEl.style.color = 'var(--text)'; }
     else { iconEl.textContent = '💙'; countEl.textContent = currentCount + 1; btnEl.style.color = 'var(--blue-light)'; }
@@ -553,6 +663,7 @@ export function initFeed() {
     if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
     if($('tab-following')) $('tab-following').className = 'btn-secondary small';
     if($('tab-trending')) $('tab-trending').className = 'btn-secondary small';
+    if($('tab-confessions')) { $('tab-confessions').className = 'btn-secondary small'; $('tab-confessions').style.background = ''; }
     if($('tab-opportunities')) { $('tab-opportunities').className = 'btn-secondary small'; $('tab-opportunities').style.background = ''; }
     if(floatOpp) floatOpp.style.display = 'none';
     if($('post-creation-container')) $('post-creation-container').style.display = 'none';
@@ -613,6 +724,19 @@ export function initFeed() {
   }
   if($('btn-cancel-opp')) $('btn-cancel-opp').addEventListener('click', () => $('modal-opportunity').classList.add('hidden'));
 
+  // --- LOGIQUE CONFESSIONS ---
+  const tabConf = $('tab-confessions');
+  if (tabConf) {
+    tabConf.addEventListener('click', () => {
+      resetTabs();
+      state.currentFeedMode = 'confessions';
+      tabConf.className = 'btn-primary small';
+      tabConf.style.background = '#6366f1';
+      if($('post-creation-container')) $('post-creation-container').style.display = 'flex';
+      loadGlobalFeed(true);
+    });
+  }
+
   // --- LOGIQUE SONDAGES ---
   if($('btn-create-poll')) {
     $('btn-create-poll').addEventListener('click', () => {
@@ -657,7 +781,6 @@ export function initFeed() {
     });
   }
 
-  // Fonction de vote
   window.votePoll = async (postId, optionIndex) => {
     try {
       const postRef = doc(db, 'posts', postId);
@@ -666,15 +789,11 @@ export function initFeed() {
       
       const data = postSnap.data();
       let votes = data.pollVotes || [];
-      
-      // Retirer le vote précédent s'il existe
       votes = votes.filter(v => v.userId !== state.currentUser.uid);
-      // Ajouter le nouveau vote
       votes.push({ userId: state.currentUser.uid, optionIndex });
       
       await updateDoc(postRef, { pollVotes: votes });
       
-      // Mise à jour visuelle immédiate
       const newHtml = generatePostHTML({ id: postId, data: { ...data, pollVotes: votes }, exists: () => true });
       const oldEl = document.getElementById(`post-${postId}`);
       if (oldEl) oldEl.outerHTML = newHtml;
