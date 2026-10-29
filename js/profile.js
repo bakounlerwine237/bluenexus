@@ -8,49 +8,33 @@ import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, whe
 
 let viewingUserId = null; 
 
-export function renderProfile() { 
-  if (!state.userProfile || !state.currentUser) return; 
-  viewingUserId = state.currentUser.uid; 
-  displayProfileData(state.userProfile, true, viewingUserId); 
+// --- HELPER : Temps relatif ---
+function timeAgoFromDate(timestamp) {
+  if (!timestamp) return "Récemment";
+  const diff = Date.now() - (timestamp.toMillis ? timestamp.toMillis() : timestamp);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `Il y a ${Math.max(1, mins)} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Il y a ${hours}h`;
+  return `Il y a ${Math.floor(hours / 24)}j`;
 }
 
-export async function openUserProfile(userId) { 
-  if (!state.currentUser) return; 
-  viewingUserId = userId; 
-  
-  // NOUVEAU : Logger la visite si ce n'est pas soi-même
-  if (userId !== state.currentUser.uid) {
-    logProfileView(userId);
-  }
-  
-  if (userId === state.currentUser.uid) { displayProfileData(state.userProfile, true, userId); } 
-  else { const snap = await getDoc(doc(db, 'users', userId)); if (snap.exists()) { displayProfileData(snap.data(), false, userId); } } 
-  switchView('profile'); 
-}
-
-// NOUVELLE FONCTION : Enregistrer une visite
-async function logProfileView(viewedId) {
-  if (!state.currentUser) return;
-  try {
-    const viewerRef = doc(db, 'users', viewedId, 'profile_views', state.currentUser.uid);
-    await setDoc(viewerRef, {
-      viewerId: state.currentUser.uid,
-      viewedAt: serverTimestamp()
-    }, { merge: true });
-  } catch(e) { console.error("Erreur log view:", e); }
-}
-
-// NOUVELLE FONCTION : Ouvrir la modale des visiteurs
+// --- FONCTION GLOBALE : Ouvrir la modale des visiteurs ---
+// On la place tout en haut pour qu'elle soit toujours disponible
 window.openProfileViewers = async () => {
   if (!state.currentUser) return;
-  const modal = $('modal-profile-viewers');
-  const container = $('viewers-list-container');
-  if (!modal || !container) return;
+  const modal = document.getElementById('modal-profile-viewers');
+  const container = document.getElementById('viewers-list-container');
+  if (!modal || !container) {
+    alert("Erreur : La modale des visiteurs n'existe pas dans le HTML.");
+    return;
+  }
   
   modal.classList.remove('hidden');
   container.innerHTML = '<p class="muted" style="text-align: center;">Chargement...</p>';
   
   try {
+    // On récupère la sous-collection 'profile_views' de l'utilisateur
     const viewsSnap = await getDocs(collection(db, 'users', state.currentUser.uid, 'profile_views'));
     
     if (viewsSnap.empty) {
@@ -59,6 +43,7 @@ window.openProfileViewers = async () => {
     }
     
     const views = viewsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Trier par date (du plus récent au plus ancien)
     views.sort((a, b) => {
       const tA = a.viewedAt?.toMillis ? a.viewedAt.toMillis() : 0;
       const tB = b.viewedAt?.toMillis ? b.viewedAt.toMillis() : 0;
@@ -75,44 +60,84 @@ window.openProfileViewers = async () => {
       </div>`;
     }
     
+    // On affiche max 50 visiteurs
     for (const view of views.slice(0, 50)) {
       try {
         const uSnap = await getDoc(doc(db, 'users', view.viewerId));
         if (uSnap.exists()) {
           const u = uSnap.data();
-          const avatar = u.photoURL ? `<img src="${u.photoURL}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; ${!isPremium ? 'filter: blur(8px);' : ''}">` : `<div style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; ${!isPremium ? 'filter: blur(8px);' : ''}">${u.username[0].toUpperCase()}</div>`;
+          
+          // Avatar (flouté si pas premium)
+          const avatarStyle = !isPremium ? 'filter: blur(8px);' : '';
+          const avatar = u.photoURL 
+            ? `<img src="${u.photoURL}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; ${avatarStyle}">` 
+            : `<div style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; ${avatarStyle}">${u.username[0].toUpperCase()}</div>`;
           
           const timeAgoText = view.viewedAt ? timeAgoFromDate(view.viewedAt) : "Récemment";
           
+          // Nom (flouté si pas premium)
+          const nameStyle = !isPremium ? 'filter: blur(6px); user-select: none;' : '';
+          const displayName = isPremium ? u.username : '████████';
+          
+          const clickAction = isPremium ? `onclick="document.getElementById('modal-profile-viewers').classList.add('hidden'); window.openUserProfile('${view.viewerId}')"` : '';
+          
           html += `
-            <div class="tg-item" ${isPremium ? `onclick="document.getElementById('modal-profile-viewers').classList.add('hidden'); window.openUserProfile('${view.viewerId}')"` : ''} style="cursor: ${isPremium ? 'pointer' : 'default'};">
+            <div class="tg-item" ${clickAction} style="cursor: ${isPremium ? 'pointer' : 'default'};">
               ${avatar}
               <div class="tg-content">
-                <div class="tg-title" style="${!isPremium ? 'filter: blur(6px); user-select: none;' : ''}">${isPremium ? u.username : '████████'}</div>
+                <div class="tg-title" style="${nameStyle}">${displayName} ${u.isPremium ? '💎' : ''}</div>
                 <div class="tg-subtitle">${timeAgoText}</div>
               </div>
-              ${u.isPremium ? '<span style="color: #a855f7;">💎</span>' : ''}
             </div>
           `;
         }
-      } catch(e) { console.error(e); }
+      } catch(e) { console.error("Erreur lecture visiteur:", e); }
     }
     
     container.innerHTML = html;
   } catch(e) {
     console.error(e);
-    container.innerHTML = '<p class="muted" style="text-align: center; color: #ef4444;">Erreur de chargement.</p>';
+    container.innerHTML = '<p class="muted" style="text-align: center; color: #ef4444;">Erreur de chargement des visiteurs.</p>';
   }
 };
 
-function timeAgoFromDate(timestamp) {
-  if (!timestamp) return "Récemment";
-  const diff = Date.now() - (timestamp.toMillis ? timestamp.toMillis() : timestamp);
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `Il y a ${Math.max(1, mins)} min`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Il y a ${hours}h`;
-  return `Il y a ${Math.floor(hours / 24)}j`;
+// --- FONCTION INTERNE : Enregistrer une visite ---
+async function logProfileView(viewedId) {
+  if (!state.currentUser) return;
+  try {
+    // On crée un document dans la sous-collection du profil visité
+    const viewerRef = doc(db, 'users', viewedId, 'profile_views', state.currentUser.uid);
+    await setDoc(viewerRef, {
+      viewerId: state.currentUser.uid,
+      viewedAt: serverTimestamp()
+    }, { merge: true });
+  } catch(e) { console.error("Erreur log view:", e); }
+}
+
+export function renderProfile() { 
+  if (!state.userProfile || !state.currentUser) return; 
+  viewingUserId = state.currentUser.uid; 
+  displayProfileData(state.userProfile, true, viewingUserId); 
+}
+
+export async function openUserProfile(userId) { 
+  if (!state.currentUser) return; 
+  viewingUserId = userId; 
+  
+  // Si on visite le profil de quelqu'un d'autre, on enregistre la visite
+  if (userId !== state.currentUser.uid) {
+    logProfileView(userId);
+  }
+  
+  if (userId === state.currentUser.uid) { 
+    displayProfileData(state.userProfile, true, userId); 
+  } else { 
+    const snap = await getDoc(doc(db, 'users', userId)); 
+    if (snap.exists()) { 
+      displayProfileData(snap.data(), false, userId); 
+    } 
+  } 
+  switchView('profile'); 
 }
 
 async function displayProfileData(profile, isMe, targetId) { 
@@ -157,7 +182,7 @@ async function displayProfileData(profile, isMe, targetId) {
   if (profile.isPremium) { badgesHtml = `<span class="badge-item" style="background: linear-gradient(135deg, #a855f7, #6b21a8); border: 1px solid #d8b4fe;">💎 Premium</span>` + badgesHtml; }
   if($('profile-badges')) $('profile-badges').innerHTML = badgesHtml; 
   
-  // --- STATS & BOUTONS ---
+  // --- STATS ---
   const postsQuery = query(collection(db, 'posts'), where('authorId', '==', targetId)); 
   const postsSnap = await getDocs(postsQuery); 
   if($('stat-posts')) $('stat-posts').textContent = postsSnap.docs.length; 
@@ -171,6 +196,7 @@ async function displayProfileData(profile, isMe, targetId) {
       if($('stat-profile-views')) $('stat-profile-views').textContent = viewsSnap.size;
     } catch(e) { console.error("Erreur count views:", e); }
   } else {
+    // Pour les autres profils, on cache le bouton visiteurs
     const viewsEl = document.querySelector('#stat-profile-views')?.parentElement?.parentElement;
     if (viewsEl) viewsEl.style.display = 'none';
   }
