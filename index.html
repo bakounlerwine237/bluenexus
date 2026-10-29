@@ -128,13 +128,13 @@
         <button id="tab-following" class="btn-secondary small" style="flex:1; white-space: nowrap;">Abonnements</button>
         <button id="tab-opportunities" class="btn-secondary small" style="flex:1; white-space: nowrap;">💼 Opportunités</button>
         <button id="tab-confessions" class="btn-secondary small" style="flex:1; white-space: nowrap;">🤫 Confessions</button>
+        <button id="tab-events" class="btn-secondary small" style="flex:1; white-space: nowrap;">📅 Événements</button>
         <button id="tab-trending" class="btn-secondary small" style="flex:1; white-space: nowrap;">🔥 Tendances</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
       
       <div id="stories-list" class="stories-container"></div>
       
-      <!-- BANNIÈRE BONUS QUOTIDIEN -->
       <div id="daily-bonus-banner" style="display:none; margin-bottom: 1rem;">
         <div onclick="document.getElementById('modal-daily').classList.remove('hidden')" style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1rem; border-radius: var(--radius); cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); position: relative; overflow: hidden;">
           <div style="font-size: 2rem;">🎁</div>
@@ -143,7 +143,6 @@
         </div>
       </div>
       
-      <!-- TOP HASHTAGS -->
       <div id="top-hashtags-container" style="display: none; margin-bottom: 1rem;">
         <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">🔥 Top Hashtags de la semaine</h4>
         <div id="top-hashtags-list" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
@@ -180,8 +179,8 @@
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
       
-      <!-- BOUTON FLOTTANT OPPORTUNITES -->
       <button id="btn-float-opp" style="position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #10b981; color: white; border: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); display: none; align-items: center; justify-content: center; z-index: 99;" title="Publier une opportunité">💼</button>
+      <button id="btn-float-event" style="position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); display: none; align-items: center; justify-content: center; z-index: 99;" title="Créer un événement">📅</button>
     </section>
     
     <section id="view-search" class="view">
@@ -248,11 +247,30 @@
     
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2></div>
-      <div id="chat-messages" class="chat-container"></div>
-      <div class="chat-input-bar"><input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button><div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div><button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button></div>
+      <div id="chat-messages" class="chat-container" style="padding-bottom: 100px;"></div>
+      
+      <!-- ZONE DE REPONSE (QUOTED MESSAGE) -->
+      <div id="chat-reply-container" style="display: none; background: var(--bg-2); border-top: 1px solid var(--border); padding: 8px 15px; position: fixed; bottom: 60px; left: 0; right: 0; z-index: 101; border-left: 4px solid var(--blue-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="overflow: hidden; flex: 1;">
+            <strong style="color: var(--blue-light); font-size: 0.75rem;" id="reply-to-name">Répondre à ...</strong>
+            <p class="muted" style="font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;" id="reply-to-text">...</p>
+          </div>
+          <button onclick="window.cancelReply()" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer;">✕</button>
+        </div>
+      </div>
+
+      <div class="chat-input-bar" style="bottom: 0; position: fixed;">
+        <input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;">
+        <button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button>
+        <div style="flex: 1; position: relative;">
+          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
+        </div>
+        <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
+      </div>
     </section>
     
-    <!-- SECTION PROFIL MISE A JOUR AVEC VISITEURS ET XP -->
+    <!-- SECTION PROFIL MISE A JOUR AVEC PARTAGE -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner">
@@ -263,17 +281,21 @@
             <div id="avatar-effect-overlay" class="effect-overlay" style="border-radius: 50%;"></div>
             <div class="fb-avatar" id="profile-avatar"></div>
           </div>
-          <div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div>
+          <div style="padding-bottom: 10px;">
+            <h2 id="profile-name">—</h2>
+            <p id="profile-bio" class="muted" style="margin-top: 5px;"></p>
+          </div>
         </div>
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
         
-        <div style="padding: 0 1rem; margin-bottom: 10px;">
+        <div style="padding: 0 1rem; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
           <span style="background: linear-gradient(135deg, #f59e0b, #b45309); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
             🪙 <span id="profile-coins">0</span> Nexus Coins
           </span>
+          <!-- BOUTON PARTAGER PROFIL -->
+          <button id="btn-share-profile" class="btn-secondary small" style="border-radius: 20px;">🔗 Partager</button>
         </div>
 
-        <!-- BARRE D'XP -->
         <div style="padding: 0 1rem; margin-bottom: 15px;">
           <div style="background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 10px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
@@ -464,6 +486,28 @@
   </div>
 </div>
 
+<!-- MODALE EVENEMENT -->
+<div id="modal-event" class="modal hidden">
+  <div class="modal-content">
+    <h3 style="color: #f59e0b; margin-bottom: 1rem;">📅 Créer un Événement</h3>
+    
+    <label class="muted" style="font-size: 0.8rem;">Titre de l'événement</label>
+    <input id="event-title" placeholder="Ex: Concert de Stanley Enow, Meetup Tech..." />
+    
+    <label class="muted" style="font-size: 0.8rem;">Date et Heure</label>
+    <input id="event-date" type="datetime-local" style="padding: 10px;" />
+
+    <label class="muted" style="font-size: 0.8rem;">Lieu</label>
+    <input id="event-location" placeholder="Ex: Palais des Sports, Douala" />
+    
+    <label class="muted" style="font-size: 0.8rem;">Description</label>
+    <textarea id="event-desc" placeholder="Détails de l'événement..." rows="3"></textarea>
+    
+    <button id="btn-publish-event" class="btn-primary" style="background: #f59e0b; margin-top: 10px;">Créer l'événement</button>
+    <button id="btn-cancel-event" class="btn-secondary">Annuler</button>
+  </div>
+</div>
+
 <div id="modal-shop" class="modal hidden">
   <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
     <h3 style="color: #f59e0b; margin-bottom: 0.5rem;">🛍️ Boutique Nexus</h3>
@@ -527,6 +571,18 @@
       <p class="muted" style="text-align: center;">Chargement...</p>
     </div>
     <button onclick="document.getElementById('modal-profile-viewers').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button>
+  </div>
+</div>
+
+<!-- MODALE QR CODE PROFIL -->
+<div id="modal-qr" class="modal hidden">
+  <div class="modal-content" style="text-align: center;">
+    <h3 style="color: var(--blue-light); margin-bottom: 1rem;">🔗 Partager mon profil</h3>
+    <p class="muted" style="margin-bottom: 1rem;">Scannez ce QR Code ou copiez le lien pour partager votre profil.</p>
+    <img id="qr-code-img" src="" alt="QR Code" style="width: 200px; height: 200px; border-radius: 10px; margin-bottom: 1rem; background: white; padding: 10px;" />
+    <div style="background: var(--bg); padding: 10px; border-radius: 8px; border: 1px dashed var(--border); margin-bottom: 1rem; word-break: break-all; font-size: 0.85rem;" id="profile-share-url"></div>
+    <button id="btn-copy-profile-url" class="btn-primary" style="width: 100%; margin-bottom: 10px;">Copier le lien</button>
+    <button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="btn-secondary" style="width: 100%;">Fermer</button>
   </div>
 </div>
 

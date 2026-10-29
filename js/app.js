@@ -40,18 +40,16 @@ function listenToUnreadMessages() {
   });
 }
 
-// --- LOGIQUE TOP CREATEURS ---
+// --- TOP CREATEURS ---
 window.loadTopCreators = async () => {
   const container = $('top-creators-list');
   if (!container) return;
   container.innerHTML = '<p class="muted" style="text-align:center;">Chargement...</p>';
   
   try {
-    // Récupérer tous les utilisateurs et trier par XP
     const snap = await getDocs(collection(db, 'users'));
     const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     users.sort((a, b) => (b.xp || 0) - (a.xp || 0));
-    
     const top10 = users.slice(0, 10);
     let html = '';
     
@@ -69,7 +67,6 @@ window.loadTopCreators = async () => {
         </div>
       </div>`;
     });
-    
     container.innerHTML = html;
   } catch(e) { container.innerHTML = '<p class="muted" style="color:red;">Erreur de chargement.</p>'; }
 };
@@ -168,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- BOUTIQUE ---
   const shopModal = $('modal-shop');
   if (shopModal) {
     const observer = new MutationObserver((mutations) => {
@@ -211,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { window.showToast("Erreur lors de l'achat : " + e.message, "error"); }
   };
 
+  // --- PARRAINAGE ---
   const copyRefBtn = $('btn-copy-referral');
   if (copyRefBtn) {
     copyRefBtn.addEventListener('click', () => {
@@ -222,12 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (shareRefBtn) {
     shareRefBtn.addEventListener('click', () => {
       const code = $('my-referral-code').value;
-      const siteUrl = "https://bluenexus-psi.vercel.app"; 
+      const siteUrl = window.location.origin; 
       const message = encodeURIComponent(`Rejoins-moi sur BlueNexus ! 🚀\nCode de parrainage : *${code}*\n${siteUrl}`);
       window.open(`https://wa.me/?text=${message}`, '_blank');
     });
   }
 
+  // --- BONUS QUOTIDIEN ---
   window.checkDailyBonus = () => {
     if (!state.userProfile) return;
     const banner = $('daily-bonus-banner');
@@ -273,6 +273,33 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (e) { window.showToast("Erreur : " + e.message, "error"); }
     });
   }
+
+  // --- PARTAGE PROFIL (QR CODE) ---
+  if($('btn-share-profile')) {
+    $('btn-share-profile').addEventListener('click', () => {
+      if (!state.currentUser) return;
+      const shareUrl = window.location.origin + window.location.pathname + "?user=" + state.currentUser.uid;
+      
+      $('profile-share-url').textContent = shareUrl;
+      $('qr-code-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}`;
+      $('modal-qr').classList.remove('hidden');
+      
+      if (navigator.share) {
+        navigator.share({
+          title: 'Mon profil BlueNexus',
+          text: 'Rejoins-moi sur BlueNexus !',
+          url: shareUrl
+        }).catch(() => {});
+      }
+    });
+  }
+
+  if($('btn-copy-profile-url')) {
+    $('btn-copy-profile-url').addEventListener('click', () => {
+      const url = $('profile-share-url').textContent;
+      navigator.clipboard.writeText(url).then(() => window.showToast("✅ Lien copié !"));
+    });
+  }
 });
 
 document.addEventListener('userReady', () => { 
@@ -283,4 +310,13 @@ document.addEventListener('userReady', () => {
   try { populatePageSelector(); } catch(e) { console.error(e); } 
   try { window.checkDailyBonus(); } catch(e) { console.error(e); }
   if(document.getElementById('view-profile').classList.contains('active')) { try { renderProfile(); } catch(e) { console.error(e); } } 
+
+  // --- DETECTION URL PROFIL (?user=UID) ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const profileParam = urlParams.get('user');
+  if (profileParam && profileParam !== state.currentUser.uid) {
+    setTimeout(() => {
+      if (window.openUserProfile) window.openUserProfile(profileParam);
+    }, 1000);
+  }
 });
