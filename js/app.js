@@ -1,5 +1,5 @@
 // --- js/app.js ---
-import { $, speakText, translateText, toggleMoreMenu, sharePost } from './utils.js';
+import { $, speakText, translateText, toggleMoreMenu, sharePost, getLevelInfo } from './utils.js';
 import { initNavigation } from './navigation.js';
 import { initAuth } from './auth.js';
 import { initFeed, loadGlobalFeed, populatePageSelector } from './feed.js';
@@ -39,6 +39,40 @@ function listenToUnreadMessages() {
     else { badge.style.display = 'none'; }
   });
 }
+
+// --- LOGIQUE TOP CREATEURS ---
+window.loadTopCreators = async () => {
+  const container = $('top-creators-list');
+  if (!container) return;
+  container.innerHTML = '<p class="muted" style="text-align:center;">Chargement...</p>';
+  
+  try {
+    // Récupérer tous les utilisateurs et trier par XP
+    const snap = await getDocs(collection(db, 'users'));
+    const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    users.sort((a, b) => (b.xp || 0) - (a.xp || 0));
+    
+    const top10 = users.slice(0, 10);
+    let html = '';
+    
+    top10.forEach((u, index) => {
+      const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+      const avatar = u.photoURL ? `<img src="${u.photoURL}" class="tg-avatar">` : `<div class="tg-avatar">${u.username[0].toUpperCase()}</div>`;
+      const levelInfo = getLevelInfo(u.xp || 0);
+      
+      html += `<div class="tg-item" onclick="document.getElementById('modal-top-creators').classList.add('hidden'); window.openUserProfile('${u.id}')">
+        <div style="font-size: 1.2rem; margin-right: 10px; width: 30px; text-align: center;">${medal}</div>
+        ${avatar}
+        <div class="tg-content">
+          <div class="tg-title">${u.username} ${u.role === 'admin' ? '👑' : ''}</div>
+          <div class="tg-subtitle">${levelInfo.title} · ${u.xp || 0} XP</div>
+        </div>
+      </div>`;
+    });
+    
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<p class="muted" style="color:red;">Erreur de chargement.</p>'; }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   try { initNavigation(); } catch(e) { console.error(e); } 
@@ -129,26 +163,17 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.toggle('eco-mode');
       const isNowEco = document.body.classList.contains('eco-mode');
       localStorage.setItem('bluenexus_eco_mode', isNowEco);
-      if (isNowEco) {
-        ecoBtn.classList.add('active');
-        if(window.showToast) window.showToast("🍃 Mode Éco activé.");
-      } else {
-        ecoBtn.classList.remove('active');
-        if(window.showToast) window.showToast("Mode Éco désactivé.");
-      }
+      if (isNowEco) { ecoBtn.classList.add('active'); if(window.showToast) window.showToast("🍃 Mode Éco activé."); } 
+      else { ecoBtn.classList.remove('active'); if(window.showToast) window.showToast("Mode Éco désactivé."); }
     });
   }
 
-  // --- LOGIQUE BOUTIQUE NEXUS ---
   const shopModal = $('modal-shop');
-  
   if (shopModal) {
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class' && !shopModal.classList.contains('hidden')) {
-          if ($('shop-coins-balance') && state.userProfile) {
-            $('shop-coins-balance').textContent = state.userProfile.coins || 0;
-          }
+          if ($('shop-coins-balance') && state.userProfile) $('shop-coins-balance').textContent = state.userProfile.coins || 0;
         }
       });
     });
@@ -158,61 +183,38 @@ document.addEventListener('DOMContentLoaded', () => {
   window.buyShopItem = async (itemType, price) => {
     if (!state.currentUser || !state.userProfile) return;
     const currentCoins = state.userProfile.coins || 0;
-
-    if (currentCoins < price) {
-      if (window.showToast) window.showToast("❌ Solde insuffisant. Il vous manque " + (price - currentCoins) + " 🪙", "error");
-      return;
-    }
-
+    if (currentCoins < price) return window.showToast("❌ Solde insuffisant. Il vous manque " + (price - currentCoins) + " 🪙", "error");
     if (!confirm(`Voulez-vous acheter cet article pour ${price} 🪙 Nexus Coins ?`)) return;
-
     try {
       const userRef = doc(db, 'users', state.currentUser.uid);
       const newCoins = currentCoins - price;
       let updates = { coins: newCoins };
-
-      if (itemType === 'stars' || itemType === 'sakura') {
-        updates.profileEffect = itemType;
-      } else if (itemType === 'premium') {
-        updates.isPremium = true;
-      } else if (itemType === 'boost') {
+      if (itemType === 'stars' || itemType === 'sakura') updates.profileEffect = itemType;
+      else if (itemType === 'premium') updates.isPremium = true;
+      else if (itemType === 'boost') {
         const q = query(collection(db, 'posts'), where('authorId', '==', state.currentUser.uid), orderBy('createdAt', 'desc'), limit(1));
         const snap = await getDocs(q);
-        if (!snap.empty) {
-          await updateDoc(doc(db, 'posts', snap.docs[0].id), { createdAt: serverTimestamp() });
-        }
+        if (!snap.empty) await updateDoc(doc(db, 'posts', snap.docs[0].id), { createdAt: serverTimestamp() });
       }
-
       await updateDoc(userRef, updates);
       state.userProfile.coins = newCoins;
       if (updates.profileEffect) state.userProfile.profileEffect = updates.profileEffect;
       if (updates.isPremium) state.userProfile.isPremium = true;
-
       if ($('shop-coins-balance')) $('shop-coins-balance').textContent = newCoins;
       if ($('profile-coins')) $('profile-coins').textContent = newCoins;
-      
-      if (window.showToast) window.showToast("✅ Achat réussi !", "success");
-      
+      window.showToast("✅ Achat réussi !", "success");
       setTimeout(() => {
         if (shopModal) shopModal.classList.add('hidden');
         if (window.renderProfile) window.renderProfile();
         if (itemType === 'boost' && window.loadGlobalFeed) window.loadGlobalFeed(true);
       }, 1000);
-
-    } catch (e) {
-      console.error(e);
-      if (window.showToast) window.showToast("Erreur lors de l'achat : " + e.message, "error");
-    }
+    } catch (e) { window.showToast("Erreur lors de l'achat : " + e.message, "error"); }
   };
 
-  // --- LOGIQUE PARRAINAGE ---
   const copyRefBtn = $('btn-copy-referral');
   if (copyRefBtn) {
     copyRefBtn.addEventListener('click', () => {
-      const code = $('my-referral-code').value;
-      navigator.clipboard.writeText(code).then(() => {
-        if(window.showToast) window.showToast("✅ Code de parrainage copié !");
-      });
+      navigator.clipboard.writeText($('my-referral-code').value).then(() => window.showToast("✅ Code de parrainage copié !"));
     });
   }
 
@@ -221,85 +223,54 @@ document.addEventListener('DOMContentLoaded', () => {
     shareRefBtn.addEventListener('click', () => {
       const code = $('my-referral-code').value;
       const siteUrl = "https://bluenexus-psi.vercel.app"; 
-      const message = encodeURIComponent(`Rejoins-moi sur BlueNexus, le nouveau réseau social ! 🚀\n\nUtilise mon code de parrainage lors de ton inscription : *${code}*\n\nOn gagne tous les deux des Nexus Coins ! 🪙\n\n${siteUrl}`);
+      const message = encodeURIComponent(`Rejoins-moi sur BlueNexus ! 🚀\nCode de parrainage : *${code}*\n${siteUrl}`);
       window.open(`https://wa.me/?text=${message}`, '_blank');
     });
   }
 
-  // --- LOGIQUE BONUS QUOTIDIEN ---
   window.checkDailyBonus = () => {
     if (!state.userProfile) return;
     const banner = $('daily-bonus-banner');
     if (!banner) return;
-    
     const lastClaim = state.userProfile.lastDailyClaim || 0;
-    const now = Date.now();
-    const hoursElapsed = (now - lastClaim) / (1000 * 60 * 60);
-    
-    if (!lastClaim || hoursElapsed >= 24) {
-      banner.style.display = 'block';
-    } else {
-      banner.style.display = 'none';
-    }
+    const hoursElapsed = (Date.now() - lastClaim) / (1000 * 60 * 60);
+    banner.style.display = (!lastClaim || hoursElapsed >= 24) ? 'block' : 'none';
   };
 
-  if($('btn-close-daily')) {
-    $('btn-close-daily').addEventListener('click', () => $('modal-daily').classList.add('hidden'));
-  }
+  if($('btn-close-daily')) $('btn-close-daily').addEventListener('click', () => $('modal-daily').classList.add('hidden'));
 
   if($('btn-claim-daily')) {
     $('btn-claim-daily').addEventListener('click', async () => {
       if (!state.userProfile || !state.currentUser) return;
-      
       const lastClaim = state.userProfile.lastDailyClaim || 0;
-      const now = Date.now();
-      const hoursElapsed = (now - lastClaim) / (1000 * 60 * 60);
-      
-      if (hoursElapsed < 24) {
-        window.showToast(`⏳ Revenez dans ${Math.ceil(24 - hoursElapsed)}h`, "error");
-        return;
-      }
+      const hoursElapsed = (Date.now() - lastClaim) / (1000 * 60 * 60);
+      if (hoursElapsed < 24) return window.showToast(`⏳ Revenez dans ${Math.ceil(24 - hoursElapsed)}h`, "error");
       
       let streak = state.userProfile.dailyStreak || 0;
-      if (hoursElapsed < 48) streak++;
-      else streak = 1;
+      streak = (hoursElapsed < 48) ? streak + 1 : 1;
       
       const rewards = [25, 50, 75, 100, 150];
       let reward = rewards[Math.floor(Math.random() * rewards.length)];
-      
       if (streak >= 7) reward += 150;
       else if (streak > 1) reward += streak * 10;
       
       try {
         const userRef = doc(db, 'users', state.currentUser.uid);
         const currentCoins = state.userProfile.coins || 0;
-        await updateDoc(userRef, {
-          coins: currentCoins + reward,
-          lastDailyClaim: now,
-          dailyStreak: streak
-        });
-        
+        await updateDoc(userRef, { coins: currentCoins + reward, lastDailyClaim: Date.now(), dailyStreak: streak });
         state.userProfile.coins = currentCoins + reward;
-        state.userProfile.lastDailyClaim = now;
+        state.userProfile.lastDailyClaim = Date.now();
         state.userProfile.dailyStreak = streak;
         
         $('daily-gift-display').textContent = '🎉';
-        $('daily-gift-display').style.animation = 'none';
-        setTimeout(() => { $('daily-gift-display').style.animation = 'bounce 0.6s'; }, 10);
-        
-        window.showToast(`🎉 +${reward} 🪙 Nexus Coins ! (Série: ${streak}j)`, "success");
-        
+        window.showToast(`🎉 +${reward} 🪙 Nexus Coins !`, "success");
         setTimeout(() => {
           $('modal-daily').classList.add('hidden');
           $('daily-bonus-banner').style.display = 'none';
           $('daily-gift-display').textContent = '📦';
-          $('daily-streak-text').textContent = `${streak} jour${streak > 1 ? 's' : ''}`;
           if (window.renderProfile) window.renderProfile();
         }, 2000);
-        
-      } catch (e) {
-        window.showToast("Erreur : " + e.message, "error");
-      }
+      } catch (e) { window.showToast("Erreur : " + e.message, "error"); }
     });
   }
 });
@@ -311,7 +282,5 @@ document.addEventListener('userReady', () => {
   try { loadStories(); } catch(e) { console.error(e); } 
   try { populatePageSelector(); } catch(e) { console.error(e); } 
   try { window.checkDailyBonus(); } catch(e) { console.error(e); }
-  if(document.getElementById('view-profile').classList.contains('active')) { 
-    try { renderProfile(); } catch(e) { console.error(e); } 
-  } 
+  if(document.getElementById('view-profile').classList.contains('active')) { try { renderProfile(); } catch(e) { console.error(e); } } 
 });

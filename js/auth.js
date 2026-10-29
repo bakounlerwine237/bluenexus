@@ -122,7 +122,8 @@ export function initAuth() {
         referredBy: referredBy,
         referrals: [],
         lastDailyClaim: 0,
-        dailyStreak: 0
+        dailyStreak: 0,
+        xp: 0 // NOUVEAU : Initialisation de l'XP
       }); 
     } catch (e) { 
       $('auth-error').textContent = e.message; 
@@ -164,6 +165,10 @@ export function initAuth() {
         if(!state.userProfile.coins) state.userProfile.coins = 0; 
         if(state.userProfile.lastDailyClaim === undefined) state.userProfile.lastDailyClaim = 0;
         if(state.userProfile.dailyStreak === undefined) state.userProfile.dailyStreak = 0;
+        if(state.userProfile.xp === undefined) {
+            state.userProfile.xp = 0;
+            await updateDoc(doc(db, 'users', user.uid), { xp: 0 });
+        }
         
         if(!state.userProfile.referralCode) {
           const newCode = state.userProfile.username.toUpperCase() + Math.floor(Math.random() * 100);
@@ -180,7 +185,7 @@ export function initAuth() {
         } 
       } else { 
         const newCode = user.email.split('@')[0].toUpperCase() + Math.floor(Math.random() * 100);
-        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50, referralCode: newCode, referrals: [], lastDailyClaim: 0, dailyStreak: 0 }; 
+        state.userProfile = { username: user.email.split('@')[0], bio: "Nouveau", photoURL: "", pinned: [], following: [], badges: [], savedPosts: [], coins: 50, referralCode: newCode, referrals: [], lastDailyClaim: 0, dailyStreak: 0, xp: 0 }; 
         await setDoc(doc(db, 'users', user.uid), state.userProfile); 
         if($('my-referral-code')) $('my-referral-code').value = newCode;
       } 

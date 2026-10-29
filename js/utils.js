@@ -33,18 +33,22 @@ export function timeAgo(createdAt) {
   return "À l'instant"; 
 }
 
-// MISE À JOUR : Gestion des mentions (@) et hashtags (#)
 export function formatPostText(text) { 
   if (!text) return ''; 
   let formatted = text; 
-  
-  // Lien pour les Mentions (@pseudo) - Fond bleu léger
   formatted = formatted.replace(/@([a-zA-Z0-9_]+)/g, '<span onclick="window.searchFromPost(\'@$1\')" style="color: var(--blue-light); font-weight: bold; cursor: pointer; background: rgba(59, 130, 246, 0.1); padding: 0 4px; border-radius: 4px;">@$1</span>'); 
-  
-  // Lien pour les Hashtags (#sujet) - Fond bleu léger
   formatted = formatted.replace(/#([a-zA-Z0-9_]+)/g, '<span onclick="window.searchFromPost(\'#$1\')" style="color: var(--blue-light); font-weight: bold; cursor: pointer; background: rgba(59, 130, 246, 0.1); padding: 0 4px; border-radius: 4px;">#$1</span>'); 
-  
   return formatted; 
+}
+
+// --- NOUVEAU : Calcul du niveau à partir de l'XP ---
+export function getLevelInfo(xp) {
+  xp = xp || 0;
+  if (xp < 100) return { level: 1, title: "Novice", nextXp: 100, progress: (xp / 100) * 100 };
+  if (xp < 500) return { level: 2, title: "Membre Actif", nextXp: 500, progress: ((xp - 100) / 400) * 100 };
+  if (xp < 2000) return { level: 3, title: "Créateur Confirmé", nextXp: 2000, progress: ((xp - 500) / 1500) * 100 };
+  if (xp < 5000) return { level: 4, title: "Influenceur", nextXp: 5000, progress: ((xp - 2000) / 3000) * 100 };
+  return { level: 5, title: "Légende de BlueNexus", nextXp: xp + 1000, progress: 100 };
 }
 
 export function speakText(elementId) { 
@@ -63,11 +67,7 @@ export function speakText(elementId) {
 export async function translateText(elementId) { 
   const el = $(elementId); 
   if(!el) return; 
-  if (el.dataset.translated === 'true') { 
-    el.textContent = el.dataset.original; 
-    el.dataset.translated = 'false'; 
-    return; 
-  } 
+  if (el.dataset.translated === 'true') { el.textContent = el.dataset.original; el.dataset.translated = 'false'; return; } 
   const originalText = el.textContent; 
   el.dataset.original = originalText; 
   el.textContent = "Traduction..."; 
@@ -76,9 +76,7 @@ export async function translateText(elementId) {
     const data = await res.json(); 
     el.textContent = data.responseData.translatedText; 
     el.dataset.translated = 'true'; 
-  } catch (e) { 
-    el.textContent = originalText; 
-  } 
+  } catch (e) { el.textContent = originalText; } 
 }
 
 export function toggleMoreMenu(postId) { 

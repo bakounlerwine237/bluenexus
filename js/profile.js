@@ -1,6 +1,6 @@
 // --- js/profile.js ---
 import { db, state } from './state.js'; 
-import { $, uploadFile, showToast } from './utils.js'; 
+import { $, uploadFile, showToast, getLevelInfo } from './utils.js'; 
 import { switchView } from './navigation.js'; 
 import { generatePostHTML } from './feed.js'; 
 import { sendNotification } from './notifications.js'; 
@@ -20,21 +20,16 @@ function timeAgoFromDate(timestamp) {
 }
 
 // --- FONCTION GLOBALE : Ouvrir la modale des visiteurs ---
-// On la place tout en haut pour qu'elle soit toujours disponible
 window.openProfileViewers = async () => {
   if (!state.currentUser) return;
   const modal = document.getElementById('modal-profile-viewers');
   const container = document.getElementById('viewers-list-container');
-  if (!modal || !container) {
-    alert("Erreur : La modale des visiteurs n'existe pas dans le HTML.");
-    return;
-  }
+  if (!modal || !container) return;
   
   modal.classList.remove('hidden');
   container.innerHTML = '<p class="muted" style="text-align: center;">Chargement...</p>';
   
   try {
-    // On récupère la sous-collection 'profile_views' de l'utilisateur
     const viewsSnap = await getDocs(collection(db, 'users', state.currentUser.uid, 'profile_views'));
     
     if (viewsSnap.empty) {
@@ -43,7 +38,6 @@ window.openProfileViewers = async () => {
     }
     
     const views = viewsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    // Trier par date (du plus récent au plus ancien)
     views.sort((a, b) => {
       const tA = a.viewedAt?.toMillis ? a.viewedAt.toMillis() : 0;
       const tB = b.viewedAt?.toMillis ? b.viewedAt.toMillis() : 0;
@@ -60,25 +54,19 @@ window.openProfileViewers = async () => {
       </div>`;
     }
     
-    // On affiche max 50 visiteurs
     for (const view of views.slice(0, 50)) {
       try {
         const uSnap = await getDoc(doc(db, 'users', view.viewerId));
         if (uSnap.exists()) {
           const u = uSnap.data();
-          
-          // Avatar (flouté si pas premium)
           const avatarStyle = !isPremium ? 'filter: blur(8px);' : '';
           const avatar = u.photoURL 
             ? `<img src="${u.photoURL}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; ${avatarStyle}">` 
             : `<div style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; ${avatarStyle}">${u.username[0].toUpperCase()}</div>`;
           
           const timeAgoText = view.viewedAt ? timeAgoFromDate(view.viewedAt) : "Récemment";
-          
-          // Nom (flouté si pas premium)
           const nameStyle = !isPremium ? 'filter: blur(6px); user-select: none;' : '';
           const displayName = isPremium ? u.username : '████████';
-          
           const clickAction = isPremium ? `onclick="document.getElementById('modal-profile-viewers').classList.add('hidden'); window.openUserProfile('${view.viewerId}')"` : '';
           
           html += `
@@ -91,13 +79,12 @@ window.openProfileViewers = async () => {
             </div>
           `;
         }
-      } catch(e) { console.error("Erreur lecture visiteur:", e); }
+      } catch(e) { console.error(e); }
     }
-    
     container.innerHTML = html;
   } catch(e) {
     console.error(e);
-    container.innerHTML = '<p class="muted" style="text-align: center; color: #ef4444;">Erreur de chargement des visiteurs.</p>';
+    container.innerHTML = '<p class="muted" style="text-align: center; color: #ef4444;">Erreur de chargement.</p>';
   }
 };
 
@@ -105,7 +92,6 @@ window.openProfileViewers = async () => {
 async function logProfileView(viewedId) {
   if (!state.currentUser) return;
   try {
-    // On crée un document dans la sous-collection du profil visité
     const viewerRef = doc(db, 'users', viewedId, 'profile_views', state.currentUser.uid);
     await setDoc(viewerRef, {
       viewerId: state.currentUser.uid,
@@ -124,18 +110,13 @@ export async function openUserProfile(userId) {
   if (!state.currentUser) return; 
   viewingUserId = userId; 
   
-  // Si on visite le profil de quelqu'un d'autre, on enregistre la visite
-  if (userId !== state.currentUser.uid) {
-    logProfileView(userId);
-  }
+  if (userId !== state.currentUser.uid) logProfileView(userId);
   
   if (userId === state.currentUser.uid) { 
     displayProfileData(state.userProfile, true, userId); 
   } else { 
     const snap = await getDoc(doc(db, 'users', userId)); 
-    if (snap.exists()) { 
-      displayProfileData(snap.data(), false, userId); 
-    } 
+    if (snap.exists()) displayProfileData(snap.data(), false, userId); 
   } 
   switchView('profile'); 
 }
@@ -150,6 +131,13 @@ async function displayProfileData(profile, isMe, targetId) {
   
   // --- NEXUS COINS ---
   if($('profile-coins')) $('profile-coins').textContent = profile.coins || 0;
+
+  // --- XP ET NIVEAU ---
+  const xp = profile.xp || 0;
+  const levelInfo = getLevelInfo(xp);
+  if($('profile-level-title')) $('profile-level-title').textContent = `Niv. ${levelInfo.level} - ${levelInfo.title}`;
+  if($('profile-xp-text')) $('profile-xp-text').textContent = `${xp} / ${levelInfo.nextXp} XP`;
+  if($('profile-xp-bar')) $('profile-xp-bar').style.width = `${levelInfo.progress}%`;
 
   // --- GESTION DE L'AVATAR ---
   const av = $('profile-avatar'); 
@@ -196,7 +184,6 @@ async function displayProfileData(profile, isMe, targetId) {
       if($('stat-profile-views')) $('stat-profile-views').textContent = viewsSnap.size;
     } catch(e) { console.error("Erreur count views:", e); }
   } else {
-    // Pour les autres profils, on cache le bouton visiteurs
     const viewsEl = document.querySelector('#stat-profile-views')?.parentElement?.parentElement;
     if (viewsEl) viewsEl.style.display = 'none';
   }
@@ -265,7 +252,6 @@ export function initProfile() {
     $('btn-edit-profile-trigger').addEventListener('click', () => {
       if ($('edit-profile-effect')) {
         $('edit-profile-effect').value = state.userProfile.profileEffect || 'none';
-        
         const options = $('edit-profile-effect').querySelectorAll('option');
         options.forEach(opt => {
           if (opt.value !== 'none' && !state.userProfile.isPremium && state.userProfile.role !== 'admin') {
