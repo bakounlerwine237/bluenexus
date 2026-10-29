@@ -240,6 +240,7 @@
       <div class="chat-input-bar"><input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button><div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div><button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button></div>
     </section>
     
+    <!-- SECTION PROFIL MISE A JOUR AVEC VISITEURS -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
         <div class="fb-banner" id="profile-banner">
@@ -260,7 +261,21 @@
           </span>
         </div>
 
-        <div class="fb-stats"><span><strong id="stat-posts">0</strong> Publications</span><span><strong id="stat-followers">0</strong> Abonnés</span><span><strong id="stat-following">0</strong> Abonnements</span></div>
+        <div class="fb-stats">
+          <span><strong id="stat-posts">0</strong> Publications</span>
+          <span><strong id="stat-followers">0</strong> Abonnés</span>
+          <span><strong id="stat-following">0</strong> Abonnements</span>
+        </div>
+
+        <!-- NOUVEAU : COMPTEUR DE VISITEURS -->
+        <div style="padding: 0 1rem; margin-bottom: 10px;">
+          <div onclick="window.openProfileViewers()" style="background: var(--bg); padding: 8px 12px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);">
+            <span style="font-size: 1.2rem;">👁️</span>
+            <span><strong id="stat-profile-views" style="color: var(--blue-light);">0</strong> visiteurs</span>
+            <span style="color: var(--muted); font-size: 0.8rem;">→</span>
+          </div>
+        </div>
+
         <div class="fb-action-buttons"><button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button><button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button></div>
         <div class="fb-tabs"><button class="fb-tab active" id="btn-tab-posts">Publications</button><button class="fb-tab" id="btn-tab-pages">Pages</button><button class="fb-tab" id="tab-favorites-btn" style="display:none;">Favoris 🔖</button><button class="fb-tab" id="btn-tab-about">À propos</button></div>
         <div class="fb-tab-content">
@@ -488,6 +503,20 @@
     <div style="font-size: 6rem; margin-bottom: 1rem;" id="daily-gift-display">📦</div>
     <button id="btn-claim-daily" class="btn-primary" style="background: #f59e0b; width: 100%; padding: 15px; font-size: 1.1rem;">🎁 Ouvrir le coffre</button>
     <button id="btn-close-daily" class="btn-secondary" style="width: 100%; margin-top: 10px;">Fermer</button>
+  </div>
+</div>
+
+<!-- MODALE VISITEURS DE PROFIL -->
+<div id="modal-profile-viewers" class="modal hidden">
+  <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
+    <h3 style="color: var(--blue-light); margin-bottom: 0.5rem;">👁️ Visiteurs du profil</h3>
+    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Les personnes qui ont consulté votre profil récemment.</p>
+    
+    <div id="viewers-list-container">
+      <p class="muted" style="text-align: center;">Chargement...</p>
+    </div>
+    
+    <button onclick="document.getElementById('modal-profile-viewers').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button>
   </div>
 </div>
 
