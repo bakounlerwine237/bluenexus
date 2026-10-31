@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BlueNexus - Le réseau social des communautés</title>
-  
   <meta name="description" content="Rejoignez BlueNexus, le réseau social nouvelle génération." />
   <meta name="theme-color" content="#0a0e1a" />
-  
-  <!-- DÉTECTEUR D'ERREUR JS -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BlueNexus" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
   <script>
     window.addEventListener('error', function(e) {
       var showError = function() {
@@ -22,67 +24,53 @@
       showError();
     });
   </script>
-
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/png" href="./icon.png" />
+  <link rel="icon" type="image/png" href="./logo-simple.png" />
+  <link rel="apple-touch-icon" href="./logo-simple.png" />
   <link rel="stylesheet" href="./css/styles.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
 </head>
 <body>
 
-<!-- 1. PAGE D'ACCUEIL (LANDING PAGE AVEC ONBOARDING) -->
+<!-- 1. LANDING PAGE -->
 <div id="landing-screen" class="screen active">
   <header class="landing-header">
-    <h1 class="logo">Blue<span>Nexus</span></h1>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="./logo-simple.png" alt="Logo BlueNexus" style="width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+      <h1 class="logo" style="margin: 0; font-size: 1.8rem;">Blue<span>Nexus</span></h1>
+    </div>
     <div class="landing-nav-buttons">
       <button id="btn-landing-login" class="btn-secondary small" style="border: none;">Se connecter</button>
     </div>
   </header>
-
   <div class="onboarding-container">
     <div id="onboarding-track" class="onboarding-track">
-      <div class="onboarding-slide">
-        <div class="slide-icon">🚀</div>
-        <h2 class="slide-title">Bienvenue sur BlueNexus</h2>
-        <p class="slide-desc">Le futur des réseaux sociaux. Un espace où vos idées prennent vie et où les communautés se rencontrent.</p>
-      </div>
-      <div class="onboarding-slide">
-        <div class="slide-icon">💬</div>
-        <h2 class="slide-title">Rejoignez des Communautés</h2>
-        <p class="slide-desc">Créez ou rejoignez des groupes publics, privés ou des chaînes d'annonces. Discutez avec des personnes qui partagent vos passions.</p>
-      </div>
-      <div class="onboarding-slide">
-        <div class="slide-icon">✨</div>
-        <h2 class="slide-title">Un Profil Unique</h2>
-        <p class="slide-desc">Personnalisez votre vitrine avec des bannières animées, des badges exclusifs et des effets d'avatar spectaculaires.</p>
-      </div>
-      <div class="onboarding-slide">
-        <div class="slide-icon">📸</div>
-        <h2 class="slide-title">Stories Éphémères</h2>
-        <p class="slide-desc">Partagez des moments de votre vie en temps réel. Vos stories disparaissent après 24 heures.</p>
-      </div>
+      <div class="onboarding-slide"><div class="slide-icon">🚀</div><h2 class="slide-title">Bienvenue sur BlueNexus</h2><p class="slide-desc">Le futur des réseaux sociaux. Un espace où vos idées prennent vie.</p></div>
+      <div class="onboarding-slide"><div class="slide-icon">💬</div><h2 class="slide-title">Rejoignez des Communautés</h2><p class="slide-desc">Créez ou rejoignez des groupes publics, privés ou des chaînes d'annonces.</p></div>
+      <div class="onboarding-slide"><div class="slide-icon">✨</div><h2 class="slide-title">Un Profil Unique</h2><p class="slide-desc">Personnalisez votre vitrine avec des bannières animées et des effets.</p></div>
+      <div class="onboarding-slide"><div class="slide-icon">📸</div><h2 class="slide-title">Stories Éphémères</h2><p class="slide-desc">Partagez des moments de votre vie en temps réel.</p></div>
       <div class="onboarding-slide final-slide">
         <h2 class="slide-title">Prêt à nous rejoindre ?</h2>
-        <p class="slide-desc" style="margin-bottom: 1.5rem;">Créez votre compte gratuitement et commencez l'aventure.</p>
+        <p class="slide-desc" style="margin-bottom: 1.5rem;">Créez votre compte gratuitement.</p>
         <button id="btn-final-enter-app" class="btn-primary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1rem; margin-bottom: 10px; display: none;">Accéder à mon application</button>
         <button id="btn-final-signup" class="btn-primary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1rem; margin-bottom: 10px;">Créer mon compte</button>
         <button id="btn-final-login" class="btn-secondary" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1rem;">J'ai déjà un compte</button>
       </div>
     </div>
   </div>
-
   <div class="onboarding-controls">
-    <div class="onboarding-dots" id="onboarding-dots">
-      <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-    </div>
+    <div class="onboarding-dots" id="onboarding-dots"><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
     <button id="btn-onboarding-next" class="btn-primary" style="padding: 12px 30px; border-radius: 30px; width: 100%; max-width: 300px;">Suivant →</button>
   </div>
 </div>
 
-<!-- 2. ÉCRAN DE CONNEXION -->
+<!-- 2. AUTH SCREEN -->
 <div id="auth-screen" class="screen">
   <div class="auth-box">
-    <h1 class="logo" style="cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
+      <img src="./logo-simple.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+      <h1 class="logo" style="margin: 0; cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
+    </div>
     <p class="tagline">Le réseau social des communautés</p>
     <div id="login-form">
       <input id="auth-email" type="email" placeholder="Email" />
@@ -105,10 +93,13 @@
   </div>
 </div>
 
-<!-- 3. APPLICATION PRINCIPALE -->
+<!-- 3. APP SCREEN -->
 <div id="app-screen" class="screen">
   <header class="top-bar" id="main-header">
-    <h2 id="page-title">Accueil</h2>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="./logo-simple.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+      <h2 id="page-title" style="margin: 0;">Accueil</h2>
+    </div>
     <div style="display: flex; gap: 12px; align-items: center;">
       <button id="btn-eco-mode" class="nav-btn top-btn" title="Mode Économie de Data" style="font-size: 1.2rem; opacity: 0.5;">🍃</button>
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;">🔔<span id="notif-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
@@ -122,7 +113,6 @@
   <main id="main-content">
     <section id="view-home" class="view active">
       <input type="file" id="story-file-input" accept="image/*" style="display: none;">
-      
       <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center; overflow-x: auto; padding-bottom: 5px;">
         <button id="tab-discovery" class="btn-primary small" style="flex:1; white-space: nowrap;">Découvertes</button>
         <button id="tab-following" class="btn-secondary small" style="flex:1; white-space: nowrap;">Abonnements</button>
@@ -132,9 +122,7 @@
         <button id="tab-trending" class="btn-secondary small" style="flex:1; white-space: nowrap;">🔥 Tendances</button>
         <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
       </div>
-      
       <div id="stories-list" class="stories-container"></div>
-      
       <div id="daily-bonus-banner" style="display:none; margin-bottom: 1rem;">
         <div onclick="document.getElementById('modal-daily').classList.remove('hidden')" style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1rem; border-radius: var(--radius); cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); position: relative; overflow: hidden;">
           <div style="font-size: 2rem;">🎁</div>
@@ -142,12 +130,10 @@
           <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Cliquez pour récupérer vos Nexus Coins</p>
         </div>
       </div>
-      
       <div id="top-hashtags-container" style="display: none; margin-bottom: 1rem;">
         <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">🔥 Top Hashtags de la semaine</h4>
         <div id="top-hashtags-list" style="display: flex; gap: 8px; flex-wrap: wrap;"></div>
       </div>
-
       <div id="post-creation-container" class="post-creation-box" style="flex-direction: column; gap: 10px;">
         <div style="width: 100%;">
           <select id="post-as-select" style="margin-bottom: 0; padding: 8px; font-size: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
@@ -163,22 +149,20 @@
               <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
               <button id="btn-global-attach" class="btn-secondary small">📎</button>
               <button id="btn-create-poll" class="btn-secondary small" title="Créer un sondage">📊</button>
-              <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
+                <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
               <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;" disabled>Publier</button>
             </div>
             <div id="global-file-preview" class="file-preview-container hidden"></div>
+
           </div>
         </div>
       </div>
-      
       <div id="suggested-users-container" style="display:none; margin-bottom: 1rem;">
         <h4 style="font-size: 0.9rem; color: var(--muted); margin-bottom: 8px;">💡 Suggestions pour vous</h4>
         <div id="suggested-users-list" class="tg-list"></div>
       </div>
-      
       <div id="global-feed-list" class="media-list"></div>
       <div id="feed-sentinel" style="height: 20px; margin-top: 20px;"></div>
-      
       <button id="btn-float-opp" style="position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #10b981; color: white; border: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); display: none; align-items: center; justify-content: center; z-index: 99;" title="Publier une opportunité">💼</button>
       <button id="btn-float-event" style="position: fixed; bottom: 80px; right: 20px; width: 50px; height: 50px; border-radius: 50%; background: #f59e0b; color: white; border: none; font-size: 1.5rem; font-weight: bold; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); display: none; align-items: center; justify-content: center; z-index: 99;" title="Créer un événement">📅</button>
     </section>
@@ -193,7 +177,6 @@
     </section>
     
     <section id="view-video" class="view" style="padding: 0 !important;"><div id="video-feed" class="video-feed-container"></div></section>
-    
     <section id="view-notifications" class="view"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;"><h3>Notifications</h3><button id="btn-mark-all-read" class="btn-secondary small">Tout lire</button></div><div id="notif-list" class="tg-list"></div></section>
     
     <section id="view-communities" class="view">
@@ -208,10 +191,7 @@
         <button id="btn-back-from-comm" class="btn-secondary small" style="padding: 4px 8px; align-self: flex-start;">←</button>
         <div style="flex: 1; display: flex; align-items: center; gap: 10px; margin-left: 10px;">
           <div id="comm-avatar-display" style="width: 45px; height: 45px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: bold; background-size: cover; background-position: center; border: 2px solid var(--bg); font-size: 1.2rem;">C</div>
-          <div style="overflow: hidden;">
-            <h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2>
-            <p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0; cursor: pointer; text-decoration: underline;" onclick="window.openMembersList()">0 membres</p>
-          </div>
+          <div style="overflow: hidden;"><h2 id="comm-title-display" style="font-size: 1rem; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom</h2><p id="members-count" class="muted" style="font-size: 0.75rem; margin: 0; cursor: pointer; text-decoration: underline;" onclick="window.openMembersList()">0 membres</p></div>
         </div>
         <button id="btn-join-community" class="btn-primary small" style="flex-shrink: 0; display:none; margin-left: 10px;">Rejoindre</button>
         <div class="more-menu-container" style="flex: 0 0 auto; margin-left: 10px;">
@@ -231,15 +211,11 @@
       </div>
       <input type="file" id="comm-avatar-upload" accept="image/*" style="display: none;">
       <input type="file" id="comm-banner-upload" accept="image/*" style="display: none;">
-      <div id="private-lock-screen" style="display:none; text-align:center; padding: 3rem 1rem;">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
-        <h3 style="margin-bottom: 10px;">Ce groupe est privé</h3>
-        <p class="muted" style="margin-bottom: 1.5rem;">Vous devez être accepté par l'administrateur pour voir le contenu.</p>
-      </div>
+      <div id="private-lock-screen" style="display:none; text-align:center; padding: 3rem 1rem;"><div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div><h3 style="margin-bottom: 10px;">Ce groupe est privé</h3><p class="muted" style="margin-bottom: 1.5rem;">Vous devez être accepté par l'administrateur pour voir le contenu.</p></div>
       <div id="posts-list" class="media-list" style="padding: 1rem; padding-bottom: 80px;"></div>
       <div id="post-form-container" class="chat-input-bar hidden">
         <div style="flex: 1; position: relative;"><textarea id="post-content" placeholder="Écrivez un message..." rows="1" style="padding-right: 60px; border-radius: 20px;"></textarea><input type="file" id="post-file" accept="image/*,video/*,audio/*" style="display: none;"><button id="btn-attach-file" style="position: absolute; right: 35px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">📎</button><button class="btn-mic" data-target="post-content" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer;">🎤</button></div>
-        <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
+         <button id="btn-publish-post" class="btn-primary" style="padding: 10px 15px; border-radius: 50%;">➤</button>
       </div>
     </section>
     
@@ -248,80 +224,40 @@
     <section id="view-chat" class="view">
       <div class="comm-header-fixed" style="background: var(--bg-2);"><button id="btn-back-from-chat" class="btn-secondary small" style="padding: 4px 8px;">←</button><h2 id="chat-with-name" style="font-size: 1rem; margin-left: 10px;">Nom</h2></div>
       <div id="chat-messages" class="chat-container" style="padding-bottom: 100px;"></div>
-      
-      <!-- ZONE DE REPONSE (QUOTED MESSAGE) -->
       <div id="chat-reply-container" style="display: none; background: var(--bg-2); border-top: 1px solid var(--border); padding: 8px 15px; position: fixed; bottom: 60px; left: 0; right: 0; z-index: 101; border-left: 4px solid var(--blue-light);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div style="overflow: hidden; flex: 1;">
-            <strong style="color: var(--blue-light); font-size: 0.75rem;" id="reply-to-name">Répondre à ...</strong>
-            <p class="muted" style="font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;" id="reply-to-text">...</p>
-          </div>
-          <button onclick="window.cancelReply()" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer;">✕</button>
-        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;"><div style="overflow: hidden; flex: 1;"><strong style="color: var(--blue-light); font-size: 0.75rem;" id="reply-to-name">Répondre à ...</strong><p class="muted" style="font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;" id="reply-to-text">...</p></div><button onclick="window.cancelReply()" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer;">✕</button></div>
       </div>
-
       <div class="chat-input-bar" style="bottom: 0; position: fixed;">
         <input type="file" id="chat-file" accept="image/*,video/*,audio/*" style="display: none;">
         <button id="btn-chat-attach" class="btn-secondary" style="padding: 10px 15px; border-radius: 50%; flex-shrink: 0;">📎</button>
-        <div style="flex: 1; position: relative;">
-          <textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea>
-        </div>
+        <div style="flex: 1; position: relative;"><textarea id="chat-input" placeholder="Votre message..." rows="1" style="border-radius: 20px;"></textarea></div>
         <button id="btn-send-chat" class="btn-primary" style="padding: 10px 15px; border-radius: 50%; font-size: 1rem; flex-shrink: 0;">➤</button>
       </div>
     </section>
     
-    <!-- SECTION PROFIL MISE A JOUR AVEC PARTAGE -->
     <section id="view-profile" class="view">
       <div class="fb-profile">
-        <div class="fb-banner" id="profile-banner">
-          <div id="banner-effect-overlay" class="effect-overlay"></div>
-        </div>
+        <div class="fb-banner" id="profile-banner"><div id="banner-effect-overlay" class="effect-overlay"></div></div>
         <div class="fb-avatar-container">
           <div id="profile-avatar-wrapper" class="avatar-effect-container">
             <div id="avatar-effect-overlay" class="effect-overlay" style="border-radius: 50%;"></div>
             <div class="fb-avatar" id="profile-avatar"></div>
           </div>
-          <div style="padding-bottom: 10px;">
-            <h2 id="profile-name">—</h2>
-            <p id="profile-bio" class="muted" style="margin-top: 5px;"></p>
-          </div>
+          <div style="padding-bottom: 10px;"><h2 id="profile-name">—</h2><p id="profile-bio" class="muted" style="margin-top: 5px;"></p></div>
         </div>
         <div id="profile-badges" class="deco-row" style="padding: 0 1rem; margin-bottom: 10px;"></div>
-        
         <div style="padding: 0 1rem; margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <span style="background: linear-gradient(135deg, #f59e0b, #b45309); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
-            🪙 <span id="profile-coins">0</span> Nexus Coins
-          </span>
-          <!-- BOUTON PARTAGER PROFIL -->
+          <span style="background: linear-gradient(135deg, #f59e0b, #b45309); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">🪙 <span id="profile-coins">0</span> Nexus Coins</span>
           <button id="btn-share-profile" class="btn-secondary small" style="border-radius: 20px;">🔗 Partager</button>
         </div>
-
         <div style="padding: 0 1rem; margin-bottom: 15px;">
           <div style="background: var(--bg); border: 1px solid var(--border); padding: 10px; border-radius: 10px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;">
-              <strong id="profile-level-title" style="color: var(--blue-light);">Niveau 1 - Novice</strong>
-              <span id="profile-xp-text" class="muted">0 / 100 XP</span>
-            </div>
-            <div style="background: var(--border); height: 8px; border-radius: 4px; overflow: hidden;">
-              <div id="profile-xp-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.5s;"></div>
-            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px;"><strong id="profile-level-title" style="color: var(--blue-light);">Niveau 1 - Novice</strong><span id="profile-xp-text" class="muted">0 / 100 XP</span></div>
+            <div style="background: var(--border); height: 8px; border-radius: 4px; overflow: hidden;"><div id="profile-xp-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.5s;"></div></div>
           </div>
         </div>
-
-        <div class="fb-stats">
-          <span><strong id="stat-posts">0</strong> Publications</span>
-          <span><strong id="stat-followers">0</strong> Abonnés</span>
-          <span><strong id="stat-following">0</strong> Abonnements</span>
-        </div>
-
-        <div style="padding: 0 1rem; margin-bottom: 10px;">
-          <div onclick="window.openProfileViewers()" style="background: var(--bg); padding: 8px 12px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);">
-            <span style="font-size: 1.2rem;">👁️</span>
-            <span><strong id="stat-profile-views" style="color: var(--blue-light);">0</strong> visiteurs</span>
-            <span style="color: var(--muted); font-size: 0.8rem;">→</span>
-          </div>
-        </div>
-
+        <div class="fb-stats"><span><strong id="stat-posts">0</strong> Publications</span><span><strong id="stat-followers">0</strong> Abonnés</span><span><strong id="stat-following">0</strong> Abonnements</span></div>
+        <div style="padding: 0 1rem; margin-bottom: 10px;"><div onclick="window.openProfileViewers()" style="background: var(--bg); padding: 8px 12px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border);"><span style="font-size: 1.2rem;">👁️</span><span><strong id="stat-profile-views" style="color: var(--blue-light);">0</strong> visiteurs</span><span style="color: var(--muted); font-size: 0.8rem;">→</span></div></div>
         <div class="fb-action-buttons"><button id="btn-edit-profile-trigger" class="btn-secondary small">Modifier mon profil</button><button id="btn-follow-user" class="btn-primary small" style="display:none;">Suivre</button></div>
         <div class="fb-tabs"><button class="fb-tab active" id="btn-tab-posts">Publications</button><button class="fb-tab" id="btn-tab-pages">Pages</button><button class="fb-tab" id="tab-favorites-btn" style="display:none;">Favoris 🔖</button><button class="fb-tab" id="btn-tab-about">À propos</button></div>
         <div class="fb-tab-content">
@@ -344,110 +280,37 @@
         <div class="fb-tab-content" style="padding-top: 1rem; border-top: 1px solid var(--border);"><h3 style="margin-bottom: 1rem; font-size: 1rem;">Publications de la page</h3><div id="page-view-posts" class="media-list"></div></div>
       </div>
     </section>
-    
-    <section id="view-settings" class="view">
+       <section id="view-settings" class="view">
       <h3>Paramètres</h3>
-      <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
-        <h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4>
-        <p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p>
-        <button id="btn-open-admin-panel" onclick="window.openAdminPanel()" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button>
-      </div>
-      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
-        <h4 style="margin-bottom: 0.5rem;">👤 Mon Compte</h4>
-        <p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Gérez vos informations de connexion.</p>
-        <button id="btn-change-username" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">✏️ Modifier mon nom d'utilisateur</button>
-        <button id="btn-change-password" class="btn-secondary small" style="width: 100%; text-align: left;">🔑 Changer mon mot de passe</button>
-      </div>
+      <div id="admin-panel-btn-container" style="display:none; background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);"><h4 style="margin-bottom: 0.5rem; color: white;">👑 Espace Administrateur</h4><p style="color: rgba(255,255,255,0.8); font-size: 0.8rem; margin-bottom: 10px;">Gérez les signalements et modérez le site.</p><button id="btn-open-admin-panel" onclick="window.openAdminPanel()" class="btn-secondary" style="width: 100%; background: white; color: #b91c1c; border: none; font-weight: bold;">Ouvrir le panneau</button></div>
+      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">👤 Mon Compte</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Gérez vos informations de connexion.</p><button id="btn-change-username" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">✏️ Modifier mon nom d'utilisateur</button><button id="btn-change-password" class="btn-secondary small" style="width: 100%; text-align: left;">🔑 Changer mon mot de passe</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Communauté</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Créez un groupe public, privé ou une chaîne de publication.</p><button id="btn-new-community-settings" class="btn-primary" style="width: 100%;">Créer une communauté</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Créer une Page Officielle</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Conditions : 3 posts et 10 abonnés (ou Admin).</p><button id="btn-create-page-settings" class="btn-primary" style="width: 100%;">Créer une Page</button></div>
       <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">Apparence</h4><button id="btn-theme-toggle-settings" class="btn-secondary" style="width: 100%;">Passer en mode clair ☀️</button></div>
-      
-      <div style="background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid var(--blue-light);">
-        <h4 style="margin-bottom: 0.5rem;">🎁 Invitez des amis</h4>
-        <p class="muted" style="font-size: 0.85rem; margin-bottom: 10px;">Gagnez des Nexus Coins en invitant vos amis sur BlueNexus.</p>
-        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-          <input id="my-referral-code" type="text" readonly style="text-align: center; font-weight: bold; font-size: 1.2rem; color: var(--blue-light); background: var(--bg); border: 1px dashed var(--blue-light); margin: 0;" />
-          <button id="btn-copy-referral" class="btn-primary" style="padding: 0 15px;">Copier</button>
-        </div>
-        <button id="btn-share-referral" class="btn-primary" style="width: 100%; background: #25D366; border: none;">Partager sur WhatsApp</button>
-      </div>
-
-      <div style="background: linear-gradient(135deg, #10b981, #047857); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="window.loadTopCreators(); document.getElementById('modal-top-creators').classList.remove('hidden')">
-        <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🏆</div>
-        <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">🏆 Mur des Créateurs</h4>
-        <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Découvrez les utilisateurs les plus actifs de BlueNexus.</p>
-      </div>
-
-      <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="document.getElementById('modal-shop').classList.remove('hidden')">
-        <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🛍️</div>
-        <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">🛍️ Boutique Nexus</h4>
-        <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Dépensez vos Nexus Coins pour personnaliser votre profil et booster vos publications.</p>
-      </div>
-
-      <div style="background: linear-gradient(135deg, #4f46e5, #9333ea); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(147, 51, 234, 0.3); position: relative; overflow: hidden;">
-        <div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">👑</div>
-        <h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">✨ BlueNexus Premium</h4>
-        <p style="color: rgba(255,255,255,0.9); font-size: 0.85rem; margin-bottom: 15px;">Débloquez la puissance ultime et démarquez-vous sur le réseau.</p>
-        <ul style="color: white; font-size: 0.85rem; margin-bottom: 15px; padding-left: 20px; line-height: 1.6;">
-          <li>Effets d'avatar animés exclusifs</li>
-          <li>Badge "Vérifié" ✅ sur votre profil</li>
-          <li>Boost de vos publications</li>
-        </ul>
-        <button id="btn-go-premium" class="btn-primary" style="width: 100%; background: white; color: #9333ea; border: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">Devenir Premium pour 1 500 FCFA/mois</button>
-      </div>
-
-      <div id="pwa-install-container" style="display: none; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; border: 1px dashed var(--blue-light);">
-        <h4 style="margin-bottom: 0.5rem;">📱 Installer l'application</h4>
-        <p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Ajoutez BlueNexus à votre écran d'accueil pour un accès rapide.</p>
-        <button id="btn-install-pwa" class="btn-primary" style="width: 100%;">Installer BlueNexus</button>
-      </div>
-
-      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;">
-        <h4 style="margin-bottom: 0.5rem;">ℹ️ Informations</h4>
-        <button id="btn-privacy-policy" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">🛡️ Confidentialité & Sécurité</button>
-        <button id="btn-support" class="btn-secondary small" style="width: 100%; text-align: left;">❓ Centre d'aide</button>
-      </div>
-      <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid rgba(239, 68, 68, 0.3);">
-        <h4 style="margin-bottom: 0.5rem; color: #ef4444;">⚠️ Zone dangereuse</h4>
-        <button id="btn-delete-account" class="btn-secondary small" style="width: 100%; color: #ef4444; border-color: #ef4444; text-align: left;">🗑️ Supprimer mon compte</button>
-      </div>
+      <div style="background: var(--bg-2); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid var(--blue-light);"><h4 style="margin-bottom: 0.5rem;">🎁 Invitez des amis</h4><p class="muted" style="font-size: 0.85rem; margin-bottom: 10px;">Gagnez des Nexus Coins en invitant vos amis sur BlueNexus.</p><div style="display: flex; gap: 10px; margin-bottom: 10px;"><input id="my-referral-code" type="text" readonly style="text-align: center; font-weight: bold; font-size: 1.2rem; color: var(--blue-light); background: var(--bg); border: 1px dashed var(--blue-light); margin: 0;" /><button id="btn-copy-referral" class="btn-primary" style="padding: 0 15px;">Copier</button></div><button id="btn-share-referral" class="btn-primary" style="width: 100%; background: #25D366; border: none;">Partager sur WhatsApp</button></div>
+      <div style="background: linear-gradient(135deg, #10b981, #047857); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="window.loadTopCreators(); document.getElementById('modal-top-creators').classList.remove('hidden')"><div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🏆</div><h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">🏆 Mur des Créateurs</h4><p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Découvrez les utilisateurs les plus actifs de BlueNexus.</p></div>
+      <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); position: relative; overflow: hidden; cursor: pointer;" onclick="document.getElementById('modal-shop').classList.remove('hidden')"><div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">🛍️</div><h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">🛍️ Boutique Nexus</h4><p style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Dépensez vos Nexus Coins pour personnaliser votre profil.</p></div>
+      <div style="background: linear-gradient(135deg, #4f46e5, #9333ea); padding: 1.5rem; border-radius: var(--radius); margin-top: 1rem; box-shadow: 0 8px 20px rgba(147, 51, 234, 0.3); position: relative; overflow: hidden;"><div style="position: absolute; top: -10px; right: -10px; font-size: 5rem; opacity: 0.2;">👑</div><h4 style="margin-bottom: 0.5rem; color: white; font-size: 1.2rem;">✨ BlueNexus Premium</h4><ul style="color: white; font-size: 0.85rem; margin-bottom: 15px; padding-left: 20px; line-height: 1.6;"><li>Effets d'avatar animés exclusifs</li><li>Badge "Vérifié" ✅</li><li>Boost de publications</li></ul><button id="btn-go-premium" class="btn-primary" style="width: 100%; background: white; color: #9333ea; border: none; font-weight: bold;">Devenir Premium pour 1 500 FCFA/mois</button></div>
+      <div id="pwa-install-container" style="display: none; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; border: 1px dashed var(--blue-light);"><h4 style="margin-bottom: 0.5rem;">📱 Installer l'application</h4><p class="muted" style="font-size: 0.8rem; margin-bottom: 10px;">Ajoutez BlueNexus à votre écran d'accueil.</p><button id="btn-install-pwa" class="btn-primary" style="width: 100%;">Installer BlueNexus</button></div>
+      <div style="background: var(--bg-2); padding: 1rem; border-radius: var(--radius); margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem;">ℹ️ Informations</h4><button id="btn-privacy-policy" class="btn-secondary small" style="width: 100%; margin-bottom: 8px; text-align: left;">🛡️ Confidentialité & Sécurité</button><button id="btn-support" class="btn-secondary small" style="width: 100%; text-align: left;">❓ Centre d'aide</button></div>
+      <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: var(--radius); margin-top: 1rem; border: 1px solid rgba(239, 68, 68, 0.3);"><h4 style="margin-bottom: 0.5rem; color: #ef4444;">⚠️ Zone dangereuse</h4><button id="btn-delete-account" class="btn-secondary small" style="width: 100%; color: #ef4444; border-color: #ef4444; text-align: left;">🗑️ Supprimer mon compte</button></div>
       <button id="btn-logout" class="btn-secondary" style="margin-top: 2rem; width: 100%; color: #ff6b6b; border-color: #ff6b6b; margin-bottom: 80px;">Se déconnecter</button>
     </section>
     
     <section id="view-admin" class="view">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;">
-        <h3>👑 Centre de Commandement</h3>
-        <button id="btn-back-to-settings" class="btn-secondary small">← Retour</button>
-      </div>
-      <div style="display:flex; gap:10px; margin-bottom: 1rem;">
-        <button id="admin-tab-dashboard" class="btn-primary small" style="flex:1;">📊 Tableau de bord</button>
-        <button id="admin-tab-users" class="btn-secondary small" style="flex:1;">👥 Utilisateurs</button>
-        <button id="admin-tab-reports" class="btn-secondary small" style="flex:1;">🚨 Signalements</button>
-      </div>
-      <div id="admin-content-dashboard" style="display: block;">
-        <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
-          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-users" style="font-size: 2rem; color: var(--blue-light);">0</h2><p class="muted" style="font-size: 0.8rem;">Utilisateurs</p></div>
-          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-posts" style="font-size: 2rem; color: #10b981;">0</h2><p class="muted" style="font-size: 0.8rem;">Publications</p></div>
-          <div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-comms" style="font-size: 2rem; color: #f59e0b;">0</h2><p class="muted" style="font-size: 0.8rem;">Communautés</p></div>
-        </div>
-        <p class="muted" style="text-align: center; font-size: 0.8rem;">Bienvenue dans ton centre de contrôle, Lerwine.</p>
-      </div>
-      <div id="admin-content-users" style="display: none;">
-        <div class="search-bar-container" style="margin-bottom: 1rem; background: var(--bg-2);"><span class="search-icon">🔍</span><input id="admin-search-user" type="text" placeholder="Chercher un utilisateur par pseudo..." style="border:none; background:transparent;" /></div>
-        <div id="admin-users-list" class="tg-list"></div>
-      </div>
-      <div id="admin-content-reports" style="display: none;">
-        <div id="admin-reports-list" class="tg-list"></div>
-      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 1rem;"><h3>👑 Centre de Commandement</h3><button id="btn-back-to-settings" class="btn-secondary small">← Retour</button></div>
+      <div style="display:flex; gap:10px; margin-bottom: 1rem;"><button id="admin-tab-dashboard" class="btn-primary small" style="flex:1;">📊 Tableau de bord</button><button id="admin-tab-users" class="btn-secondary small" style="flex:1;">👥 Utilisateurs</button><button id="admin-tab-reports" class="btn-secondary small" style="flex:1;">🚨 Signalements</button></div>
+      <div id="admin-content-dashboard" style="display: block;"><div style="display: flex; gap: 10px; margin-bottom: 1rem;"><div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-users" style="font-size: 2rem; color: var(--blue-light);">0</h2><p class="muted" style="font-size: 0.8rem;">Utilisateurs</p></div><div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-posts" style="font-size: 2rem; color: #10b981;">0</h2><p class="muted" style="font-size: 0.8rem;">Publications</p></div><div style="flex:1; background: var(--bg-2); padding: 1rem; border-radius: var(--radius); text-align: center; border: 1px solid var(--border);"><h2 id="admin-stat-comms" style="font-size: 2rem; color: #f59e0b;">0</h2><p class="muted" style="font-size: 0.8rem;">Communautés</p></div></div><p class="muted" style="text-align: center; font-size: 0.8rem;">Bienvenue dans ton centre de contrôle, Lerwine.</p></div>
+      <div id="admin-content-users" style="display: none;"><div class="search-bar-container" style="margin-bottom: 1rem; background: var(--bg-2);"><span class="search-icon">🔍</span><input id="admin-search-user" type="text" placeholder="Chercher un utilisateur par pseudo..." style="border:none; background:transparent;" /></div><div id="admin-users-list" class="tg-list"></div></div>
+      <div id="admin-content-reports" style="display: none;"><div id="admin-reports-list" class="tg-list"></div></div>
     </section>
   </main>
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
-    <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>
+ <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
   </nav>
 </div>
-
 <!-- MODALS -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-comm" class="modal hidden"><div class="modal-content"><h3>Modifier la communauté</h3><label class="muted" style="font-size: 0.8rem;">Nom</label><input id="edit-comm-name" placeholder="Nom" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="edit-comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Type</label><select id="edit-comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="btn-save-comm-info" class="btn-primary">Enregistrer</button><button id="btn-cancel-edit-comm" class="btn-secondary">Annuler</button></div></div>
@@ -458,154 +321,39 @@
 <div id="modal-edit-post" class="modal hidden"><div class="modal-content"><h3>Modifier la publication</h3><textarea id="edit-post-content" style="height: 150px;"></textarea><button id="btn-save-post-edit" class="btn-primary">Enregistrer</button><button id="btn-cancel-post-edit" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-username" class="modal hidden"><div class="modal-content"><h3>Modifier le pseudo</h3><input id="new-username" placeholder="Nouveau nom d'utilisateur" /><button id="btn-save-username" class="btn-primary">Enregistrer</button><button id="btn-cancel-username" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-change-password" class="modal hidden"><div class="modal-content"><h3>Changer le mot de passe</h3><input id="current-password" type="password" placeholder="Mot de passe actuel" /><input id="new-password" type="password" placeholder="Nouveau mot de passe (6 car. min)" /><button id="btn-save-password" class="btn-primary">Mettre à jour</button><button id="btn-cancel-password" class="btn-secondary">Annuler</button></div></div>
-
-<div id="modal-opportunity" class="modal hidden">
-  <div class="modal-content">
-    <h3 style="color: #10b981; margin-bottom: 1rem;">💼 Publier une Opportunité</h3>
-    <label class="muted" style="font-size: 0.8rem;">Titre de l'annonce</label>
-    <input id="opp-title" placeholder="Ex: Cherche développeur web, Vends moto..." />
-    <div style="display: flex; gap: 10px;">
-      <div style="flex: 1;">
-        <label class="muted" style="font-size: 0.8rem;">Type</label>
-        <select id="opp-type" style="padding: 10px;">
-          <option value="emploi">💼 Emploi / Stage</option>
-          <option value="vente">🛒 Vente / Achat</option>
-          <option value="service">🛠️ Service</option>
-          <option value="immobilier">🏠 Immobilier</option>
-        </select>
-      </div>
-      <div style="flex: 1;">
-        <label class="muted" style="font-size: 0.8rem;">Ville</label>
-        <input id="opp-city" placeholder="Ex: Douala" style="padding: 10px;" />
-      </div>
-    </div>
-    <label class="muted" style="font-size: 0.8rem;">Description & Contact</label>
-    <textarea id="opp-desc" placeholder="Détails de l'offre et numéro de téléphone..." rows="4"></textarea>
-    <button id="btn-publish-opp" class="btn-primary" style="background: #10b981; margin-top: 10px;">Publier l'annonce (Coût: 5 🪙)</button>
-    <button id="btn-cancel-opp" class="btn-secondary">Annuler</button>
-  </div>
-</div>
-
-<!-- MODALE EVENEMENT -->
-<div id="modal-event" class="modal hidden">
-  <div class="modal-content">
-    <h3 style="color: #f59e0b; margin-bottom: 1rem;">📅 Créer un Événement</h3>
-    
-    <label class="muted" style="font-size: 0.8rem;">Titre de l'événement</label>
-    <input id="event-title" placeholder="Ex: Concert de Stanley Enow, Meetup Tech..." />
-    
-    <label class="muted" style="font-size: 0.8rem;">Date et Heure</label>
-    <input id="event-date" type="datetime-local" style="padding: 10px;" />
-
-    <label class="muted" style="font-size: 0.8rem;">Lieu</label>
-    <input id="event-location" placeholder="Ex: Palais des Sports, Douala" />
-    
-    <label class="muted" style="font-size: 0.8rem;">Description</label>
-    <textarea id="event-desc" placeholder="Détails de l'événement..." rows="3"></textarea>
-    
-    <button id="btn-publish-event" class="btn-primary" style="background: #f59e0b; margin-top: 10px;">Créer l'événement</button>
-    <button id="btn-cancel-event" class="btn-secondary">Annuler</button>
-  </div>
-</div>
-
-<div id="modal-shop" class="modal hidden">
-  <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-    <h3 style="color: #f59e0b; margin-bottom: 0.5rem;">🛍️ Boutique Nexus</h3>
-    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solde actuel : <strong style="color: #f59e0b; font-size: 1.1rem;">🪙 <span id="shop-coins-balance">0</span></strong></p>
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
-        <div class="tg-avatar" style="background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00);">✨</div>
-        <div class="tg-content"><div class="tg-title">Effet Étoiles Cosmiques</div><div class="tg-subtitle">Durée : 7 jours</div></div>
-        <button onclick="window.buyShopItem('stars', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button>
-      </div>
-      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
-        <div class="tg-avatar" style="background: #ec4899;">🌸</div>
-        <div class="tg-content"><div class="tg-title">Effet Pétales de Sakura</div><div class="tg-subtitle">Durée : 7 jours</div></div>
-        <button onclick="window.buyShopItem('sakura', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button>
-      </div>
-      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
-        <div class="tg-avatar" style="background: #10b981;">🚀</div>
-        <div class="tg-content"><div class="tg-title">Boost de Publication</div><div class="tg-subtitle">Remontez votre post dans le fil</div></div>
-        <button onclick="window.buyShopItem('boost', 50)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 50</button>
-      </div>
-      <div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;">
-        <div class="tg-avatar" style="background: #3b82f6;">✅</div>
-        <div class="tg-content"><div class="tg-title">Badge Vérifié</div><div class="tg-subtitle">Pour toujours</div></div>
-        <button onclick="window.buyShopItem('premium', 2000)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 2000</button>
-      </div>
-    </div>
-    <button onclick="document.getElementById('modal-shop').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1.5rem;">Fermer</button>
-  </div>
-</div>
-
-<div id="modal-poll" class="modal hidden">
-  <div class="modal-content">
-    <h3 style="color: #a855f7; margin-bottom: 1rem;">📊 Créer un sondage</h3>
-    <label class="muted" style="font-size: 0.8rem;">Votre question</label>
-    <input id="poll-question" placeholder="Ex: Quel est le meilleur rappeur camerounais ?" />
-    <label class="muted" style="font-size: 0.8rem;">Options (2 à 4)</label>
-    <input id="poll-opt-1" placeholder="Option 1" style="margin-bottom: 5px;" />
-    <input id="poll-opt-2" placeholder="Option 2" style="margin-bottom: 5px;" />
-    <input id="poll-opt-3" placeholder="Option 3 (optionnel)" style="margin-bottom: 5px;" />
-    <input id="poll-opt-4" placeholder="Option 4 (optionnel)" />
-    <button id="btn-publish-poll" class="btn-primary" style="background: #a855f7; margin-top: 10px;">Publier le sondage</button>
-    <button id="btn-cancel-poll" class="btn-secondary">Annuler</button>
-  </div>
-</div>
-
-<div id="modal-daily" class="modal hidden">
-  <div class="modal-content" style="text-align: center;">
-    <h3 style="color: #f59e0b; margin-bottom: 1rem;">🎁 Bonus Quotidien</h3>
-    <p class="muted" style="margin-bottom: 1rem;">Série actuelle : <strong id="daily-streak-text" style="color: #f59e0b;">0 jour</strong></p>
-    <div style="font-size: 6rem; margin-bottom: 1rem;" id="daily-gift-display">📦</div>
-    <button id="btn-claim-daily" class="btn-primary" style="background: #f59e0b; width: 100%; padding: 15px; font-size: 1.1rem;">🎁 Ouvrir le coffre</button>
-    <button id="btn-close-daily" class="btn-secondary" style="width: 100%; margin-top: 10px;">Fermer</button>
-  </div>
-</div>
-
-<div id="modal-profile-viewers" class="modal hidden">
-  <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-    <h3 style="color: var(--blue-light); margin-bottom: 0.5rem;">👁️ Visiteurs du profil</h3>
-    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Les personnes qui ont consulté votre profil récemment.</p>
-    <div id="viewers-list-container">
-      <p class="muted" style="text-align: center;">Chargement...</p>
-    </div>
-    <button onclick="document.getElementById('modal-profile-viewers').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button>
-  </div>
-</div>
-
-<!-- MODALE QR CODE PROFIL -->
-<div id="modal-qr" class="modal hidden">
-  <div class="modal-content" style="text-align: center;">
-    <h3 style="color: var(--blue-light); margin-bottom: 1rem;">🔗 Partager mon profil</h3>
-    <p class="muted" style="margin-bottom: 1rem;">Scannez ce QR Code ou copiez le lien pour partager votre profil.</p>
-    <img id="qr-code-img" src="" alt="QR Code" style="width: 200px; height: 200px; border-radius: 10px; margin-bottom: 1rem; background: white; padding: 10px;" />
-    <div style="background: var(--bg); padding: 10px; border-radius: 8px; border: 1px dashed var(--border); margin-bottom: 1rem; word-break: break-all; font-size: 0.85rem;" id="profile-share-url"></div>
-    <button id="btn-copy-profile-url" class="btn-primary" style="width: 100%; margin-bottom: 10px;">Copier le lien</button>
-    <button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="btn-secondary" style="width: 100%;">Fermer</button>
-  </div>
-</div>
-
-<div id="modal-top-creators" class="modal hidden">
-  <div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-    <h3 style="color: #10b981; margin-bottom: 1rem;">🏆 Top Créateurs</h3>
-    <p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Les utilisateurs les plus actifs du réseau.</p>
-    <div id="top-creators-list" class="tg-list">
-      <p class="muted" style="text-align: center;">Chargement...</p>
-    </div>
-    <button onclick="document.getElementById('modal-top-creators').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button>
-  </div>
-</div>
-
-<div id="story-viewer">
-  <div class="story-progress-bar"><div id="story-progress" class="story-progress-fill"></div></div>
-  <button class="story-close-btn" onclick="window.closeStory()">✕</button>
-  <h3 id="story-viewer-name" style="color:white; margin-bottom: 10px; z-index: 10;"></h3>
-  <img id="story-viewer-img" class="story-image" src="" alt="Story">
-</div>
-
+<div id="modal-opportunity" class="modal hidden"><div class="modal-content"><h3 style="color: #10b981; margin-bottom: 1rem;">💼 Publier une Opportunité</h3><label class="muted" style="font-size: 0.8rem;">Titre de l'annonce</label><input id="opp-title" placeholder="Ex: Cherche développeur web..." /><div style="display: flex; gap: 10px;"><div style="flex: 1;"><label class="muted" style="font-size: 0.8rem;">Type</label><select id="opp-type" style="padding: 10px;"><option value="emploi">💼 Emploi / Stage</option><option value="vente">🛒 Vente / Achat</option><option value="service">🛠️ Service</option><option value="immobilier">🏠 Immobilier</option></select></div><div style="flex: 1;"><label class="muted" style="font-size: 0.8rem;">Ville</label><input id="opp-city" placeholder="Ex: Douala" style="padding: 10px;" /></div></div><label class="muted" style="font-size: 0.8rem;">Description & Contact</label><textarea id="opp-desc" placeholder="Détails..." rows="4"></textarea><button id="btn-publish-opp" class="btn-primary" style="background: #10b981; margin-top: 10px;">Publier l'annonce (Coût: 5 🪙)</button><button id="btn-cancel-opp" class="btn-secondary">Annuler</button></div></div>
+<div id="modal-event" class="modal hidden"><div class="modal-content"><h3 style="color: #f59e0b; margin-bottom: 1rem;">📅 Créer un Événement</h3><label class="muted" style="font-size: 0.8rem;">Titre de l'événement</label><input id="event-title" placeholder="Ex: Concert..." /><label class="muted" style="font-size: 0.8rem;">Date et Heure</label><input id="event-date" type="datetime-local" style="padding: 10px;" /><label class="muted" style="font-size: 0.8rem;">Lieu</label><input id="event-location" placeholder="Ex: Douala" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="event-desc" placeholder="Détails..." rows="3"></textarea><button id="btn-publish-event" class="btn-primary" style="background: #f59e0b; margin-top: 10px;">Créer l'événement</button><button id="btn-cancel-event" class="btn-secondary">Annuler</button></div></div>
+<div id="modal-shop" class="modal hidden"><div class="modal-content" style="max-height: 80vh; overflow-y: auto;"><h3 style="color: #f59e0b; margin-bottom: 0.5rem;">🛍️ Boutique Nexus</h3><p class="muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Solde actuel : <strong style="color: #f59e0b; font-size: 1.1rem;">🪙 <span id="shop-coins-balance">0</span></strong></p><div style="display: flex; flex-direction: column; gap: 10px;"><div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;"><div class="tg-avatar" style="background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00);">✨</div><div class="tg-content"><div class="tg-title">Effet Étoiles Cosmiques</div><div class="tg-subtitle">Durée : 7 jours</div></div><button onclick="window.buyShopItem('stars', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button></div><div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;"><div class="tg-avatar" style="background: #ec4899;">🌸</div><div class="tg-content"><div class="tg-title">Effet Pétales de Sakura</div><div class="tg-subtitle">Durée : 7 jours</div></div><button onclick="window.buyShopItem('sakura', 150)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 150</button></div><div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;"><div class="tg-avatar" style="background: #10b981;">🚀</div><div class="tg-content"><div class="tg-title">Boost de Publication</div><div class="tg-subtitle">Remontez votre post</div></div><button onclick="window.buyShopItem('boost', 50)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 50</button></div><div class="tg-item" style="cursor: default; background: var(--bg); border-radius: 10px;"><div class="tg-avatar" style="background: #3b82f6;">✅
+</div><div class="tg-content"><div class="tg-title">Badge Vérifié</div><div class="tg-subtitle">Pour toujours</div></div><button onclick="window.buyShopItem('premium', 2000)" class="btn-primary small" style="background: #f59e0b; border: none;">🪙 2000</button></div></div><button onclick="document.getElementById('modal-shop').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1.5rem;">Fermer</button></div></div>
+<div id="modal-poll" class="modal hidden"><div class="modal-content"><h3 style="color: #a855f7; margin-bottom: 1rem;">📊 Créer un sondage</h3><label class="muted" style="font-size: 0.8rem;">Votre question</label><input id="poll-question" placeholder="Ex: Meilleur rappeur ?" /><label class="muted" style="font-size: 0.8rem;">Options (2 à 4)</label><input id="poll-opt-1" placeholder="Option 1" style="margin-bottom: 5px;" /><input id="poll-opt-2" placeholder="Option 2" style="margin-bottom: 5px;" /><input id="poll-opt-3" placeholder="Option 3 (optionnel)" style="margin-bottom: 5px;" /><input id="poll-opt-4" placeholder="Option 4 (optionnel)" /><button id="btn-publish-poll" class="btn-primary" style="background: #a855f7; margin-top: 10px;">Publier le sondage</button><button id="btn-cancel-poll" class="btn-secondary">Annuler</button></div></div>
+<div id="modal-daily" class="modal hidden"><div class="modal-content" style="text-align: center;"><h3 style="color: #f59e0b; margin-bottom: 1rem;">🎁 Bonus Quotidien</h3><p class="muted" style="margin-bottom: 1rem;">Série actuelle : <strong id="daily-streak-text" style="color: #f59e0b;">0 jour</strong></p><div style="font-size: 6rem; margin-bottom: 1rem;" id="daily-gift-display">📦</div><button id="btn-claim-daily" class="btn-primary" style="background: #f59e0b; width: 100%; padding: 15px; font-size: 1.1rem;">🎁 Ouvrir le coffre</button><button id="btn-close-daily" class="btn-secondary" style="width: 100%; margin-top: 10px;">Fermer</button></div></div>
+<div id="modal-profile-viewers" class="modal hidden"><div class="modal-content" style="max-height: 80vh; overflow-y: auto;"><h3 style="color: var(--blue-light); margin-bottom: 0.5rem;">👁️ Visiteurs du profil</h3><p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Les personnes qui ont consulté votre profil récemment.</p><div id="viewers-list-container"><p class="muted" style="text-align: center;">Chargement...</p></div><button onclick="document.getElementById('modal-profile-viewers').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button></div></div>
+<div id="modal-qr" class="modal hidden"><div class="modal-content" style="text-align: center;"><h3 style="color: var(--blue-light); margin-bottom: 1rem;">🔗 Partager mon profil</h3><p class="muted" style="margin-bottom: 1rem;">Scannez ce QR Code ou copiez le lien.</p><img id="qr-code-img" src="" alt="QR Code" style="width: 200px; height: 200px; border-radius: 10px; margin-bottom: 1rem; background: white; padding: 10px;" /><div style="background: var(--bg); padding: 10px; border-radius: 8px; border: 1px dashed var(--border); margin-bottom: 1rem; word-break: break-all; font-size: 0.85rem;" id="profile-share-url"></div><button id="btn-copy-profile-url" class="btn-primary" style="width: 100%; margin-bottom: 10px;">Copier le lien</button><button onclick="document.getElementById('modal-qr').classList.add('hidden')" class="btn-secondary" style="width: 100%;">Fermer</button></div></div>
+<div id="modal-top-creators" class="modal hidden"><div class="modal-content" style="max-height: 80vh; overflow-y: auto;"><h3 style="color: #10b981; margin-bottom: 1rem;">🏆 Top Créateurs</h3><p class="muted" style="font-size: 0.85rem; margin-bottom: 1rem;">Les utilisateurs les plus actifs.</p><div id="top-creators-list" class="tg-list"><p class="muted" style="text-align: center;">Chargement...</p></div><button onclick="document.getElementById('modal-top-creators').classList.add('hidden')" class="btn-secondary" style="width:100%; margin-top: 1rem;">Fermer</button></div></div>
+<div id="story-viewer"><div class="story-progress-bar"><div id="story-progress" class="story-progress-fill"></div></div><button class="story-close-btn" onclick="window.closeStory()">✕</button><h3 id="story-viewer-name" style="color:white; margin-bottom: 10px; z-index: 10;"></h3><img id="story-viewer-img" class="story-image" src="" alt="Story"></div>
 <div id="toast-container"></div>
 <button id="btn-back-to-top" title="Retour en haut">↑</button>
 <script type="module" src="./js/app.js"></script>
+
+<!-- Enregistrement du Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((reg) => {
+          console.log('✅ BlueNexus SW enregistré. Scope:', reg.scope);
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('🔄 Nouvelle version disponible. Rechargez pour l\'avoir.');
+              }
+            });
+          });
+        })
+        .catch((err) => console.warn('⚠️ SW non enregistré (normal en local file://):', err));
+    });
+  }
+</script>
 </body>
 </html>

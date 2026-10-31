@@ -1,15 +1,47 @@
 {
-  "name": "BlueNexus",
+  "name": "BlueNexus - Le réseau social des communautés",
   "short_name": "BlueNexus",
+  "description": "Le réseau social camerounais nouvelle génération : communautés, confessions anonymes, opportunités et Mobile Money.",
+  "lang": "fr",
+  "dir": "ltr",
+  "scope": "./",
   "start_url": "./index.html",
+  "id": "./index.html",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
   "background_color": "#0a0e1a",
-  "theme_color": "#2563eb",
+  "theme_color": "#0a0e1a",
+  "categories": ["social", "communication", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "https://res.cloudinary.com/uotg2qg2/image/upload/v1/blue-logo.png",
+      "src": "./logo-simple.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./logo-simple.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Découvrir",
+      "short_name": "Feed",
+      "description": "Voir les nouvelles publications",
+      "url": "./index.html?view=home",
+      "icons": [{ "src": "./logo-simple.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Messages",
+      "short_name": "Chat",
+      "description": "Ouvrir la messagerie",
+      "url": "./index.html?view=messages",
+      "icons": [{ "src": "./logo-simple.png", "sizes": "192x192" }]
     }
   ]
 }
