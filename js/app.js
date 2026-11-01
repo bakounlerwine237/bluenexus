@@ -1,4 +1,3 @@
-// --- js/app.js ---
 import { $, speakText, translateText, toggleMoreMenu, sharePost, getLevelInfo } from './utils.js';
 import { initNavigation } from './navigation.js';
 import { initAuth } from './auth.js';
@@ -33,14 +32,20 @@ function listenToUnreadMessages() {
   if(!state.currentUser) return;
   const q = query(collection(db, 'messages'), where('toUser', '==', state.currentUser.uid), where('read', '==', false));
   onSnapshot(q, (snap) => {
-    const badge = $('msg-badge');
-    if(!badge) return;
-    if(snap.docs.length > 0) { badge.style.display = 'block'; badge.textContent = snap.docs.length; } 
-    else { badge.style.display = 'none'; }
+    const badgeTop = $('msg-badge');
+    const badgeBtm = $('msg-badge-btm');
+    const count = snap.docs.length;
+    
+    if(count > 0) {
+      if(badgeTop) { badgeTop.style.display = 'block'; badgeTop.textContent = count; }
+      if(badgeBtm) { badgeBtm.style.display = 'block'; badgeBtm.textContent = count; }
+    } else {
+      if(badgeTop) { badgeTop.style.display = 'none'; }
+      if(badgeBtm) { badgeBtm.style.display = 'none'; }
+    }
   });
 }
 
-// --- TOP CREATEURS ---
 window.loadTopCreators = async () => {
   const container = $('top-creators-list');
   if (!container) return;
@@ -165,7 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- BOUTIQUE ---
   const shopModal = $('modal-shop');
   if (shopModal) {
     const observer = new MutationObserver((mutations) => {
@@ -209,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) { window.showToast("Erreur lors de l'achat : " + e.message, "error"); }
   };
 
-  // --- PARRAINAGE ---
   const copyRefBtn = $('btn-copy-referral');
   if (copyRefBtn) {
     copyRefBtn.addEventListener('click', () => {
@@ -227,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- BONUS QUOTIDIEN ---
   window.checkDailyBonus = () => {
     if (!state.userProfile) return;
     const banner = $('daily-bonus-banner');
@@ -274,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- PARTAGE PROFIL (QR CODE) ---
   if($('btn-share-profile')) {
     $('btn-share-profile').addEventListener('click', () => {
       if (!state.currentUser) return;
@@ -311,7 +312,6 @@ document.addEventListener('userReady', () => {
   try { window.checkDailyBonus(); } catch(e) { console.error(e); }
   if(document.getElementById('view-profile').classList.contains('active')) { try { renderProfile(); } catch(e) { console.error(e); } } 
 
-  // --- DETECTION URL PROFIL (?user=UID) ---
   const urlParams = new URLSearchParams(window.location.search);
   const profileParam = urlParams.get('user');
   if (profileParam && profileParam !== state.currentUser.uid) {

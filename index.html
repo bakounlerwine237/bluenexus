@@ -36,7 +36,7 @@
 <div id="landing-screen" class="screen active">
   <header class="landing-header">
     <div style="display: flex; align-items: center; gap: 10px;">
-      <img src="./logo-simple.png" alt="Logo BlueNexus" style="width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+      <img src="./logo-simple.png" alt="Logo BlueNexus" onerror="this.style.display='none'" style="width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
       <h1 class="logo" style="margin: 0; font-size: 1.8rem;">Blue<span>Nexus</span></h1>
     </div>
     <div class="landing-nav-buttons">
@@ -68,7 +68,7 @@
 <div id="auth-screen" class="screen">
   <div class="auth-box">
     <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;">
-      <img src="./logo-simple.png" alt="Logo" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+      <img src="./logo-simple.png" alt="Logo" onerror="this.style.display='none'" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
       <h1 class="logo" style="margin: 0; cursor: pointer;" onclick="window.goToLanding()">Blue<span>Nexus</span></h1>
     </div>
     <p class="tagline">Le réseau social des communautés</p>
@@ -96,32 +96,32 @@
 <!-- 3. APP SCREEN -->
 <div id="app-screen" class="screen">
   <header class="top-bar" id="main-header">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <img src="./logo-simple.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-      <h2 id="page-title" style="margin: 0;">Accueil</h2>
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden;">
+      <img src="./logo-simple.png" alt="Logo" onerror="this.style.display='none'" style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+      <h2 id="page-title" style="margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Accueil</h2>
     </div>
-    <div style="display: flex; gap: 12px; align-items: center;">
+    <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
       <button id="btn-eco-mode" class="nav-btn top-btn" title="Mode Économie de Data" style="font-size: 1.2rem; opacity: 0.5;">🍃</button>
       <button data-view="notifications" class="nav-btn top-btn" style="position:relative;">🔔<span id="notif-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
-      <button data-view="messages" class="nav-btn top-btn" style="position:relative;">✉️<span id="msg-badge" style="display:none;position:absolute; top:-5px; right:-5px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span></button>
       <button data-view="search" class="nav-btn top-btn">🔍</button>
-      <button data-view="profile" class="nav-btn top-btn">👤</button>
-      <button id="btn-settings-top" class="icon-btn">⚙️</button>
+      <button id="btn-settings-top" class="icon-btn" style="font-size: 1.2rem; background:none; border:none; color:white; cursor:pointer;">⚙️</button>
     </div>
   </header>
   
   <main id="main-content">
     <section id="view-home" class="view active">
       <input type="file" id="story-file-input" accept="image/*" style="display: none;">
-      <div style="display:flex; gap:10px; margin-bottom: 1rem; align-items:center; overflow-x: auto; padding-bottom: 5px;">
-        <button id="tab-discovery" class="btn-primary small" style="flex:1; white-space: nowrap;">Découvertes</button>
-        <button id="tab-following" class="btn-secondary small" style="flex:1; white-space: nowrap;">Abonnements</button>
-        <button id="tab-opportunities" class="btn-secondary small" style="flex:1; white-space: nowrap;">💼 Opportunités</button>
-        <button id="tab-confessions" class="btn-secondary small" style="flex:1; white-space: nowrap;">🤫 Confessions</button>
-        <button id="tab-events" class="btn-secondary small" style="flex:1; white-space: nowrap;">📅 Événements</button>
-        <button id="tab-trending" class="btn-secondary small" style="flex:1; white-space: nowrap;">🔥 Tendances</button>
-        <button id="btn-refresh-feed" class="btn-secondary small" style="padding: 8px 12px;">🔄</button>
+      <!-- Onglets défilants -->
+      <div class="feed-tabs-container">
+        <button id="tab-discovery" class="btn-primary small tab-btn">Découvertes</button>
+        <button id="tab-following" class="btn-secondary small tab-btn">Abonnements</button>
+        <button id="tab-opportunities" class="btn-secondary small tab-btn">💼 Opportunités</button>
+        <button id="tab-confessions" class="btn-secondary small tab-btn">🤫 Confessions</button>
+        <button id="tab-events" class="btn-secondary small tab-btn">📅 Événements</button>
+        <button id="tab-trending" class="btn-secondary small tab-btn">🔥 Tendances</button>
+        <button id="btn-refresh-feed" class="btn-secondary small tab-btn" style="flex-shrink:0;">🔄</button>
       </div>
+      
       <div id="stories-list" class="stories-container"></div>
       <div id="daily-bonus-banner" style="display:none; margin-bottom: 1rem;">
         <div onclick="document.getElementById('modal-daily').classList.remove('hidden')" style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1rem; border-radius: var(--radius); cursor: pointer; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); position: relative; overflow: hidden;">
@@ -141,19 +141,18 @@
             <option value="confession">🤫 Publier une confession anonyme</option>
           </select>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+        <div style="display: flex; gap: 10px; align-items: flex-start; width: 100%;">
           <div id="create-post-avatar" class="post-avatar" style="width: 40px; height: 40px; font-size: 1.2rem; flex-shrink: 0; background-size: cover; background-position: center;">?</div>
-          <div style="flex: 1;">
-            <textarea id="global-post-content" placeholder="Quoi de neuf ?" rows="1"></textarea>
-            <div style="display: flex; gap: 10px; align-items: center;">
+          <div style="flex: 1; min-width: 0;">
+            <textarea id="global-post-content" placeholder="Quoi de neuf ?" rows="1" style="width: 100%;"></textarea>
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 5px;">
               <input type="file" id="global-post-file" accept="image/*,video/*,audio/*" style="display:none;">
-              <button id="btn-global-attach" class="btn-secondary small">📎</button>
-              <button id="btn-create-poll" class="btn-secondary small" title="Créer un sondage">📊</button>
-                <button class="btn-secondary small btn-mic" data-target="global-post-content">🎤</button>
-              <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto;" disabled>Publier</button>
+              <button id="btn-global-attach" class="btn-secondary small" style="padding: 5px 10px;">📎</button>
+              <button id="btn-create-poll" class="btn-secondary small" style="padding: 5px 10px;" title="Créer un sondage">📊</button>
+              <button class="btn-secondary small btn-mic" style="padding: 5px 10px;" data-target="global-post-content">🎤</button>
+              <button id="btn-global-publish" class="btn-primary small" style="margin-left:auto; padding: 5px 15px;" disabled>Publier</button>
             </div>
             <div id="global-file-preview" class="file-preview-container hidden"></div>
-
           </div>
         </div>
       </div>
@@ -307,8 +306,10 @@
   </main>
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
- <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>
+    <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>
     <button data-view="video" class="nav-btn">🎬<span>Vidéo</span></button>
+    <button data-view="messages" class="nav-btn" style="position:relative;">✉️<span id="msg-badge-btm" style="display:none;position:absolute; top:-5px; right:15px; background:red; color:white; font-size:10px; border-radius:50%; padding:2px 5px;">0</span><span>Messages</span></button>
+    <button data-view="profile" class="nav-btn">👤<span>Profil</span></button>
   </nav>
 </div>
 <!-- MODALS -->
@@ -342,16 +343,8 @@
       navigator.serviceWorker.register('./sw.js')
         .then((reg) => {
           console.log('✅ BlueNexus SW enregistré. Scope:', reg.scope);
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                console.log('🔄 Nouvelle version disponible. Rechargez pour l\'avoir.');
-              }
-            });
-          });
         })
-        .catch((err) => console.warn('⚠️ SW non enregistré (normal en local file://):', err));
+        .catch((err) => console.warn('⚠️ SW non enregistré:', err));
     });
   }
 </script>
