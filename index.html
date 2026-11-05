@@ -111,6 +111,7 @@
   <main id="main-content">
     <section id="view-home" class="view active">
       <input type="file" id="story-file-input" accept="image/*" style="display: none;">
+      
       <!-- Onglets défilants -->
       <div class="feed-tabs-container">
         <button id="tab-discovery" class="btn-primary small tab-btn">Découvertes</button>
@@ -304,6 +305,8 @@
       <div id="admin-content-reports" style="display: none;"><div id="admin-reports-list" class="tg-list"></div></div>
     </section>
   </main>
+  
+  <!-- Barre de navigation du bas -->
   <nav class="bottom-nav" id="main-nav">
     <button data-view="home" class="nav-btn active">🏠<span>Accueil</span></button>
     <button data-view="communities" class="nav-btn">💬<span>Communautés</span></button>
@@ -312,6 +315,7 @@
     <button data-view="profile" class="nav-btn">👤<span>Profil</span></button>
   </nav>
 </div>
+
 <!-- MODALS -->
 <div id="modal-community" class="modal hidden"><div class="modal-content"><h3>Créer une communauté</h3><input id="comm-name" placeholder="Nom" /><textarea id="comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Photo de profil (Avatar)</label><input type="file" id="comm-new-avatar" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Bannière (Couverture)</label><input type="file" id="comm-new-banner" accept="image/*" style="padding: 5px; background: var(--bg);"><label class="muted" style="font-size: 0.8rem;">Type de communauté</label><select id="comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="comm-save" class="btn-primary">Créer</button><button id="comm-cancel" class="btn-secondary">Annuler</button></div></div>
 <div id="modal-edit-comm" class="modal hidden"><div class="modal-content"><h3>Modifier la communauté</h3><label class="muted" style="font-size: 0.8rem;">Nom</label><input id="edit-comm-name" placeholder="Nom" /><label class="muted" style="font-size: 0.8rem;">Description</label><textarea id="edit-comm-desc" placeholder="Description"></textarea><label class="muted" style="font-size: 0.8rem;">Type</label><select id="edit-comm-type" style="margin-bottom: 0.5rem;"><option value="public">🌐 Publique</option><option value="private">🔒 Privée</option><option value="announcement">📢 Publication</option></select><button id="btn-save-comm-info" class="btn-primary">Enregistrer</button><button id="btn-cancel-edit-comm" class="btn-secondary">Annuler</button></div></div>
@@ -335,15 +339,11 @@
 <div id="toast-container"></div>
 <button id="btn-back-to-top" title="Retour en haut">↑</button>
 <script type="module" src="./js/app.js"></script>
-
-<!-- Enregistrement du Service Worker (PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then((reg) => {
-          console.log('✅ BlueNexus SW enregistré. Scope:', reg.scope);
-        })
+        .then((reg) => { console.log('✅ BlueNexus SW enregistré. Scope:', reg.scope); })
         .catch((err) => console.warn('⚠️ SW non enregistré:', err));
     });
   }
