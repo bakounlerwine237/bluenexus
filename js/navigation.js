@@ -1,4 +1,3 @@
-// --- js/navigation.js ---
 import { $ } from './utils.js'; 
 import { state } from './state.js';
 
@@ -40,40 +39,47 @@ export function initNavigation() {
   if($('btn-back-from-comm')) $('btn-back-from-comm').addEventListener('click', () => switchView('communities')); 
   if($('btn-back-from-chat')) $('btn-back-from-chat').addEventListener('click', () => switchView('messages')); 
   
-  if($('tab-discovery')) { 
-    $('tab-discovery').addEventListener('click', () => { 
-      state.currentFeedMode = 'discovery'; 
-      $('tab-discovery').className = 'btn-primary small'; 
-      if($('tab-following')) $('tab-following').className = 'btn-secondary small'; 
-      if($('tab-trending')) $('tab-trending').className = 'btn-secondary small'; 
-      if($('tab-opportunities')) { $('tab-opportunities').className = 'btn-secondary small'; $('tab-opportunities').style.background = ''; }
+  const tabDiscovery = $('tab-discovery');
+  const tabFollowing = $('tab-following');
+  const tabTrending = $('tab-trending');
+
+  function resetFeedTabs() {
+    if(tabDiscovery) tabDiscovery.classList.remove('active');
+    if(tabFollowing) tabFollowing.classList.remove('active');
+    if(tabTrending) tabTrending.classList.remove('active');
+    if($('tab-opportunities')) $('tab-opportunities').classList.remove('active');
+    if($('tab-confessions')) $('tab-confessions').classList.remove('active');
+    if($('tab-events')) $('tab-events').classList.remove('active');
+  }
+
+  if(tabDiscovery) { 
+    tabDiscovery.addEventListener('click', () => { 
+      resetFeedTabs(); state.currentFeedMode = 'discovery'; 
+      tabDiscovery.classList.add('active');
       if($('post-creation-container')) $('post-creation-container').style.display = 'flex'; 
       if($('btn-float-opp')) $('btn-float-opp').style.display = 'none';
+      if($('btn-float-event')) $('btn-float-event').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
   } 
-  if($('tab-following')) { 
-    $('tab-following').addEventListener('click', () => { 
-      state.currentFeedMode = 'following'; 
-      $('tab-following').className = 'btn-primary small'; 
-      if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small'; 
-      if($('tab-trending')) $('tab-trending').className = 'btn-secondary small'; 
-      if($('tab-opportunities')) { $('tab-opportunities').className = 'btn-secondary small'; $('tab-opportunities').style.background = ''; }
+  if(tabFollowing) { 
+    tabFollowing.addEventListener('click', () => { 
+      resetFeedTabs(); state.currentFeedMode = 'following'; 
+      tabFollowing.classList.add('active');
       if($('post-creation-container')) $('post-creation-container').style.display = 'none'; 
       if($('btn-float-opp')) $('btn-float-opp').style.display = 'none';
+      if($('btn-float-event')) $('btn-float-event').style.display = 'none';
       if($('suggested-users-container')) $('suggested-users-container').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
   } 
-  if($('tab-trending')) { 
-    $('tab-trending').addEventListener('click', () => { 
-      state.currentFeedMode = 'trending'; 
-      $('tab-trending').className = 'btn-primary small'; 
-      if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small'; 
-      if($('tab-following')) $('tab-following').className = 'btn-secondary small'; 
-      if($('tab-opportunities')) { $('tab-opportunities').className = 'btn-secondary small'; $('tab-opportunities').style.background = ''; }
+  if(tabTrending) { 
+    tabTrending.addEventListener('click', () => { 
+      resetFeedTabs(); state.currentFeedMode = 'trending'; 
+      tabTrending.classList.add('active');
       if($('post-creation-container')) $('post-creation-container').style.display = 'none'; 
       if($('btn-float-opp')) $('btn-float-opp').style.display = 'none';
+      if($('btn-float-event')) $('btn-float-event').style.display = 'none';
       if($('suggested-users-container')) $('suggested-users-container').style.display = 'none';
       if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
     }); 
@@ -86,12 +92,19 @@ window.switchToDiscovery = () => {
   const tabFollow = document.getElementById('tab-following'); 
   const tabTrend = document.getElementById('tab-trending'); 
   const tabOpp = document.getElementById('tab-opportunities');
-  if(tabDisco) tabDisco.className = 'btn-primary small'; 
-  if(tabFollow) tabFollow.className = 'btn-secondary small'; 
-  if(tabTrend) tabTrend.className = 'btn-secondary small'; 
-  if(tabOpp) { tabOpp.className = 'btn-secondary small'; tabOpp.style.background = ''; }
+  const tabConf = document.getElementById('tab-confessions');
+  const tabEvent = document.getElementById('tab-events');
+  
+  if(tabDisco) tabDisco.classList.add('active');
+  if(tabFollow) tabFollow.classList.remove('active');
+  if(tabTrend) tabTrend.classList.remove('active');
+  if(tabOpp) tabOpp.classList.remove('active');
+  if(tabConf) tabConf.classList.remove('active');
+  if(tabEvent) tabEvent.classList.remove('active');
+  
   if(document.getElementById('post-creation-container')) document.getElementById('post-creation-container').style.display = 'flex'; 
   if(document.getElementById('btn-float-opp')) document.getElementById('btn-float-opp').style.display = 'none';
+  if(document.getElementById('btn-float-event')) document.getElementById('btn-float-event').style.display = 'none';
   if(window.loadGlobalFeed) window.loadGlobalFeed(true); 
 };
 

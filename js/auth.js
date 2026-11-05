@@ -1,4 +1,3 @@
-// --- js/auth.js ---
 import { auth, db, state, TENCENT_SDK_APP_ID } from './state.js';
 import { $, showToast } from './utils.js';
 import { switchView } from './navigation.js';
@@ -16,7 +15,6 @@ async function initTencentChat(userId) {
 }
 
 export function initAuth() {
-  // --- LOGIQUE DU CARROUSEL ---
   let currentSlide = 0;
   const totalSlides = 5;
   const track = $('onboarding-track');
@@ -25,7 +23,8 @@ export function initAuth() {
 
   function updateCarousel() {
     if(!track) return;
-    track.style.transform = `translateX(-${currentSlide * 20}%)`; 
+    // Modification ici : On utilise vw au lieu de % pour être sûr du calcul sur mobile
+    track.style.transform = `translateX(-${currentSlide * 100}vw)`; 
     dots.forEach((dot, index) => {
       if(index === currentSlide) dot.classList.add('active');
       else dot.classList.remove('active');
@@ -82,7 +81,6 @@ export function initAuth() {
   if($('btn-final-signup')) $('btn-final-signup').onclick = window.goToSignup;
   if($('btn-final-enter-app')) $('btn-final-enter-app').onclick = () => enterApp();
 
-  // --- INSCRIPTION AVEC PARRAINAGE ---
   if($('btn-signup')) $('btn-signup').addEventListener('click', async () => { 
     const email = $('auth-email-signup').value.trim(), pass = $('auth-pass-signup').value.trim(), name = $('auth-name').value.trim(); 
     const refCode = $('auth-referral-code') ? $('auth-referral-code').value.trim().toUpperCase() : ""; 
@@ -123,7 +121,7 @@ export function initAuth() {
         referrals: [],
         lastDailyClaim: 0,
         dailyStreak: 0,
-        xp: 0 // NOUVEAU : Initialisation de l'XP
+        xp: 0
       }); 
     } catch (e) { 
       $('auth-error').textContent = e.message; 
@@ -152,7 +150,6 @@ export function initAuth() {
     signOut(auth);
   });
 
-  // --- LE CHEF D'ORCHESTRE ---
   onAuthStateChanged(auth, async (user) => { 
     if (user) { 
       state.currentUser = user; 

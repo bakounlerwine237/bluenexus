@@ -112,15 +112,15 @@
     <section id="view-home" class="view active">
       <input type="file" id="story-file-input" accept="image/*" style="display: none;">
       
-      <!-- Onglets défilants -->
+      <!-- CORRECTION ICI : Utilisation de la classe unique "tab-btn" -->
       <div class="feed-tabs-container">
-        <button id="tab-discovery" class="btn-primary small tab-btn">Découvertes</button>
-        <button id="tab-following" class="btn-secondary small tab-btn">Abonnements</button>
-        <button id="tab-opportunities" class="btn-secondary small tab-btn">💼 Opportunités</button>
-        <button id="tab-confessions" class="btn-secondary small tab-btn">🤫 Confessions</button>
-        <button id="tab-events" class="btn-secondary small tab-btn">📅 Événements</button>
-        <button id="tab-trending" class="btn-secondary small tab-btn">🔥 Tendances</button>
-        <button id="btn-refresh-feed" class="btn-secondary small tab-btn" style="flex-shrink:0;">🔄</button>
+        <button id="tab-discovery" class="tab-btn active">Découvertes</button>
+        <button id="tab-following" class="tab-btn">Abonnements</button>
+        <button id="tab-opportunities" class="tab-btn">💼 Opportunités</button>
+        <button id="tab-confessions" class="tab-btn">🤫 Confessions</button>
+        <button id="tab-events" class="tab-btn">📅 Événements</button>
+        <button id="tab-trending" class="tab-btn">🔥 Tendances</button>
+        <button id="btn-refresh-feed" class="tab-btn" style="padding: 8px 12px;">🔄</button>
       </div>
       
       <div id="stories-list" class="stories-container"></div>

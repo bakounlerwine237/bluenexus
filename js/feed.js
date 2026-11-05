@@ -1,4 +1,3 @@
-// --- js/feed.js ---
 import { db, state } from './state.js';
 import { $, timeAgo, uploadFile, speakText, translateText, toggleMoreMenu, sharePost, showToast, formatPostText, getLevelInfo } from './utils.js';
 import { sendNotification } from './notifications.js';
@@ -17,7 +16,6 @@ function calculatePostScore(post) {
   return likesPoints + commentsPoints + freshnessPoints;
 }
 
-// --- GAGNER DE L'XP ---
 export async function gainXp(amount) {
   if (!state.currentUser || !state.userProfile) return;
   try {
@@ -31,7 +29,6 @@ async function loadSuggestedUsers() {
   const container = $('suggested-users-container');
   const list = $('suggested-users-list');
   if(!container || !list) return;
-  
   if (state.currentFeedMode !== 'discovery') { container.style.display = 'none'; return; }
   
   try {
@@ -74,16 +71,11 @@ async function processMentions(text, postAuthorId) {
   }
 }
 
-// --- TOP HASHTAGS ---
 async function loadTopHashtags() {
   const container = $('top-hashtags-container');
   const list = $('top-hashtags-list');
   if (!container || !list) return;
-  
-  if (state.currentFeedMode !== 'trending') {
-    container.style.display = 'none';
-    return;
-  }
+  if (state.currentFeedMode !== 'trending') { container.style.display = 'none'; return; }
   
   try {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'), limit(100));
@@ -147,7 +139,7 @@ export async function loadGlobalFeed(reset = false) {
 
     if (state.currentFeedMode === 'following') {
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity' || p.data.postType === 'confession' || p.data.postType === 'event') return false; 
+        if (['opportunity', 'confession', 'event'].includes(p.data.postType)) return false; 
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -159,7 +151,7 @@ export async function loadGlobalFeed(reset = false) {
       }
     } else if (state.currentFeedMode === 'discovery') {
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity' || p.data.postType === 'confession' || p.data.postType === 'event') return false; 
+        if (['opportunity', 'confession', 'event'].includes(p.data.postType)) return false; 
         const isMe = p.data.authorId === state.currentUser.uid;
         const isUserFollowed = state.userProfile?.following?.includes(p.data.authorId) || false;
         const isPageFollowed = (p.data.pageId && state.userProfile?.following?.includes(p.data.pageId)) || false;
@@ -189,7 +181,7 @@ export async function loadGlobalFeed(reset = false) {
     } else if (state.currentFeedMode === 'trending') {
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
       postsToShow = postsToShow.filter(p => {
-        if (p.data.postType === 'opportunity' || p.data.postType === 'confession' || p.data.postType === 'event') return false;
+        if (['opportunity', 'confession', 'event'].includes(p.data.postType)) return false;
         const postTime = p.data.createdAt ? (p.data.createdAt.toMillis ? p.data.createdAt.toMillis() : p.data.createdAt) : 0;
         const hasEngagement = (p.data.likes?.length || 0) > 0 || (p.data.commentsCount || 0) > 0;
         return postTime > sevenDaysAgo && hasEngagement;
@@ -213,7 +205,6 @@ export async function loadGlobalFeed(reset = false) {
 export function generatePostHTML(docSnap) {
   const p = docSnap.data();
   
-  // --- EVENEMENTS ---
   if (p.postType === 'event') {
     const isAttending = p.eventAttendees?.includes(state.currentUser.uid);
     const attendeesCount = p.eventAttendees?.length || 0;
@@ -224,10 +215,7 @@ export function generatePostHTML(docSnap) {
       <div class="post-header">
         <div style="display:flex; align-items:center; gap:10px;">
           <div class="post-avatar" style="background: #f59e0b;">📅</div>
-          <div>
-            <strong style="font-size: 1.05rem; color: #f59e0b;">${p.eventTitle}</strong>
-            <div style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">Organisé par @${p.authorName}</div>
-          </div>
+          <div><strong style="font-size: 1.05rem; color: #f59e0b;">${p.eventTitle}</strong><div style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">Organisé par @${p.authorName}</div></div>
         </div>
         <span class="post-time">${timeAgo(p.createdAt)}</span>
       </div>
@@ -237,15 +225,12 @@ export function generatePostHTML(docSnap) {
         <p style="margin-top: 10px;">${p.content}</p>
       </div>
       <div class="post-actions" style="margin-top: 10px;">
-        <button onclick="window.toggleAttendEvent('${docSnap.id}', ${isAttending})" class="btn-primary small" style="background: ${isAttending ? '#10b981' : '#f59e0b'}; border: none; flex: 1;">
-          ${isAttending ? '✅ Je participe' : '👋 Je participe'} (${attendeesCount})
-        </button>
+        <button onclick="window.toggleAttendEvent('${docSnap.id}', ${isAttending})" class="btn-primary small" style="background: ${isAttending ? '#10b981' : '#f59e0b'}; border: none; flex: 1;">${isAttending ? '✅ Je participe' : '👋 Je participe'} (${attendeesCount})</button>
         <button onclick="window.sharePost('${docSnap.id}')" class="action-btn" style="flex: 1;">📤 Partager</button>
       </div>
     </div>`;
   }
 
-  // --- CONFESSIONS ---
   if (p.postType === 'confession') {
     const isAuthor = p.authorId === state.currentUser.uid;
     const canReveal = p.allowReveal && !isAuthor;
@@ -253,21 +238,16 @@ export function generatePostHTML(docSnap) {
     let authorDisplay = isAuthor ? `@${p.authorRealName} <span style="font-size: 0.7rem; color: #6366f1;">(vous)</span>` : (alreadyRevealed ? `@${p.authorRealName}` : `<span class="confession-author" style="color: #6366f1;">🤫 Anonyme</span>`);
     let actionHtml = '';
     if (!isAuthor && !alreadyRevealed) {
-      if (p.allowReveal) {
-        actionHtml = `<div class="confession-action" style="margin-top: 10px; text-align: center;"><button onclick="window.revealConfession('${docSnap.id}', '${p.authorId}')" class="btn-primary small" style="background: #6366f1; width: 100%;">🔍 Révéler l'auteur (50 🪙)</button></div>`;
-      } else {
-        actionHtml = `<div class="confession-action" style="margin-top: 10px; text-align: center;"><p class="muted" style="font-size: 0.8rem;">🔒 L'auteur n'autorise pas la révélation.</p></div>`;
-      }
+      if (p.allowReveal) actionHtml = `<div class="confession-action" style="margin-top: 10px; text-align: center;"><button onclick="window.revealConfession('${docSnap.id}', '${p.authorId}')" class="btn-primary small" style="background: #6366f1; width: 100%;">🔍 Révéler l'auteur (50 🪙)</button></div>`;
+      else actionHtml = `<div class="confession-action" style="margin-top: 10px; text-align: center;"><p class="muted" style="font-size: 0.8rem;">🔒 L'auteur n'autorise pas la révélation.</p></div>`;
     }
     return `<div class="media-item" style="border-left: 4px solid #6366f1;">
       <div class="post-header"><div style="display:flex; align-items:center; gap:10px;"><div class="post-avatar" style="background: #6366f1;">🤫</div><div><strong style="color: #6366f1;">${authorDisplay}</strong><div style="font-size: 0.7rem; color: var(--muted); margin-top: 2px;">Confession anonyme · ${timeAgo(p.createdAt)}</div></div></div></div>
-      <p style="margin-top: 10px; font-style: italic; font-size: 1.05rem;">"${formatPostText(p.content)}"</p>
-      ${actionHtml}
+      <p style="margin-top: 10px; font-style: italic; font-size: 1.05rem;">"${formatPostText(p.content)}"</p>${actionHtml}
       <div class="post-actions"><button onclick="window.sharePost('${docSnap.id}')" class="action-btn">📤 Partager</button>${(p.authorId === state.currentUser.uid || state.userProfile.role === 'admin') ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete">🗑️ Supprimer</button>` : ''}</div>
     </div>`;
   }
 
-  // --- OPPORTUNITES ---
   if (p.postType === 'opportunity') {
     const typeIcons = { emploi: '💼', vente: '🛒', service: '🛠️', immobilier: '🏠' };
     const icon = typeIcons[p.oppType] || '📌';
@@ -279,7 +259,6 @@ export function generatePostHTML(docSnap) {
     </div>`;
   }
 
-  // --- SONDAGES ---
   if (p.postType === 'poll') {
     const totalVotes = (p.pollVotes || []).length;
     const hasVoted = p.pollVotes?.some(v => v.userId === state.currentUser.uid);
@@ -295,7 +274,6 @@ export function generatePostHTML(docSnap) {
     return `<div class="media-item" style="border-left: 4px solid #a855f7;"><div class="post-header"><div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">${p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar">` : `<div class="post-avatar" style="background: #a855f7;">${p.authorName[0].toUpperCase()}</div>`}<div><strong>@${p.authorName}</strong><div style="font-size: 0.7rem; color: #a855f7; font-weight: bold;">📊 SONDAGE</div></div></div><span class="post-time">${timeAgo(p.createdAt)}</span></div><p style="font-weight: bold; margin: 10px 0; font-size: 1.05rem;">${p.pollQuestion}</p>${optionsHtml}<div style="font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 5px;">${totalVotes} vote${totalVotes > 1 ? 's' : ''} ${hasVoted ? '· Cliquez pour changer votre vote' : ''}</div><div class="post-actions"><button onclick="window.sharePost('${docSnap.id}')" class="action-btn">📤 Partager</button>${(p.authorId === state.currentUser.uid || state.userProfile.role === 'admin') ? `<button onclick="window.deletePost('${docSnap.id}')" class="action-btn delete">🗑️ Supprimer</button>` : ''}</div></div>`;
   }
 
-  // --- POST STANDARD ---
   const avatar = p.authorPhoto ? `<img src="${p.authorPhoto}" class="post-avatar" loading="lazy">` : `<div class="post-avatar">${p.authorName[0].toUpperCase()}</div>`;
   const isLiked = p.likes?.includes(state.currentUser.uid);
   const likeCount = p.likes?.length || 0;
@@ -329,6 +307,7 @@ export function generatePostHTML(docSnap) {
 
   return `<div class="media-item" id="post-${docSnap.id}" ondblclick="window.doubleTapLike('${docSnap.id}', '${p.authorId}', ${isLiked})"><div class="heart-animation" id="heart-${docSnap.id}">❤️</div><div class="post-header"><div style="display:flex; align-items:center; gap:10px; cursor:pointer;" onclick="window.openUserProfile('${p.authorId}')">${avatar} <div><strong>@${p.authorName}</strong>${levelBadge}${verifiedIcon}${pageBadge}</div></div><span class="post-time">${timeAgo(p.createdAt)}</span></div><p id="text-${docSnap.id}">${formattedContent}</p>${mediaHtml}<div class="post-actions"><button id="like-btn-${docSnap.id}" onclick="window.likePost('${docSnap.id}', '${p.authorId}', ${isLiked})" class="action-btn" style="color:${isLiked?'var(--blue-light)':'var(--text)'};"><span id="like-icon-${docSnap.id}">${isLiked?'💙':'🤍'}</span> <span id="like-count-${docSnap.id}">${likeCount}</span></button><button onclick="window.toggleComments('${docSnap.id}')" class="action-btn">💬 ${p.commentsCount || 0}</button><button onclick="window.sharePost('${docSnap.id}')" class="action-btn" title="Partager">📤</button><div class="more-menu-container"><button onclick="window.toggleMoreMenu('${docSnap.id}')" class="action-btn">⋮</button><div id="more-menu-${docSnap.id}" class="more-menu"><button onclick="window.speakText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🔊 Écouter</button><button onclick="window.translateText('text-${docSnap.id}'); window.toggleMoreMenu('${docSnap.id}')">🌐 Traduire</button>${boostBtn}${saveBtn}${pinBtn}${reportBtn}${deleteBtn}</div></div></div><div id="comments-section-${docSnap.id}" class="comments-section" style="display: none;"><div id="comments-list-${docSnap.id}"><p class="muted" style="font-size: 0.8rem;">Chargement...</p></div><div class="comment-input-row"><input type="text" id="comment-input-${docSnap.id}" placeholder="Commenter..."><button onclick="window.addComment('${docSnap.id}', '${p.authorId}')" class="btn-primary small">Envoyer</button></div></div></div>`;
 }
+
 
 export async function populatePageSelector() {
   const select = $('post-as-select');
@@ -489,143 +468,198 @@ export function initFeed() {
     window.addEventListener('scroll', () => { btnBackToTop.classList.toggle('show', window.scrollY > 300); });
     btnBackToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   }
-  
-  window.doubleTapLike = async (postId, authorId, isLiked) => {
-    const heart = $(`heart-${postId}`);
-    if (heart) { heart.classList.add('animate'); setTimeout(() => heart.classList.remove('animate'), 600); }
-    if (!isLiked) window.likePost(postId, authorId, false);
-  };
-  
-  window.boostPost = async (postId) => {
-    try {
-      await updateDoc(doc(db, 'posts', postId), { createdAt: serverTimestamp() });
-      showToast("🚀 Publication boostée !", "success");
-      if (document.getElementById('view-home').classList.contains('active')) window.loadGlobalFeed(true);
-    } catch (e) { showToast("Erreur lors du boost", "error"); }
+
+  // FONCTIONS D'INTERACTION DES POSTS
+  window.reportPost = (postId) => {
+    const reason = prompt("Raison du signalement (spam, harcèlement, contenu inapproprié, autre) :");
+    if (reason && reason.trim()) window.submitReport(postId, reason.trim());
   };
 
-  window.toggleSavePost = async (postId, isSaved) => {
-    const ref = doc(db, 'users', state.currentUser.uid);
-    if (isSaved) {
-      await updateDoc(ref, { savedPosts: arrayRemove(postId) });
-      state.userProfile.savedPosts = state.userProfile.savedPosts.filter(id => id !== postId);
-      showToast("Retiré des favoris.", "error");
-    } else {
-      await updateDoc(ref, { savedPosts: arrayUnion(postId) });
-      if (!state.userProfile.savedPosts) state.userProfile.savedPosts = [];
-      state.userProfile.savedPosts.push(postId);
-      showToast("🔖 Post sauvegardé !", "success");
-    }
-  };
-  
-  window.likePost = async (postId, authorId, isLiked) => {
-    const ref = doc(db, 'posts', postId);
-    const iconEl = $(`like-icon-${postId}`), countEl = $(`like-count-${postId}`), btnEl = $(`like-btn-${postId}`);
-    if (!iconEl || !countEl) return;
-    let currentCount = parseInt(countEl.textContent) || 0;
-    if (isLiked) { iconEl.textContent = '🤍'; countEl.textContent = Math.max(0, currentCount - 1); btnEl.style.color = 'var(--text)'; }
-    else { iconEl.textContent = '💙'; countEl.textContent = currentCount + 1; btnEl.style.color = 'var(--blue-light)'; }
+  window.submitReport = async (postId, reason) => {
     try {
-      if (isLiked) await updateDoc(ref, { likes: arrayRemove(state.currentUser.uid) });
-      else {
-        await updateDoc(ref, { likes: arrayUnion(state.currentUser.uid) });
-        if (authorId !== state.currentUser.uid) {
-          await sendNotification(authorId, "a aimé votre publication.");
-          gainXp(2);
-        }
+      await addDoc(collection(db, 'reports'), { 
+        postId, reason, 
+        reporterId: state.currentUser.uid, 
+        reporterName: state.userProfile.username, 
+        createdAt: serverTimestamp() 
+      });
+      showToast("✅ Signalement envoyé à la modération.", "success");
+    } catch (e) { showToast("Erreur lors du signalement", "error"); }
+  };
+
+  window.likePost = async (postId, authorId, isLiked) => {
+    const btn = $(`like-btn-${postId}`);
+    const iconEl = $(`like-icon-${postId}`);
+    const countEl = $(`like-count-${postId}`);
+    if (!btn || !iconEl || !countEl) return;
+    let currentCount = parseInt(countEl.textContent) || 0;
+    const postRef = doc(db, 'posts', postId);
+    if (isLiked) {
+      iconEl.textContent = '🤍';
+      countEl.textContent = Math.max(0, currentCount - 1);
+      btn.style.color = 'var(--text)';
+      btn.setAttribute('onclick', `window.likePost('${postId}', '${authorId}', false)`);
+    } else {
+      iconEl.textContent = '💙';
+      countEl.textContent = currentCount + 1;
+      btn.style.color = 'var(--blue-light)';
+      btn.setAttribute('onclick', `window.likePost('${postId}', '${authorId}', true)`);
+    }
+    const postEl = $(`post-${postId}`);
+    if (postEl) postEl.setAttribute('ondblclick', `window.doubleTapLike('${postId}', '${authorId}', ${!isLiked})`);
+    try {
+      if (isLiked) {
+        await updateDoc(postRef, { likes: arrayRemove(state.currentUser.uid) });
+      } else {
+        await updateDoc(postRef, { likes: arrayUnion(state.currentUser.uid) });
+        if (authorId !== state.currentUser.uid) sendNotification(authorId, "a aimé votre publication.");
       }
-      btnEl.setAttribute('onclick', `window.likePost('${postId}', '${authorId}', ${!isLiked})`);
     } catch (e) {
       if (isLiked) { iconEl.textContent = '💙'; countEl.textContent = currentCount + 1; }
       else { iconEl.textContent = '🤍'; countEl.textContent = currentCount - 1; }
+      console.error("Erreur like:", e);
     }
   };
-  
-  window.deletePost = async (postId) => {
-    if (confirm("Supprimer ce message ?")) {
-      await deleteDoc(doc(db, 'posts', postId));
-      const el = document.getElementById(`post-${postId}`);
-      if (el) el.remove();
-      showToast("🗑️ Post supprimé.", "error");
+
+  window.doubleTapLike = async (postId, authorId, isLiked) => {
+    const heartEl = $(`heart-${postId}`);
+    if (heartEl) {
+      heartEl.classList.remove('animate');
+      void heartEl.offsetWidth;
+      heartEl.classList.add('animate');
     }
+    if (!isLiked) await window.likePost(postId, authorId, false);
   };
-  
-  window.toggleComments = (postId) => {
+
+  window.toggleComments = async (postId) => {
     const section = $(`comments-section-${postId}`);
     if (!section) return;
-    if (section.style.display === 'none') { section.style.display = 'block'; window.loadComments(postId); }
-    else section.style.display = 'none';
-  };
-  
-  window.loadComments = async (postId) => {
-    const list = $(`comments-list-${postId}`);
-    if (!list) return;
-    list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Chargement...</p>';
-    const q = query(collection(db, 'comments'), where('postId', '==', postId));
-    const snap = await getDocs(q);
-    if (snap.empty) return list.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Soyez le premier à commenter !</p>';
-    const comments = snap.docs.map(d => d.data());
-    comments.sort((a, b) => a.createdAt - b.createdAt);
-    list.innerHTML = comments.map(c => `<div class="comment-item"><strong>@${c.authorName}</strong> : ${c.content}</div>`).join('');
-  };
-  
-  window.addComment = async (postId, authorId) => {
-    const input = $(`comment-input-${postId}`);
-    if (!input) return;
-    const content = input.value.trim();
-    if (!content) return;
-    input.value = '';
+    const isHidden = section.style.display === 'none' || section.style.display === '';
+    if (!isHidden) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    const listEl = $(`comments-list-${postId}`);
+    if (listEl) listEl.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Chargement...</p>';
     try {
-      await addDoc(collection(db, 'comments'), { postId, content, authorId: state.currentUser.uid, authorName: state.userProfile.username, createdAt: Date.now() });
+      const q = query(collection(db, 'comments'), where('postId', '==', postId));
+      const snap = await getDocs(q);
+      const comments = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      if (comments.length === 0) {
+        listEl.innerHTML = '<p class="muted" style="font-size: 0.8rem;">Aucun commentaire. Soyez le premier !</p>';
+        return;
+      }
+      listEl.innerHTML = comments.map(c => `
+        <div class="comment-item">
+          <strong>@${c.authorName}</strong> ${c.content}
+          <div style="font-size: 0.7rem; color: var(--muted); margin-top: 3px;">${timeAgo(c.createdAt)}</div>
+        </div>
+      `).join('');
+    } catch (e) {
+      listEl.innerHTML = '<p class="muted" style="color: red; font-size: 0.8rem;">Erreur de chargement.</p>';
+    }
+  };
+
+  window.addComment = async (postId, authorId) => {
+    const inputEl = $(`comment-input-${postId}`);
+    if (!inputEl) return;
+    const content = inputEl.value.trim();
+    if (!content) return;
+    inputEl.value = '';
+    try {
+      await addDoc(collection(db, 'comments'), {
+        postId, content,
+        authorId: state.currentUser.uid,
+        authorName: state.userProfile.username,
+        createdAt: Date.now()
+      });
       const postRef = doc(db, 'posts', postId);
       const postSnap = await getDoc(postRef);
-      if (postSnap.exists()) await updateDoc(postRef, { commentsCount: (postSnap.data().commentsCount || 0) + 1 });
-      if (authorId !== state.currentUser.uid) {
-        await sendNotification(authorId, "a commenté votre publication.");
-        gainXp(5);
+      if (postSnap.exists()) {
+        const newCount = (postSnap.data().commentsCount || 0) + 1;
+        await updateDoc(postRef, { commentsCount: newCount });
+        const commentBtn = document.querySelector(`#post-${postId} .post-actions button:nth-child(2)`);
+        if (commentBtn) commentBtn.textContent = `💬 ${newCount}`;
       }
-      window.loadComments(postId);
-    } catch (e) { alert("Erreur : " + e.message); }
+      if (authorId !== state.currentUser.uid) sendNotification(authorId, "a commenté votre publication.");
+      await window.toggleComments(postId);
+      await window.toggleComments(postId);
+    } catch (e) { showToast("Erreur lors de l'envoi.", "error"); }
   };
-  
-  window.togglePin = async (postId, isPinned) => {
-    const ref = doc(db, 'users', state.currentUser.uid);
-    if (isPinned) {
-      await updateDoc(ref, { pinned: arrayRemove(postId) });
-      state.userProfile.pinned = state.userProfile.pinned.filter(id => id !== postId);
-    } else {
-      await updateDoc(ref, { pinned: arrayUnion(postId) });
-      if (!state.userProfile.pinned) state.userProfile.pinned = [];
-      state.userProfile.pinned.push(postId);
-    }
-    if ($('view-profile').classList.contains('active') && window.renderProfile) window.renderProfile();
-  };
-  
-  window.reportPost = async (postId) => {
-    const dupQuery = query(collection(db, 'reports'), where('postId', '==', postId), where('reporterId', '==', state.currentUser.uid));
-    const dupSnap = await getDocs(dupQuery);
-    if (!dupSnap.empty) return showToast("Vous avez déjà signalé ce post.", "error");
-    let modal = $('modal-report');
-    if (!modal) {
-      modal = document.createElement('div'); modal.id = 'modal-report'; modal.className = 'modal hidden';
-      modal.innerHTML = `<div class="modal-content"><h3 style="margin-bottom:1rem;">🚨 Signaler ce post</h3><div id="report-reasons" style="display:flex; flex-direction:column; gap:8px; margin-bottom:1rem;"><button class="btn-secondary" data-reason="Haineux" style="text-align:left;">🚫 Contenu haineux</button><button class="btn-secondary" data-reason="Harcèlement" style="text-align:left;">😠 Harcèlement</button><button class="btn-secondary" data-reason="Spam" style="text-align:left;">📢 Spam</button><button class="btn-secondary" data-reason="Autre" style="text-align:left;">❓ Autre</button></div><button id="btn-cancel-report" class="btn-secondary" style="width:100%;">Annuler</button></div>`;
-      document.body.appendChild(modal);
-      $('btn-cancel-report').addEventListener('click', () => modal.classList.add('hidden'));
-      modal.querySelectorAll('#report-reasons button').forEach(btn => {
-        btn.addEventListener('click', () => { window.submitReport(postId, btn.dataset.reason); modal.classList.add('hidden'); });
-      });
-    }
-    modal.classList.remove('hidden');
-  };
-  
-  window.submitReport = async (postId, reason) => {
+
+  window.deletePost = async (postId) => {
+    if (!confirm("Supprimer définitivement cette publication ?")) return;
     try {
-      await addDoc(collection(db, 'reports'), { postId, reason, reporterId: state.currentUser.uid, reporterName: state.userProfile.username, createdAt: serverTimestamp() });
-      showToast("✅ Signalement envoyé.", "success");
+      await deleteDoc(doc(db, 'posts', postId));
+      const el = $(`post-${postId}`);
+      if (el) el.remove();
+      showToast("🗑️ Publication supprimée.", "success");
+    } catch (e) { showToast("Erreur de suppression.", "error"); }
+  };
+
+  window.togglePin = async (postId, isPinned) => {
+    try {
+      const userRef = doc(db, 'users', state.currentUser.uid);
+      if (isPinned) {
+        await updateDoc(userRef, { pinned: arrayRemove(postId) });
+        state.userProfile.pinned = (state.userProfile.pinned || []).filter(id => id !== postId);
+        showToast("📍 Désépinglé");
+      } else {
+        await updateDoc(userRef, { pinned: arrayUnion(postId) });
+        if (!state.userProfile.pinned) state.userProfile.pinned = [];
+        state.userProfile.pinned.push(postId);
+        showToast("📌 Épinglé sur votre profil");
+      }
     } catch (e) { showToast("Erreur", "error"); }
   };
 
-  // --- LOGIQUE ONGLETS ---
+  window.toggleSavePost = async (postId, isSaved) => {
+    try {
+      const userRef = doc(db, 'users', state.currentUser.uid);
+      if (isSaved) {
+        await updateDoc(userRef, { savedPosts: arrayRemove(postId) });
+        state.userProfile.savedPosts = (state.userProfile.savedPosts || []).filter(id => id !== postId);
+        showToast("Retiré des favoris");
+      } else {
+        await updateDoc(userRef, { savedPosts: arrayUnion(postId) });
+        if (!state.userProfile.savedPosts) state.userProfile.savedPosts = [];
+        state.userProfile.savedPosts.push(postId);
+        showToast("🔖 Sauvegardé dans vos favoris");
+      }
+    } catch (e) { showToast("Erreur", "error"); }
+  };
+
+  window.revealConfession = async (postId, authorId) => {
+    const cost = 50;
+    const userCoins = state.userProfile.coins || 0;
+    if (userCoins < cost && state.userProfile.role !== 'admin') {
+      return showToast(`❌ Il vous faut ${cost} 🪙 pour révéler l'auteur.`, "error");
+    }
+    if (!confirm(`Révéler l'auteur pour ${cost} 🪙 Nexus Coins ?`)) return;
+    try {
+      const postRef = doc(db, 'posts', postId);
+      if (state.userProfile.role !== 'admin') {
+        await updateDoc(doc(db, 'users', state.currentUser.uid), { coins: userCoins - cost });
+        state.userProfile.coins = userCoins - cost;
+      }
+      await updateDoc(postRef, { revealedTo: arrayUnion(state.currentUser.uid) });
+      showToast("🔍 Auteur révélé !", "success");
+      setTimeout(() => loadGlobalFeed(true), 800);
+    } catch (e) { showToast("Erreur lors de la révélation.", "error"); }
+  };
+
+  window.boostPost = async (postId) => {
+    if (!state.userProfile.isPremium && state.userProfile.role !== 'admin') {
+      return showToast("❌ Réservé aux membres Premium.", "error");
+    }
+    if (!confirm("Booster ce post pour le remonter en haut du feed ?")) return;
+    try {
+      await updateDoc(doc(db, 'posts', postId), { createdAt: serverTimestamp() });
+      showToast("🚀 Post boosté !", "success");
+      setTimeout(() => loadGlobalFeed(true), 500);
+    } catch (e) { showToast("Erreur de boost.", "error"); }
+  };
+
+  // GESTION DES ONGLETS DU FEED (Mise à jour de la classe active)
   const tabOpp = $('tab-opportunities');
   const floatOpp = $('btn-float-opp');
   const tabConf = $('tab-confessions');
@@ -633,12 +667,7 @@ export function initFeed() {
   const floatEvent = $('btn-float-event');
 
   function resetTabs() {
-    if($('tab-discovery')) $('tab-discovery').className = 'btn-secondary small';
-    if($('tab-following')) $('tab-following').className = 'btn-secondary small';
-    if($('tab-trending')) $('tab-trending').className = 'btn-secondary small';
-    if(tabConf) { tabConf.className = 'btn-secondary small'; tabConf.style.background = ''; }
-    if(tabOpp) { tabOpp.className = 'btn-secondary small'; tabOpp.style.background = ''; }
-    if(tabEvent) { tabEvent.className = 'btn-secondary small'; tabEvent.style.background = ''; }
+    document.querySelectorAll('.feed-tabs-container .tab-btn').forEach(btn => btn.classList.remove('active'));
     if(floatOpp) floatOpp.style.display = 'none';
     if(floatEvent) floatEvent.style.display = 'none';
     if($('post-creation-container')) $('post-creation-container').style.display = 'none';
@@ -647,45 +676,28 @@ export function initFeed() {
 
   if(tabOpp) {
     tabOpp.addEventListener('click', () => {
-      resetTabs();
-      state.currentFeedMode = 'opportunities';
-      tabOpp.className = 'btn-primary small';
-      tabOpp.style.background = '#10b981';
+      resetTabs(); state.currentFeedMode = 'opportunities';
+      tabOpp.classList.add('active');
       if(floatOpp) floatOpp.style.display = 'flex';
       loadGlobalFeed(true);
     });
   }
-
-  if(floatOpp) {
-    floatOpp.onclick = () => { if($('modal-opportunity')) $('modal-opportunity').classList.remove('hidden'); };
-  }
-
+  if(floatOpp) floatOpp.onclick = () => { if($('modal-opportunity')) $('modal-opportunity').classList.remove('hidden'); };
   if($('btn-cancel-opp')) $('btn-cancel-opp').addEventListener('click', () => $('modal-opportunity').classList.add('hidden'));
 
   if($('btn-publish-opp')) {
     $('btn-publish-opp').addEventListener('click', async () => {
-      const title = $('opp-title').value.trim();
-      const desc = $('opp-desc').value.trim();
-      const city = $('opp-city').value.trim();
-      const type = $('opp-type').value;
-      
+      const title = $('opp-title').value.trim(), desc = $('opp-desc').value.trim(), city = $('opp-city').value.trim(), type = $('opp-type').value;
       if (!title || !desc || !city) return showToast("Remplissez tous les champs.", "error");
-      
       const userCoins = state.userProfile.coins || 0;
       if (userCoins < 5 && state.userProfile.role !== 'admin') return showToast("❌ Besoin de 5 🪙 Nexus Coins.", "error");
-
       $('btn-publish-opp').textContent = "Publication..."; $('btn-publish-opp').disabled = true;
-
       try {
         if (state.userProfile.role !== 'admin') {
           await updateDoc(doc(db, 'users', state.currentUser.uid), { coins: userCoins - 5 });
           state.userProfile.coins = userCoins - 5;
         }
-        await addDoc(collection(db, 'posts'), {
-          postType: 'opportunity', oppTitle: title, oppCity: city, oppType: type, content: desc, oppContact: "Message privé",
-          authorId: state.currentUser.uid, authorName: state.userProfile.username, authorIsPremium: state.userProfile.isPremium || false,
-          createdAt: serverTimestamp(), likes: [], commentsCount: 0
-        });
+        await addDoc(collection(db, 'posts'), { postType: 'opportunity', oppTitle: title, oppCity: city, oppType: type, content: desc, oppContact: "Message privé", authorId: state.currentUser.uid, authorName: state.userProfile.username, authorIsPremium: state.userProfile.isPremium || false, createdAt: serverTimestamp(), likes: [], commentsCount: 0 });
         showToast("✅ Annonce publiée ! (-5 🪙)");
         $('modal-opportunity').classList.add('hidden');
         $('opp-title').value = ''; $('opp-desc').value = ''; $('opp-city').value = '';
@@ -697,10 +709,8 @@ export function initFeed() {
 
   if(tabConf) {
     tabConf.addEventListener('click', () => {
-      resetTabs();
-      state.currentFeedMode = 'confessions';
-      tabConf.className = 'btn-primary small';
-      tabConf.style.background = '#6366f1';
+      resetTabs(); state.currentFeedMode = 'confessions';
+      tabConf.classList.add('active');
       if($('post-creation-container')) $('post-creation-container').style.display = 'flex';
       loadGlobalFeed(true);
     });
@@ -708,45 +718,28 @@ export function initFeed() {
 
   if(tabEvent) {
     tabEvent.addEventListener('click', () => {
-      resetTabs();
-      state.currentFeedMode = 'events';
-      tabEvent.className = 'btn-primary small';
-      tabEvent.style.background = '#f59e0b';
+      resetTabs(); state.currentFeedMode = 'events';
+      tabEvent.classList.add('active');
       if(floatEvent) floatEvent.style.display = 'flex';
       loadGlobalFeed(true);
     });
   }
-
-  if(floatEvent) {
-    floatEvent.onclick = () => { if($('modal-event')) $('modal-event').classList.remove('hidden'); };
-  }
-
+  if(floatEvent) floatEvent.onclick = () => { if($('modal-event')) $('modal-event').classList.remove('hidden'); };
   if($('btn-cancel-event')) $('btn-cancel-event').addEventListener('click', () => $('modal-event').classList.add('hidden'));
 
   if($('btn-publish-event')) {
     $('btn-publish-event').addEventListener('click', async () => {
-      const title = $('event-title').value.trim();
-      const date = $('event-date').value;
-      const location = $('event-location').value.trim();
-      const desc = $('event-desc').value.trim();
-      
+      const title = $('event-title').value.trim(), date = $('event-date').value, location = $('event-location').value.trim(), desc = $('event-desc').value.trim();
       if (!title || !date || !location) return showToast("Remplissez le titre, la date et le lieu.", "error");
-      
       const userCoins = state.userProfile.coins || 0;
       if (userCoins < 10 && state.userProfile.role !== 'admin') return showToast("❌ Besoin de 10 🪙 pour créer un événement.", "error");
-
       $('btn-publish-event').textContent = "Publication..."; $('btn-publish-event').disabled = true;
-
       try {
         if (state.userProfile.role !== 'admin') {
           await updateDoc(doc(db, 'users', state.currentUser.uid), { coins: userCoins - 10 });
           state.userProfile.coins = userCoins - 10;
         }
-        await addDoc(collection(db, 'posts'), {
-          postType: 'event', eventTitle: title, eventDate: date, eventLocation: location, content: desc, eventAttendees: [state.currentUser.uid],
-          authorId: state.currentUser.uid, authorName: state.userProfile.username, authorIsPremium: state.userProfile.isPremium || false,
-          createdAt: serverTimestamp()
-        });
+        await addDoc(collection(db, 'posts'), { postType: 'event', eventTitle: title, eventDate: date, eventLocation: location, content: desc, eventAttendees: [state.currentUser.uid], authorId: state.currentUser.uid, authorName: state.userProfile.username, authorIsPremium: state.userProfile.isPremium || false, createdAt: serverTimestamp() });
         showToast("✅ Événement créé ! (-10 🪙)");
         $('modal-event').classList.add('hidden');
         $('event-title').value = ''; $('event-date').value = ''; $('event-location').value = ''; $('event-desc').value = '';
@@ -759,13 +752,12 @@ export function initFeed() {
   window.toggleAttendEvent = async (postId, isAttending) => {
     try {
       const ref = doc(db, 'posts', postId);
-      if (isAttending) { await updateDoc(ref, { eventAttendees: arrayRemove(state.currentUser.uid) }); } 
-      else { await updateDoc(ref, { eventAttendees: arrayUnion(state.currentUser.uid) }); }
+      if (isAttending) await updateDoc(ref, { eventAttendees: arrayRemove(state.currentUser.uid) }); 
+      else await updateDoc(ref, { eventAttendees: arrayUnion(state.currentUser.uid) });
       loadGlobalFeed(true);
     } catch(e) { showToast("Erreur", "error"); }
   };
 
-  // --- SONDAGES ---
   if($('btn-create-poll')) {
     $('btn-create-poll').addEventListener('click', () => {
       if (!state.userProfile.isPremium && state.userProfile.role !== 'admin') return showToast("❌ Devenez Premium pour créer des sondages.", "error");
